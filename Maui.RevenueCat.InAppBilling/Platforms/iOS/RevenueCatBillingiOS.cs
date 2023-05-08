@@ -1,19 +1,18 @@
-using Com.Revenuecat.Purchases.Models;
-using Com.Revenuecat.Purchases;
-using Android.App;
-using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Extensions;
-using Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
-using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
-using Maui.RevenueCat.InAppBilling.Platforms.Android.Exceptions;
+using Maui.RevenueCat.InAppBilling.Models;
+using Maui.RevenueCat.InAppBilling.Platforms.iOS.Exceptions;
+using Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
+using Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
+using Maui.RevenueCat.iOS;
+using Purchases = Maui.RevenueCat.iOS.RCPurchases;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
 
+
 public partial class RevenueCatBilling : IRevenueCatBilling
 {
-    private Purchases _purchases;
-    private List<Package> _cachedOfferingPackages = new();
-    private static Activity? _currentActivityContext => Platform.CurrentActivity;
+    private Purchases _purchases = default!;
+    private List<RCPackage> _cachedOfferingPackages = new();
 
     public static partial void EnableDebugLogs(bool enable)
     {
@@ -22,27 +21,17 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     public partial void Initialize(string apiKey)
     {
-        if (_currentActivityContext is null)
-        {
-            throw new Exception("You must call this code in App.xaml->OnStart");
-        }
-
         try
         {
-            _purchases = Purchases.Configure(
-                new PurchasesConfiguration(
-                    new PurchasesConfiguration.Builder(
-                        _currentActivityContext,
-                        apiKey)
-                )
-            );
+            _purchases = Purchases.ConfigureWithAPIKey(apiKey);
+            Purchases.SharedPurchases.AllowSharingAppStoreAccount = true;
 
             _isInitialized = true;
         }
         catch (PurchasesErrorException ex)
         {
-            var description = ex.PurchasesError.Code.Description;
-            var diagnosis = ex.PurchasesError.UnderlyingErrorMessage;
+            //var description = ex.PurchasesError.Code.Description;
+            //var diagnosis = ex.PurchasesError.UnderlyingErrorMessage;
             //var msg = new Show_Dialog();
             //if(description.Contains("problem with the store"))
             //	description = S.StoreProblemInDetail;       // Ask user to verify logged in to Google and re-start app
@@ -65,7 +54,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return _cachedOfferingPackages.ToOfferDtoList(); ;
         }
 
-        using var offerings = await Purchases.SharedInstance.GetOfferingsAsync();
+        using var offerings = await _purchases.GetOfferingsAsync();
         if (offerings is null)
         {
             return new();
@@ -79,9 +68,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         _cachedOfferingPackages = currentOffering.AvailablePackages.ToList();
 
+        //TODO - check if Android and iOS outputs are same
+        //var test = currentOffering.AvailablePackages.ToList();
+
         return _cachedOfferingPackages.ToOfferDtoList(); ;
     }
-    public partial async Task<bool> PurchaseProduct(string offeringIdentifier)
+
+    public async partial Task<bool> PurchaseProduct(string offeringIdentifier)
     {
         if (!_isInitialized)
         {
@@ -98,7 +91,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(_currentActivityContext, packageToBuy);
+            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(packageToBuy);
         }
         catch (PurchasesErrorException ex)
         {
@@ -110,29 +103,36 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.PurchaseProduct " + ex.ToString(), ex.InnerException);
         }
 
-        if (purchaseSuccessInfo is null)
+        if (purchaseSuccessInfo is null || purchaseSuccessInfo.Value.StoreTransaction.Sk1Transaction is null)
         {
             return false;
         }
 
-        return purchaseSuccessInfo.StoreTransaction.PurchaseState == PurchaseState.Purchased;
+        return purchaseSuccessInfo.Value.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased;
     }
-    public partial async Task<List<string>> GetActiveSubscriptions()
+
+    public async partial Task<List<string>> GetActiveSubscriptions()
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
                 return new();
             }
 
-            if (customerInfo.ActiveSubscriptions.IsNullOrEmpty())
+            if (customerInfo.ActiveSubscriptions.ToStringList().IsNullOrEmpty())
             {
                 return new();
             }
 
-            return customerInfo.ActiveSubscriptions.ToList(); ;
+            var activeSubscriptions = new List<string>();
+            foreach (var activeSubscription in customerInfo.ActiveSubscriptions)
+            {
+                activeSubscriptions.Add(activeSubscription.ToString());
+            }
+
+            return activeSubscriptions;
         }
         catch (Exception ex)
         {
@@ -140,22 +140,23 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.ActiveSubscriptionsAsync " + ex.ToString(), ex.InnerException);
         }
     }
-    public partial async Task<List<string>> GetAllPurchasedIdentifiers()
+
+    public async partial Task<List<string>> GetAllPurchasedIdentifiers()
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
                 return new();
             }
 
-            if (customerInfo.AllPurchasedSkus.IsNullOrEmpty())
+            if (customerInfo.AllPurchasedProductIdentifiers.ToStringList().IsNullOrEmpty())
             {
                 return new();
             }
 
-            return customerInfo.AllPurchasedSkus.ToList(); ;
+            return customerInfo.AllPurchasedProductIdentifiers.ToStringList(); ;
         }
         catch (Exception ex)
         {
@@ -163,17 +164,18 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.AllPurchasedProductIdentifiersAsync " + ex.ToString(), ex.InnerException);
         }
     }
-    public partial async Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier)
+
+    public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier)
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
                 return null;
             }
 
-            return customerInfo.GetPurchaseDateForSku(productIdentifier).ToDateTime();
+            return customerInfo.PurchaseDateForProductIdentifier(productIdentifier).ToDateTime();
         }
         catch (Exception ex)
         {
@@ -181,7 +183,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.PurchaseDateForProductIdentifierAsync " + ex.ToString(), ex.InnerException);
         }
     }
-    public partial async Task<string> GetManagementSubscriptionUrl()
+
+    public async partial Task<string> GetManagementSubscriptionUrl()
     {
         if (!_cachedManagementUrl.IsNullOrEmpty())
         {
@@ -190,7 +193,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null || customerInfo.ManagementURL is null)
             {
                 return string.Empty;
