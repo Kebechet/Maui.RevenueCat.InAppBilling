@@ -12,6 +12,9 @@ public interface IRevenueCatBilling
     Task<List<string>> GetAllPurchasedIdentifiers();
     Task<DateTime?> GetPurchaseDateForProductIdentifier(string productSku);
     Task<string> GetManagementSubscriptionUrl();
+
+    //TODO
     //Purchases.SharedInstance.LogIn
     //Purchases.SharedInstance.LogOut
+    //RCCustomerInfo purchaserInfo = await RCPurchases.SharedPurchases.RestoreTransactionsAsync();
 }
