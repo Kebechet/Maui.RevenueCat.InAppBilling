@@ -41,8 +41,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (PurchasesErrorException ex)
         {
-            var description = ex.PurchasesError.Code.Description;
-            var diagnosis = ex.PurchasesError.UnderlyingErrorMessage;
+            var description = ex.PurchasesError?.Code.Description;
+            var diagnosis = ex.PurchasesError?.UnderlyingErrorMessage;
             //var msg = new Show_Dialog();
             //if(description.Contains("problem with the store"))
             //	description = S.StoreProblemInDetail;       // Ask user to verify logged in to Google and re-start app
@@ -92,6 +92,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         if (packageToBuy is null)
         {
             throw new Exception($"No offering/packege with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.");
+        }
+
+        if(_currentActivityContext is null)
+        {
+            throw new Exception("Android Current Activity can't be null.");
         }
 
         PurchaseSuccessInfo? purchaseSuccessInfo = null;

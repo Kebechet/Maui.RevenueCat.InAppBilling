@@ -6,7 +6,7 @@ using Maui.RevenueCat.InAppBilling.Platforms.Android.Exceptions;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 
-internal class DelegatingMakePurchaseListener : DelegatingListenerBase<PurchaseSuccessInfo>, IPurchaseCallback
+internal sealed class DelegatingMakePurchaseListener : DelegatingListenerBase<PurchaseSuccessInfo>, IPurchaseCallback
 {
     public DelegatingMakePurchaseListener(CancellationToken cancellationToken) : base(cancellationToken)
     {

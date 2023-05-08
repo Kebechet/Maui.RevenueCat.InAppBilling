@@ -1,6 +1,6 @@
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 
-public abstract class DelegatingListenerBase<TResult> : Java.Lang.Object
+internal abstract class DelegatingListenerBase<TResult> : Java.Lang.Object
 {
     private readonly TaskCompletionSource<TResult> _taskCompletionSource;
 

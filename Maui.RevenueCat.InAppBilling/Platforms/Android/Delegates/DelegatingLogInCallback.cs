@@ -4,7 +4,7 @@ using Maui.RevenueCat.InAppBilling.Platforms.Android.Exceptions;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 
-internal class DelegatingLogInCallback : DelegatingListenerBase<CustomerInfo>, ILogInCallback
+internal sealed class DelegatingLogInCallback : DelegatingListenerBase<CustomerInfo>, ILogInCallback
 {
     public DelegatingLogInCallback(CancellationToken cancellationToken) : base(cancellationToken)
     {

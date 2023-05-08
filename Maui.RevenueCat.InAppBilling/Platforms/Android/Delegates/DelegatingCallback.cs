@@ -2,7 +2,7 @@ using Com.Revenuecat.Purchases.Interfaces;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 
-public class DelegatingCallback<TResult> : DelegatingListenerBase<TResult>, ICallback
+internal sealed class DelegatingCallback<TResult> : DelegatingListenerBase<TResult>, ICallback
 {
     public DelegatingCallback(CancellationToken cancellationToken) : base(cancellationToken)
     {

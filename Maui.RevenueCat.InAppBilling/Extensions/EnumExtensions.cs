@@ -1,6 +1,6 @@
 namespace Maui.RevenueCat.InAppBilling.Extensions;
 
-internal class EnumExtensions
+internal sealed class EnumExtensions
 {
 
     /// <summary>
