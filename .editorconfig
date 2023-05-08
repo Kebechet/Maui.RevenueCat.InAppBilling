@@ -1,4 +1,4 @@
-﻿# Docs
+# Docs
 # https://editorconfig.org/
 # https://docs.microsoft.com/en-us/visualstudio/ide/create-portable-custom-editor-options?view=vs-2017
 # https://gist.github.com/anreton/0773ff6f2d8225b9719047bfca27657b - example of many editorconfig settings
@@ -91,3 +91,6 @@ dotnet_diagnostic.IDE0049.severity = warning
 
 #Simplify NEW expression
 dotnet_diagnostic.IDE0090.severity = warning
+
+# IDE0036: Order modifiers
+dotnet_diagnostic.IDE0036.severity = warning
