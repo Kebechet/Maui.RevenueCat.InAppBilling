@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-		<TargetFrameworks>net7.0;net7.0-android;net7.0-ios</TargetFrameworks>
+	<TargetFrameworks>net7.0;net7.0-android;net7.0-ios</TargetFrameworks>
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -9,6 +9,19 @@
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+
+		<IsPackable>true</IsPackable>
+		<PackageId>Kebechet.Maui.RevenueCat.InAppBilling</PackageId>
+		<Description>Serves as an abstraction around RevenueCat Android and iOS SDKs https://docs.revenuecat.com/docs</Description>
+		<PackageOutputPath>bin\nupkgOutput</PackageOutputPath>
+		<RepositoryUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<RepositoryType>git</RepositoryType>
+		<OutputType>Library</OutputType>
+		<Version>1.0.0-preview1</Version>
+		<PackageReleaseNotes>Initial version</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
