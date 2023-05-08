@@ -12,10 +12,9 @@ public static class RevenueCatBillingInstaller
             forceEnableDebugLogs = IsDebug();
         }
 
-#if __MOBILE__
-        services.AddSingleton<IRevenueCatBilling, RevenueCatBilling>();
         RevenueCatBilling.EnableDebugLogs(forceEnableDebugLogs.Value);
-#endif
+
+        services.AddSingleton<IRevenueCatBilling, RevenueCatBilling>();
 
         return services;
     }
