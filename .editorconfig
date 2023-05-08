@@ -1,0 +1,93 @@
+﻿# Docs
+# https://editorconfig.org/
+# https://docs.microsoft.com/en-us/visualstudio/ide/create-portable-custom-editor-options?view=vs-2017
+# https://gist.github.com/anreton/0773ff6f2d8225b9719047bfca27657b - example of many editorconfig settings
+# https://docs.microsoft.com/en-us/visualstudio/ide/code-styles-and-code-cleanup?view=vs-2022 - Code Cleanup
+
+# Remove the line below if you want to inherit .editorconfig settings from higher directories
+root = true
+
+[*]
+end_of_line = crlf
+indent_style = space
+trim_trailing_whitespace = true
+
+# XML project files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_size = 2
+
+# XML config files
+[*.{xml,props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct}]
+indent_size = 4
+
+# XML other files
+[*.{svg}]
+indent_size = 4
+
+# JSON
+[*.{json}]
+indent_size = 4
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Code block preferences
+dotnet_style_allow_multiple_blank_lines_experimental = false:warning
+
+# Modifier preferences
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async
+
+# Naming rules
+dotnet_naming_style.begins_with_i.required_prefix = I
+dotnet_naming_rule.interface_should_be_begins_with_i.severity = warning
+dotnet_naming_rule.interface_should_be_begins_with_i.symbols = interface
+dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i
+
+# Use underscores for private readonly fields
+dotnet_naming_symbols.private_fields.applicable_kinds           = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.prefix_underscore.capitalization = camel_case
+dotnet_naming_style.prefix_underscore.required_prefix = _
+dotnet_naming_rule.private_fields_with_underscore.symbols  = private_fields
+dotnet_naming_rule.private_fields_with_underscore.style    = prefix_underscore
+dotnet_naming_rule.private_fields_with_underscore.severity = warning
+
+#### C# Formatting Rules ####
+
+# New line preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# Space preferences
+csharp_space_after_keywords_in_control_flow_statements = true:warning
+
+# Null preferences
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
+
+# IDE0008: Use explicit type
+csharp_style_var_elsewhere = true
+csharp_style_var_for_built_in_types = true
+csharp_style_var_when_type_is_apparent = true
+
+# IDE0066: Use switch expression
+dotnet_diagnostic.IDE0066.severity = none
+
+# IDE0055: Fix formatting
+dotnet_diagnostic.IDE0055.severity = warning
+
+# IDE0005: Remove unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = warning
+
+# CA1852: Seal internal types
+dotnet_diagnostic.CA1852.severity = warning
+
+#Use language keywords instead of framework type names for type references
+dotnet_diagnostic.IDE0049.severity = warning
+
+#Simplify NEW expression
+dotnet_diagnostic.IDE0090.severity = warning
