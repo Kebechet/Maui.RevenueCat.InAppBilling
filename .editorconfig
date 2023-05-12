@@ -94,3 +94,6 @@ dotnet_diagnostic.IDE0090.severity = warning
 
 # IDE0036: Order modifiers
 dotnet_diagnostic.IDE0036.severity = warning
+
+# RCS1822: Can be marked as static.
+dotnet_diagnostic.CA1822.severity = none

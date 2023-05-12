@@ -52,5 +52,10 @@ Example of such dummy class: [RevenueCatBillingWindows.cs](Maui.RevenueCat.InApp
 ## Contributions
 Feel free to create an issue or pull request. In case you would like to do massive changes in the package please firstly discuss them in the issue because otherwise there is high chance that such big PR would be rejected.
 
+## TODO
+- [ ] Logging
+- [ ] Implement check if GooglePlay/Apple store is activated (installed & user signed in)
+
+
 ## License
 This repository is licensed with the [MIT](LICENSE.txt) license.

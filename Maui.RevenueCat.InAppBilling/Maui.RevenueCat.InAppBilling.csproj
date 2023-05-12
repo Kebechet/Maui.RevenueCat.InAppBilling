@@ -13,7 +13,9 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+	</PropertyGroup>
 
+  <PropertyGroup Label="NugetProperties">
 		<IsPackable>true</IsPackable>
 		<PackageId>Kebechet.Maui.RevenueCat.InAppBilling</PackageId>
 		<Description>Serves as an abstraction around RevenueCat Android and iOS SDKs https://docs.revenuecat.com/docs</Description>
@@ -47,5 +49,4 @@
 	    <PackagePath>\</PackagePath>
 	  </None>
 	</ItemGroup>
-
 </Project>

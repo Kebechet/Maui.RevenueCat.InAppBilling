@@ -102,8 +102,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             purchaseSuccessInfo = await _purchases.PurchasePackageAsync(_currentActivityContext, packageToBuy, cancellationToken);
         }
-        catch (PurchasesErrorException ex)
+        catch (PurchasesErrorException)
         {
+            //TODO
             //error code
         }
         catch (Exception ex)

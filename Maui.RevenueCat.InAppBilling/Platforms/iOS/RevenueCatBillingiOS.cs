@@ -25,8 +25,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             _isInitialized = true;
         }
-        catch (PurchasesErrorException ex)
+        catch (PurchasesErrorException)
         {
+            //TODO
             //var description = ex.PurchasesError.Code.Description;
             //var diagnosis = ex.PurchasesError.UnderlyingErrorMessage;
             //var msg = new Show_Dialog();
@@ -88,9 +89,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             purchaseSuccessInfo = await _purchases.PurchasePackageAsync(packageToBuy);
         }
-        catch (PurchasesErrorException ex)
+        catch (PurchasesErrorException)
         {
-            //error code
+            //TODO - error code
         }
         catch (Exception ex)
         {
