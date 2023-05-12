@@ -26,12 +26,13 @@
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<RepositoryType>git</RepositoryType>
 		<OutputType>Library</OutputType>
-		<Version>1.0.0-preview1</Version>
-		<PackageReleaseNotes>Initial version</PackageReleaseNotes>
-	</PropertyGroup>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Version>1.0.0-preview3</Version>
+		<PackageReleaseNotes>Added missing methods</PackageReleaseNotes>
+  </PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
-	  <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.9.0.2-fix5" />
+	  <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.9.0.2-fix7" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
