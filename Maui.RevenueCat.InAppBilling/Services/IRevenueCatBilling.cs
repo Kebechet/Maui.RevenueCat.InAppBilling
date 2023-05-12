@@ -4,17 +4,18 @@ namespace Maui.RevenueCat.InAppBilling.Services;
 
 public interface IRevenueCatBilling
 {
-    void Initialize(string apiKey);
     bool IsInitialized();
-    Task<List<OfferingDto>> LoadOfferings(bool forceRefresh = false);
-    Task<bool> PurchaseProduct(string offeringIdentifier);
-    Task<List<string>> GetActiveSubscriptions();
-    Task<List<string>> GetAllPurchasedIdentifiers();
-    Task<DateTime?> GetPurchaseDateForProductIdentifier(string productSku);
-    Task<string> GetManagementSubscriptionUrl();
+    bool IsAnonymous();
+    string GetAppUserId();
 
-    //TODO
-    //Purchases.SharedInstance.LogIn
-    //Purchases.SharedInstance.LogOut
-    //RCCustomerInfo purchaserInfo = await RCPurchases.SharedPurchases.RestoreTransactionsAsync();
+    void Initialize(string apiKey);
+    Task<List<OfferingDto>> LoadOfferings(bool forceRefresh = false, CancellationToken cancellationToken = default);
+    Task<bool> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken = default);
+    Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken = default);
+    Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken = default);
+    Task<DateTime?> GetPurchaseDateForProductIdentifier(string productSku, CancellationToken cancellationToken = default);
+    Task<string> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
+    Task<CustomerInfoDto> Login(string appUserId, CancellationToken cancellationToken = default);
+    Task<CustomerInfoDto> Logout(CancellationToken cancellationToken = default);
+    Task<CustomerInfoDto> RestoreTransactions(CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,6 @@ namespace Maui.RevenueCat.InAppBilling.Models;
 
 public sealed record OfferingDto
 {
-    public string Identifier { get; init; } = string.Empty;
-    public ProductDto Product { get; init; } = new();
+    public required string Identifier { get; init; }
+    public required ProductDto Product { get; init; }
 }

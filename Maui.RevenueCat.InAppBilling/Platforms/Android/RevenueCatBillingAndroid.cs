@@ -15,10 +15,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     private List<Package> _cachedOfferingPackages = new();
     private static Activity? _currentActivityContext => Platform.CurrentActivity;
 
-    public static partial void EnableDebugLogs(bool enable)
-    {
-        Purchases.DebugLogsEnabled = enable;
-    }
+    public partial bool IsAnonymous() => Purchases.SharedInstance.IsAnonymous;
+    public partial string GetAppUserId() => Purchases.SharedInstance.AppUserID;
 
     public partial void Initialize(string apiKey)
     {
@@ -57,15 +55,14 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.InitialiseRevenueCatAsync " + ex.ToString(), ex.InnerException);
         }
     }
-
-    public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh)
+    public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         if (!forceRefresh && !_cachedOfferingPackages.IsNullOrEmpty())
         {
             return _cachedOfferingPackages.ToOfferDtoList(); ;
         }
 
-        using var offerings = await Purchases.SharedInstance.GetOfferingsAsync();
+        using var offerings = await Purchases.SharedInstance.GetOfferingsAsync(cancellationToken);
         if (offerings is null)
         {
             return new();
@@ -81,7 +78,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         return _cachedOfferingPackages.ToOfferDtoList(); ;
     }
-    public async partial Task<bool> PurchaseProduct(string offeringIdentifier)
+    public async partial Task<bool> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken)
     {
         if (!_isInitialized)
         {
@@ -103,7 +100,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(_currentActivityContext, packageToBuy);
+            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(_currentActivityContext, packageToBuy, cancellationToken);
         }
         catch (PurchasesErrorException ex)
         {
@@ -122,11 +119,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         return purchaseSuccessInfo.StoreTransaction.PurchaseState == PurchaseState.Purchased;
     }
-    public async partial Task<List<string>> GetActiveSubscriptions()
+    public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
                 return new();
@@ -145,11 +142,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.ActiveSubscriptionsAsync " + ex.ToString(), ex.InnerException);
         }
     }
-    public async partial Task<List<string>> GetAllPurchasedIdentifiers()
+    public async partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
                 return new();
@@ -168,11 +165,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.AllPurchasedProductIdentifiersAsync " + ex.ToString(), ex.InnerException);
         }
     }
-    public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier)
+    public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
                 return null;
@@ -186,7 +183,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("In InAppPurchases.PurchaseDateForProductIdentifierAsync " + ex.ToString(), ex.InnerException);
         }
     }
-    public async partial Task<string> GetManagementSubscriptionUrl()
+    public async partial Task<string> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
     {
         if (!_cachedManagementUrl.IsNullOrEmpty())
         {
@@ -195,7 +192,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync();
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null || customerInfo.ManagementURL is null)
             {
                 return string.Empty;
@@ -208,5 +205,52 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             //MyUtil.WriteLogFile(S.Exception, ex.ToString());
             throw new Exception("In InAppPurchases.ManagementUrlAsync " + ex.ToString(), ex.InnerException);
         }
+    }
+    public async partial Task<CustomerInfoDto> Login(string appUserId, CancellationToken cancellationToken)
+    {
+        var customerInfo = await Purchases.SharedInstance.LogInAsync(appUserId, cancellationToken);
+
+        return new CustomerInfoDto()
+        {
+            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToList(),
+            AllPurchasedIdentifiers = customerInfo.AllPurchasedSkus.ToList(),
+            NonConsumablePurchases = customerInfo.PurchasedNonSubscriptionSkus.ToList(),
+            FirstSeen = customerInfo.FirstSeen.ToDateTime(),
+            LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
+            ManagementURL = customerInfo.ManagementURL.ToString(),
+        };
+    }
+    public async partial Task<CustomerInfoDto> Logout(CancellationToken cancellationToken)
+    {
+        var customerInfo = await Purchases.SharedInstance.LogOutAsync(cancellationToken);
+
+        return new CustomerInfoDto()
+        {
+            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToList(),
+            AllPurchasedIdentifiers = customerInfo.AllPurchasedSkus.ToList(),
+            NonConsumablePurchases = customerInfo.PurchasedNonSubscriptionSkus.ToList(),
+            FirstSeen = customerInfo.FirstSeen.ToDateTime(),
+            LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
+            ManagementURL = customerInfo.ManagementURL.ToString(),
+        };
+    }
+    public async partial Task<CustomerInfoDto> RestoreTransactions(CancellationToken cancellationToken)
+    {
+        var customerInfo = await Purchases.SharedInstance.RestorePurchasesAsync(cancellationToken);
+
+        return new CustomerInfoDto()
+        {
+            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToList(),
+            AllPurchasedIdentifiers = customerInfo.AllPurchasedSkus.ToList(),
+            NonConsumablePurchases = customerInfo.PurchasedNonSubscriptionSkus.ToList(),
+            FirstSeen = customerInfo.FirstSeen.ToDateTime(),
+            LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
+            ManagementURL = customerInfo.ManagementURL.ToString(),
+        };
+    }
+
+    internal static partial void EnableDebugLogs(bool enable)
+    {
+        Purchases.DebugLogsEnabled = enable;
     }
 }
