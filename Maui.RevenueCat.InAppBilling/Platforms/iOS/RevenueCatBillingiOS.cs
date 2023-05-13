@@ -4,6 +4,7 @@ using Maui.RevenueCat.InAppBilling.Platforms.iOS.Exceptions;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
 using Maui.RevenueCat.iOS;
+using Microsoft.Extensions.Logging;
 using Purchases = Maui.RevenueCat.iOS.RCPurchases;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
@@ -40,8 +41,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            //MyUtil.WriteLogFile(S.Exception, ex.ToString());
             throw new Exception("In InAppPurchases.InitialiseRevenueCatAsync " + ex.ToString(), ex.InnerException);
+            _logger.LogError(ex, "Initialization exception");
         }
     }
     public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
@@ -60,6 +61,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         using var currentOffering = offerings.Current;
         if (currentOffering is null)
         {
+            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't suceed.");
             return new();
         }
 
@@ -92,16 +94,18 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (PurchasesErrorException)
         {
             //TODO - error code
+            _logger.LogError(ex, "PurchasesErrorException");
         }
         catch (Exception ex)
         {
-            //MyUtil.WriteLogFile(S.Exception, ex.ToString());
             throw new Exception("In InAppPurchases.PurchaseProduct " + ex.ToString(), ex.InnerException);
+            _logger.LogError(ex, "Exception in PurchaseProduct");
         }
 
         if (purchaseSuccessInfo is null || purchaseSuccessInfo.Value.StoreTransaction.Sk1Transaction is null)
         {
             return false;
+            _logger.LogError($"{nameof(purchaseSuccessInfo)} is null.");
         }
 
         return purchaseSuccessInfo.Value.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased;
@@ -131,8 +135,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            //MyUtil.WriteLogFile(S.Exception, ex.ToString());
             throw new Exception("In InAppPurchases.ActiveSubscriptionsAsync " + ex.ToString(), ex.InnerException);
+            _logger.LogError(ex, "Couldn't retrieve active subscriptions.");
         }
     }
     public async partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
@@ -154,8 +158,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            //MyUtil.WriteLogFile(S.Exception, ex.ToString());
             throw new Exception("In InAppPurchases.AllPurchasedProductIdentifiersAsync " + ex.ToString(), ex.InnerException);
+            _logger.LogError(ex, "Couldn't retrieve all purchased identifiers.");
         }
     }
     public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
@@ -172,8 +176,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            //MyUtil.WriteLogFile(S.Exception, ex.ToString());
             throw new Exception("In InAppPurchases.PurchaseDateForProductIdentifierAsync " + ex.ToString(), ex.InnerException);
+            _logger.LogError(ex, "Couldn't retrieve purchase date.");
         }
     }
     public async partial Task<string> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
@@ -195,8 +199,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            //MyUtil.WriteLogFile(S.Exception, ex.ToString());
             throw new Exception("In InAppPurchases.ManagementUrlAsync " + ex.ToString(), ex.InnerException);
+            _logger.LogError(ex, "Couldn't retrieve management url.");
         }
     }
     public async partial Task<CustomerInfoDto> Login(string appUserId, CancellationToken cancellationToken)
@@ -213,6 +217,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
             ManagementURL = customerInfo?.ManagementURL?.ToString(),
         };
+            _logger.LogError(ex, $"{nameof(Login)} failed.");
     }
     public async partial Task<CustomerInfoDto> Logout(CancellationToken cancellationToken)
     {
@@ -227,6 +232,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
             ManagementURL = customerInfo?.ManagementURL?.ToString(),
         };
+            _logger.LogError(ex, $"{nameof(Logout)} failed.");
     }
     public async partial Task<CustomerInfoDto> RestoreTransactions(CancellationToken cancellationToken)
     {
@@ -241,6 +247,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
             ManagementURL = customerInfo?.ManagementURL?.ToString(),
         };
+            _logger.LogError(ex, $"{RestoreTransactions} failed.");
     }
 
     internal static partial void EnableDebugLogs(bool enable)

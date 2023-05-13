@@ -16,6 +16,8 @@ public static class RevenueCatBillingInstaller
 
         services.AddSingleton<IRevenueCatBilling, RevenueCatBilling>();
 
+        services.AddLogging();
+
         return services;
     }
 

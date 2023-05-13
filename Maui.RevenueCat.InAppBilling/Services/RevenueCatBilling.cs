@@ -1,19 +1,24 @@
 using Maui.RevenueCat.InAppBilling.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
 
 public partial class RevenueCatBilling : IRevenueCatBilling
 {
+    private readonly ILogger<RevenueCatBilling> _logger;
+
     private static bool _isInstanceCreated = false;
     private volatile bool _isInitialized = false;
     private string _cachedManagementUrl = string.Empty;
 
-    public RevenueCatBilling()
+    public RevenueCatBilling(ILogger<RevenueCatBilling> logger)
     {
         if (_isInstanceCreated)
         {
             throw new InvalidOperationException($"You shouldn't create more instances of class RevenueCatBilling.");
         }
+
+        _logger = logger;
 
         _isInstanceCreated = true;
     }
