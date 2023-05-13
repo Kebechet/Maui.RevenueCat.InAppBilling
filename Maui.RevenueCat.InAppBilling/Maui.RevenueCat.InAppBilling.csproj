@@ -27,8 +27,10 @@
 		<RepositoryType>git</RepositoryType>
 		<OutputType>Library</OutputType>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Version>1.0.0-preview3</Version>
-		<PackageReleaseNotes>Added missing methods</PackageReleaseNotes>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>embedded</DebugType>
+		<Version>1.0.0-preview11</Version>
+		<PackageReleaseNotes>Overall improvements</PackageReleaseNotes>
   </PropertyGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
