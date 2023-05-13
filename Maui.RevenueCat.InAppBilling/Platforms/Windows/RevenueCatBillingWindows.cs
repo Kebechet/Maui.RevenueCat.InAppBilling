@@ -17,9 +17,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return new();
     }
-    public async partial Task<bool> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken)
     {
-        return true;
+        return new();
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
     {
@@ -33,11 +33,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return DateTime.MinValue;
     }
-    public async partial Task<string> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
+    public async partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
     {
         return string.Empty;
     }
-    public async partial Task<CustomerInfoDto> Login(string appUserId, CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken)
     {
         return new()
         {
@@ -49,7 +49,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             NonConsumablePurchases = new()
         };
     }
-    public async partial Task<CustomerInfoDto> Logout(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken)
     {
         return new()
         {
@@ -61,7 +61,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             NonConsumablePurchases = new()
         };
     }
-    public async partial Task<CustomerInfoDto> RestoreTransactions(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken)
     {
         return new()
         {

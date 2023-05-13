@@ -49,6 +49,10 @@ So that you dont have to specify platform for this package and it's calls, also 
 
 Example of such dummy class: [RevenueCatBillingWindows.cs](Maui.RevenueCat.InAppBilling/Platforms/Windows/RevenueCatBillingWindows.cs)
 
+## Exception behavior
+- Library will throw exceptions only in case developer did some mistake
+- in other cases, when there is some corrupted state it will either return ErrorCode in output variable e.g. `PurchaseResult` or it will return default value of that type.
+
 ## Contributions
 Feel free to create an issue or pull request. In case you would like to do massive changes in the package please firstly discuss them in the issue because otherwise there is high chance that such big PR would be rejected.
 
