@@ -30,12 +30,12 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-    <Version>1.0.1-preview2</Version>
+    <Version>1.0.1-preview4</Version>
     <PackageReleaseNotes>Improved OfferDto extensions</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.9.0.2-fix7" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.19.0-preview3"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
