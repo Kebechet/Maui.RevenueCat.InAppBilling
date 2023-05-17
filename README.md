@@ -61,6 +61,7 @@ Feel free to create an issue or pull request. In case you would like to do massi
 - [ ] Verify overall functionality
 - [ ] Pipeline package build and publish artifacts
 - [ ] Pipeline PR test build
+- [ ] Unify somehow SubscriptionPeriod inside OfferingDto
 
 ## License
 This repository is licensed with the [MIT](LICENSE.txt) license.

@@ -11,18 +11,18 @@ internal static class PackageListExtensions
 
         foreach (var package in packages)
         {
-            var priceWithoutCurrency = package.StoreProduct.LocalizedPriceString.Replace(package.StoreProduct.CurrencyCode!, string.Empty).Trim();
-            var price = Convert.ToDecimal(priceWithoutCurrency);
-
             var offeringDto = new OfferingDto()
             {
                 Identifier = package.Identifier,
                 Product = new ProductDto()
                 {
-                    Price = price,
-                    PriceCurrencyCode = package.StoreProduct.CurrencyCode ?? string.Empty,
-                    PriceWithCurrency = package.StoreProduct.LocalizedPriceString,
-                    OriginalPriceAmountMicros = (long)package.StoreProduct.Price,
+                    Pricing = new PricingDto
+                    {
+                        CurrencyCode = package.StoreProduct.CurrencyCode ?? string.Empty,
+                        Price = Convert.ToDecimal(package.StoreProduct.Price.DoubleValue),
+                        PriceMicros = (long)(package.StoreProduct.Price.DoubleValue * Math.Pow(10, 6)),
+                        PriceLocalized = package.StoreProduct.LocalizedPriceString,
+                    },
                     Sku = package.StoreProduct.ProductIdentifier,
                     SubscriptionPeriod = package.StoreProduct.SubscriptionPeriod.ToString(),
                 }

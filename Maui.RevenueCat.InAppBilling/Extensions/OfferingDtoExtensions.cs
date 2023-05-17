@@ -15,32 +15,32 @@ public static class OfferingDtoExtensions
     {
         if (offeringDto.Identifier == DefaultOfferingIdentifier.Weekly)
         {
-            return offeringDto.Product.Price / _daysInWeek * _daysInMonth;
+            return offeringDto.Product.Pricing.Price / _daysInWeek * _daysInMonth;
         }
 
         if (offeringDto.Identifier == DefaultOfferingIdentifier.Monthly)
         {
-            return offeringDto.Product.Price;
+            return offeringDto.Product.Pricing.Price;
         }
 
         if (offeringDto.Identifier == DefaultOfferingIdentifier.BiMonthly)
         {
-            return offeringDto.Product.Price / _monthsInBiMonthly;
+            return offeringDto.Product.Pricing.Price / _monthsInBiMonthly;
         }
 
         if (offeringDto.Identifier == DefaultOfferingIdentifier.Quarterly)
         {
-            return offeringDto.Product.Price / _quartalsInYear;
+            return offeringDto.Product.Pricing.Price / _quartalsInYear;
         }
 
         if (offeringDto.Identifier == DefaultOfferingIdentifier.SemiAnnually)
         {
-            return offeringDto.Product.Price / _monthsInHalfYear;
+            return offeringDto.Product.Pricing.Price / _monthsInHalfYear;
         }
 
         if (offeringDto.Identifier == DefaultOfferingIdentifier.Annually)
         {
-            return offeringDto.Product.Price / _monthsInYear;
+            return offeringDto.Product.Pricing.Price / _monthsInYear;
         }
 
         throw new NotImplementedException();
@@ -48,6 +48,7 @@ public static class OfferingDtoExtensions
 
     public static string GetMonthlyPriceWithCurrency(this OfferingDto offeringDto)
     {
-        return offeringDto.Product.PriceWithCurrency.Replace($"{offeringDto.Product.Price:n2}", $"{offeringDto.GetMonthlyPrice():n2}");
+        return offeringDto.Product.Pricing.PriceLocalized
+            .Replace($"{offeringDto.Product.Pricing.Price:n2}", $"{offeringDto.GetMonthlyPrice():n2}");
     }
 }
