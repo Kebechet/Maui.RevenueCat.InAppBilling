@@ -34,12 +34,6 @@
     <PackageReleaseNotes>Improved OfferDto extensions</PackageReleaseNotes>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.Contains('-ios'))">
-    <MtouchLink>None</MtouchLink>
-    <UseInterpreter>True</UseInterpreter>
-    <RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
-  </PropertyGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
     <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.9.0.2-fix7" />
   </ItemGroup>
