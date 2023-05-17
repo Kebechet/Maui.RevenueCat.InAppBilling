@@ -11,7 +11,7 @@ public static class OfferingDtoExtensions
     private static readonly decimal _monthsInHalfYear = 6m;
     private static readonly decimal _monthsInYear = 12m;
 
-    public static decimal GetMonthlyPrice(this OfferingDto offeringDto)
+    public static decimal GetMonthlyPrice(this OfferingDto offeringDto, bool ignoreExceptions = true)
     {
         if (offeringDto.Identifier == DefaultOfferingIdentifier.Weekly)
         {
@@ -43,12 +43,29 @@ public static class OfferingDtoExtensions
             return offeringDto.Product.Pricing.Price / _monthsInYear;
         }
 
-        throw new NotImplementedException();
+        if (ignoreExceptions)
+        {
+            return 0m;
+        }
+
+        throw new NotImplementedException("Specified offering identifier is not supported.");
     }
 
-    public static string GetMonthlyPriceWithCurrency(this OfferingDto offeringDto)
+    public static string GetMonthlyPriceWithCurrency(this OfferingDto offeringDto, bool ignoreExceptions = true)
     {
-        return offeringDto.Product.Pricing.PriceLocalized
-            .Replace($"{offeringDto.Product.Pricing.Price:n2}", $"{offeringDto.GetMonthlyPrice():n2}");
+        try
+        {
+            return offeringDto.Product.Pricing.PriceLocalized
+            .Replace($"{offeringDto.Product.Pricing.Price:n2}", $"{offeringDto.GetMonthlyPrice(ignoreExceptions):n2}");
+        }
+        catch
+        {
+            if (ignoreExceptions)
+            {
+                return "$0.00";
+            }
+
+            throw;
+        }
     }
 }

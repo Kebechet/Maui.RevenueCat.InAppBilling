@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFrameworks>net7.0-android;net7.0-ios;net7.0-maccatalyst</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net7.0-windows10.0.19041.0</TargetFrameworks>
-		<UseMaui>true</UseMaui>
-		<SingleProject>true</SingleProject>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
 
     <!--https://learn.microsoft.com/en-us/dotnet/maui/supported-platforms-->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
@@ -14,43 +14,43 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-	</PropertyGroup>
+  </PropertyGroup>
 
   <PropertyGroup Label="NugetProperties">
-		<IsPackable>true</IsPackable>
-		<PackageId>Kebechet.Maui.RevenueCat.InAppBilling</PackageId>
-		<Description>Serves as an abstraction around RevenueCat Android and iOS SDKs https://docs.revenuecat.com/docs</Description>
-		<PackageOutputPath>bin\nupkgOutput</PackageOutputPath>
-		<RepositoryUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</RepositoryUrl>
-		<PackageProjectUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</PackageProjectUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageLicenseFile>LICENSE</PackageLicenseFile>
-		<RepositoryType>git</RepositoryType>
-		<OutputType>Library</OutputType>
+    <IsPackable>true</IsPackable>
+    <PackageId>Kebechet.Maui.RevenueCat.InAppBilling</PackageId>
+    <Description>Serves as an abstraction around RevenueCat Android and iOS SDKs https://docs.revenuecat.com/docs</Description>
+    <PackageOutputPath>bin\nupkgOutput</PackageOutputPath>
+    <RepositoryUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <RepositoryType>git</RepositoryType>
+    <OutputType>Library</OutputType>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-		<Version>1.0.0</Version>
-		<PackageReleaseNotes>Overall improvements</PackageReleaseNotes>
+    <Version>1.0.1</Version>
+    <PackageReleaseNotes>Improved OfferDto extensions</PackageReleaseNotes>
   </PropertyGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
-	  <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.9.0.2-fix7" />
-	</ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
+    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.9.0.2-fix7" />
+  </ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
-	  <PackageReference Include="Xamarin.RevenueCat.Android" Version="5.3.0.3" />
-	</ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
+    <PackageReference Include="Xamarin.RevenueCat.Android" Version="5.3.0.3" />
+  </ItemGroup>
 
-	<ItemGroup>
-	  <None Include="..\.editorconfig" Link=".editorconfig" />
-	  <None Include="..\LICENSE">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
-	  <None Include="..\README.md">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
-	</ItemGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 </Project>
