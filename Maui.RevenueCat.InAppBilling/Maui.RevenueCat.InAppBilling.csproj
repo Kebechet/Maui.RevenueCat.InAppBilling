@@ -30,8 +30,14 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-    <Version>1.0.1</Version>
+    <Version>1.0.1-preview2</Version>
     <PackageReleaseNotes>Improved OfferDto extensions</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(TargetFramework.Contains('-ios'))">
+    <MtouchLink>None</MtouchLink>
+    <UseInterpreter>True</UseInterpreter>
+    <RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
