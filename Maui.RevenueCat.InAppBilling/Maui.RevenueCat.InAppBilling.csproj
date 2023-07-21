@@ -30,8 +30,8 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-    <Version>1.0.2</Version>
-    <PackageReleaseNotes>Improved OfferDto extensions</PackageReleaseNotes>
+    <Version>1.0.3</Version>
+    <PackageReleaseNotes>Improved localized price</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">

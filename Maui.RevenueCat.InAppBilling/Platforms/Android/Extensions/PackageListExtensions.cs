@@ -1,4 +1,5 @@
 using Com.Revenuecat.Purchases;
+using Maui.RevenueCat.InAppBilling.Extensions;
 using Maui.RevenueCat.InAppBilling.Models;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
@@ -11,6 +12,9 @@ internal static class PackageListExtensions
 
         foreach (var package in packages)
         {
+            var currencyCode = package.Product.PriceCurrencyCode;
+            var price = Convert.ToDecimal(package.Product.PriceAmountMicros * Math.Pow(10, -6));
+
             var offeringDto = new OfferingDto()
             {
                 Identifier = package.Identifier,
@@ -18,10 +22,10 @@ internal static class PackageListExtensions
                 {
                     Pricing = new PricingDto
                     {
-                        CurrencyCode = package.Product.PriceCurrencyCode,
-                        Price = Convert.ToDecimal(package.Product.PriceAmountMicros * Math.Pow(10, -6)),
+                        CurrencyCode = currencyCode,
+                        Price = price,
                         PriceMicros = package.Product.PriceAmountMicros,
-                        PriceLocalized = package.Product.Price,
+                        PriceLocalized = OfferingDtoExtensions.GetLocalizedPrice(currencyCode, price)
                     },
                     Sku = package.Product.Sku,
                     SubscriptionPeriod = package.Product.SubscriptionPeriod,
