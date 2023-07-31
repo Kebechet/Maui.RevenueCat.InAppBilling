@@ -103,7 +103,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             };
         }
 
-        if (purchaseSuccessInfo is null || purchaseSuccessInfo.Value.StoreTransaction.Sk1Transaction is null)
+        if (purchaseSuccessInfo is null || purchaseSuccessInfo.StoreTransaction.Sk1Transaction is null)
         {
             _logger.LogError($"{nameof(purchaseSuccessInfo)} is null.");
 
@@ -115,7 +115,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         return new PurchaseResult
         {
-            IsSuccess = purchaseSuccessInfo.Value.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
+            IsSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
         };
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)

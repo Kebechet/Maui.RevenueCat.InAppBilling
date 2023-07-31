@@ -2,7 +2,7 @@ using Maui.RevenueCat.iOS;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
 
-public struct LoginResult
+public sealed class LoginResult
 {
     public RCCustomerInfo CustomerInfo { get; }
     public bool Created { get; }

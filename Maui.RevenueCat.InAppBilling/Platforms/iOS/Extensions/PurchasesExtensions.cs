@@ -72,13 +72,9 @@ internal static class PurchasesExtensions
         purchases.PurchasePackage(packageToPurchase,
             (RCStoreTransaction transaction, RCCustomerInfo customerInfo, NSError error, bool userCancelled) =>
             {
-                if (error != null)
+                if (error != null || userCancelled)
                 {
                     tcs.TrySetException(new PurchasesErrorException(error, userCancelled));
-                }
-                else if (userCancelled)
-                {
-                    tcs.TrySetException(new PurchasesErrorException(null, true));
                 }
                 else
                 {

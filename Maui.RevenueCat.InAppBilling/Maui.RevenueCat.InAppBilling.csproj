@@ -20,7 +20,6 @@
     <IsPackable>true</IsPackable>
     <PackageId>Kebechet.Maui.RevenueCat.InAppBilling</PackageId>
     <Description>Serves as an abstraction around RevenueCat Android and iOS SDKs https://docs.revenuecat.com/docs</Description>
-    <PackageOutputPath>bin\nupkgOutput</PackageOutputPath>
     <RepositoryUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</RepositoryUrl>
     <PackageProjectUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -30,16 +29,18 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-    <Version>1.0.3</Version>
-    <PackageReleaseNotes>Improved localized price</PackageReleaseNotes>
+    <Version>1.0.4</Version>
+    <PackageReleaseNotes>Small adjustments</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.19.0-preview3"/>
+    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="4.19.0.0" />
+    <!--<PackageReference Include="Tonestro.Maui.RevenueCat.iOS" Version="4.9.0.6" />-->
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
     <PackageReference Include="Xamarin.RevenueCat.Android" Version="5.3.0.3" />
+    <!--<PackageReference Include="Tonestro.Maui.RevenueCat.Android" Version="5.3.0.1" />-->
   </ItemGroup>
 
   <ItemGroup>
