@@ -31,7 +31,7 @@ protected override void OnStart() {
 #if __ANDROID__
     revenueCatApiKey = "<AndroidRevenueCatKeyHere>";
 #elif __IOS__
-	revenueCatApiKey = "<iOSRevenueCatKeyHere>";
+    revenueCatApiKey = "<iOSRevenueCatKeyHere>";
 #endif
 
     _revenueCat.Initialize(revenueCatApiKey);
