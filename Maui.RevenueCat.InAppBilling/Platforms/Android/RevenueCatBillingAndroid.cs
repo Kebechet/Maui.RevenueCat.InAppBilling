@@ -237,9 +237,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToList(),
                 AllPurchasedIdentifiers = customerInfo.AllPurchasedSkus.ToList(),
                 NonConsumablePurchases = customerInfo.PurchasedNonSubscriptionSkus.ToList(),
-                FirstSeen = customerInfo.FirstSeen == null ? default : customerInfo.FirstSeen.ToDateTime(),
-                LatestExpirationDate = customerInfo.LatestExpirationDate == null ? default : customerInfo.LatestExpirationDate.ToDateTime(),
-                ManagementURL = customerInfo.ManagementURL ==  null ? default : customerInfo.ManagementURL.ToString(),
+                FirstSeen = customerInfo.FirstSeen.ToDateTime(),
+                LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
+                ManagementURL = customerInfo.ManagementURL == null ? default : customerInfo.ManagementURL.ToString(),
             };
         }
         catch (Exception ex)
