@@ -8,7 +8,7 @@ internal static class JavaDateExtensions
     {
         if (date is null)
         {
-            return default;
+            return null;
         }
 
         var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
