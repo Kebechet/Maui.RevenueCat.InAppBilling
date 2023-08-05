@@ -29,8 +29,8 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-    <Version>1.0.4</Version>
-    <PackageReleaseNotes>Small adjustments</PackageReleaseNotes>
+    <Version>1.0.5</Version>
+    <PackageReleaseNotes>Fixed Android login</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
