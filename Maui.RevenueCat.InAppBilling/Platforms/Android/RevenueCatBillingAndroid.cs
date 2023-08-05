@@ -94,7 +94,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception($"No offering/packege with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.");
         }
 
-        if(_currentActivityContext is null)
+        if (_currentActivityContext is null)
         {
             throw new Exception("Android Current Activity can't be null.");
         }
@@ -239,7 +239,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 NonConsumablePurchases = customerInfo.PurchasedNonSubscriptionSkus.ToList(),
                 FirstSeen = customerInfo.FirstSeen.ToDateTime(),
                 LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-                ManagementURL = customerInfo.ManagementURL.ToString(),
+                ManagementURL = customerInfo?.ManagementURL?.ToString(),
             };
         }
         catch (Exception ex)
