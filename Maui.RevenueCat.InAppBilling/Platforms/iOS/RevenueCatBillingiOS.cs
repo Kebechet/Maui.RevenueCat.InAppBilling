@@ -218,15 +218,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             var loginResult = await Purchases.SharedPurchases.LoginAsync(appUserId, cancellationToken);
             var customerInfo = loginResult.CustomerInfo;
 
-            return new CustomerInfoDto()
-            {
-                ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToStringList(),
-                AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIdentifiers.ToStringList(),
-                NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
-                FirstSeen = customerInfo.FirstSeen.ToDateTime(),
-                LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-                ManagementURL = customerInfo?.ManagementURL?.ToString(),
-            };
+            return CustomerInfoToCustomerInfoDto(customerInfo);
         }
         catch (Exception ex)
         {
@@ -240,15 +232,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedPurchases.LogOutAsync(cancellationToken);
 
-            return new CustomerInfoDto()
-            {
-                ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToStringList(),
-                AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIdentifiers.ToStringList(),
-                NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
-                FirstSeen = customerInfo.FirstSeen.ToDateTime(),
-                LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-                ManagementURL = customerInfo?.ManagementURL?.ToString(),
-            };
+            return CustomerInfoToCustomerInfoDto(customerInfo);
         }
         catch (Exception ex)
         {
@@ -262,21 +246,26 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedPurchases.RestorePurchasesAsync(cancellationToken);
 
-            return new CustomerInfoDto()
-            {
-                ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToStringList(),
-                AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIdentifiers.ToStringList(),
-                NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
-                FirstSeen = customerInfo.FirstSeen.ToDateTime(),
-                LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-                ManagementURL = customerInfo?.ManagementURL?.ToString(),
-            };
+            return CustomerInfoToCustomerInfoDto(customerInfo);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{RestoreTransactions} failed.");
             return null;
         }
+    }
+
+    internal static CustomerInfoDto CustomerInfoToCustomerInfoDto(RCCustomerInfo customerInfo)
+    {
+        return new CustomerInfoDto()
+        {
+            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToStringList(),
+            AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIdentifiers.ToStringList(),
+            NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
+            FirstSeen = customerInfo.FirstSeen.ToDateTime(),
+            LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
+            ManagementURL = customerInfo?.ManagementURL?.ToString(),
+        };
     }
 
     internal static partial void EnableDebugLogs(bool enable)
