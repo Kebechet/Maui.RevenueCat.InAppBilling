@@ -29,8 +29,8 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-    <Version>1.0.5</Version>
-    <PackageReleaseNotes>Fixed Android login</PackageReleaseNotes>
+    <Version>1.0.6</Version>
+    <PackageReleaseNotes>Fix for null reference exception</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
