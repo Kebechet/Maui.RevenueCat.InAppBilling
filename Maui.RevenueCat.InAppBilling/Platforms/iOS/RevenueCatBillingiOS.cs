@@ -34,6 +34,33 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw;
         }
     }
+
+    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers);
+            if (eligibilities is null)
+            {
+                return new();
+            }
+
+            var _eligibilities = new Dictionary<string, IntroElegibilityStatus>();
+
+            for (ulong i = 0; i < eligibilities.Count.ToUInt64(); i++)
+            {
+                _eligibilities.Add(eligibilities.Keys[i], eligibilities.Values[i].Status.Convert());
+            }
+
+            return _eligibilities;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"{nameof(CheckTrialOrIntroDiscountEligibility)} didn't succeed.");
+            return new();
+        }
+    }
+
     public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         if (!forceRefresh && !_cachedOfferingPackages.IsNullOrEmpty())
@@ -61,7 +88,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't suceed.");
+            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't succeed.");
             return new();
         }
     }
