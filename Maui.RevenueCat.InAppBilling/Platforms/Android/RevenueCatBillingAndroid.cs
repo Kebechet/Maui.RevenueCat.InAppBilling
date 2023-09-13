@@ -48,6 +48,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw;
         }
     }
+    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException("This method is iOS Only");
+    }
+
     public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         if (!forceRefresh && !_cachedOfferingPackages.IsNullOrEmpty())

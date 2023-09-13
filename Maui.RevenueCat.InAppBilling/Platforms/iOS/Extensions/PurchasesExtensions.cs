@@ -1,4 +1,5 @@
 using Foundation;
+using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Exceptions;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
 using Maui.RevenueCat.iOS;
@@ -41,6 +42,18 @@ internal static class PurchasesExtensions
             {
                 tcs.TrySetResult(customerInfo);
             }
+        });
+        return tcs.Task;
+    }
+
+    public static Task<NSDictionary<NSString, RCIntroEligibility>> CheckTrialOrIntroDiscountEligibilityAsync(this RCPurchases purchases, IList<string> identifiers,
+        CancellationToken cancellationToken = default)
+    {
+        var tcs = new TaskCompletionSource<NSDictionary<NSString, RCIntroEligibility>>();
+        cancellationToken.Register(() => tcs.TrySetCanceled());
+        purchases.CheckTrialOrIntroDiscountEligibility(identifiers.ToArray(), (NSDictionary<NSString, RCIntroEligibility> eligibilities) =>
+        {
+            tcs.TrySetResult(eligibilities);
         });
         return tcs.Task;
     }

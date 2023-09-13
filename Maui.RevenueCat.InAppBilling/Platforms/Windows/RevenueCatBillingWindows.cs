@@ -1,3 +1,4 @@
+using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
@@ -11,6 +12,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial void Initialize(string apiKey)
     {
         _isInitialized = true;
+    }
+    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken)
+    {
+        return new();
     }
 
     public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)

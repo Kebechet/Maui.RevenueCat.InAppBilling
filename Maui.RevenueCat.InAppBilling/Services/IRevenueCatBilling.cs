@@ -1,3 +1,4 @@
+using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
@@ -9,6 +10,7 @@ public interface IRevenueCatBilling
     string GetAppUserId();
 
     void Initialize(string apiKey);
+    Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken = default);
     Task<List<OfferingDto>> LoadOfferings(bool forceRefresh = false, CancellationToken cancellationToken = default);
     Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken = default);
     Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken = default);
