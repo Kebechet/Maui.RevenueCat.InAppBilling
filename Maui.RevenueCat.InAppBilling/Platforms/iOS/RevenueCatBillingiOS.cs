@@ -47,7 +47,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             var _eligibilities = new Dictionary<string, IntroElegibilityStatus>();
 
-            for (ulong i = 0; i < eligibilities.Count.ToUInt64(); i++)
+            for (ulong i = 0; i < eligibilities.Count; i++)
             {
                 _eligibilities.Add(eligibilities.Keys[i], eligibilities.Values[i].Status.Convert());
             }
