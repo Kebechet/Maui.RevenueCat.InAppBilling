@@ -45,14 +45,14 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 return new();
             }
 
-            var _eligibilities = new Dictionary<string, IntroElegibilityStatus>();
+            var eligibilitiesResult = new Dictionary<string, IntroElegibilityStatus>();
 
             for (ulong i = 0; i < eligibilities.Count; i++)
             {
-                _eligibilities.Add(eligibilities.Keys[i], eligibilities.Values[i].Status.Convert());
+                eligibilitiesResult.Add(eligibilities.Keys[i], eligibilities.Values[i].Status.Convert());
             }
 
-            return _eligibilities;
+            return eligibilitiesResult;
         }
         catch (Exception ex)
         {
