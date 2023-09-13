@@ -40,7 +40,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         try
         {
             using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers);
-            if (eligibilities is null)
+            if (eligibilities.IsNullOrEmpty())
             {
                 return new();
             }
