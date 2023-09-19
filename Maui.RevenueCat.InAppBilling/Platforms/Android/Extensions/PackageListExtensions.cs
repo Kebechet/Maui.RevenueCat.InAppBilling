@@ -12,8 +12,8 @@ internal static class PackageListExtensions
 
         foreach (var package in packages)
         {
-            var currencyCode = package.Product.PriceCurrencyCode;
-            var price = Convert.ToDecimal(package.Product.PriceAmountMicros * Math.Pow(10, -6));
+            var currencyCode = package.Product.Price.CurrencyCode;
+            var price = Convert.ToDecimal(package.Product.Price.AmountMicros * Math.Pow(10, -6));
 
             var offeringDto = new OfferingDto()
             {
@@ -24,11 +24,11 @@ internal static class PackageListExtensions
                     {
                         CurrencyCode = currencyCode,
                         Price = price,
-                        PriceMicros = package.Product.PriceAmountMicros,
+                        PriceMicros = package.Product.Price.AmountMicros,
                         PriceLocalized = OfferingDtoExtensions.GetLocalizedPrice(currencyCode, price)
                     },
                     Sku = package.Product.Sku,
-                    SubscriptionPeriod = package.Product.SubscriptionPeriod,
+                    SubscriptionPeriod = package.Product.Period.ToString(),
                 }
             };
 

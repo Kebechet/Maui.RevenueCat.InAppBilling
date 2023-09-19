@@ -277,7 +277,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"{RestoreTransactions} failed.");
+            _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
             return null;
         }
     }
@@ -297,6 +297,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     internal static partial void EnableDebugLogs(bool enable)
     {
-        Purchases.DebugLogsEnabled = enable;
+        if (!enable)
+        {
+            return;
+        }
+
+        Purchases.LogLevel = LogLevel.Debug.ToRCLogLevel();
     }
 }
