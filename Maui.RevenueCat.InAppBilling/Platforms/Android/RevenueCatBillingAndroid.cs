@@ -291,6 +291,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     internal static partial void EnableDebugLogs(bool enable)
     {
-        Purchases.DebugLogsEnabled = enable;
+        if (!enable)
+        {
+            return;
+        }
+
+        Purchases.LogLevel = LogLevel.Debug.ToRCLogLevel();
     }
 }
