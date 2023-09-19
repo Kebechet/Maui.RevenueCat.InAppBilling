@@ -50,6 +50,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     }
     public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
         throw new NotImplementedException("This method is iOS Only");
     }
 
