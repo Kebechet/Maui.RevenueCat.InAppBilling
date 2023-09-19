@@ -39,11 +39,12 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
-    public static Task<PurchaseSuccessInfo> PurchasePackageAsync(this Purchases purchases, Activity activity,
+    public static Task<PurchaseSuccessInfo> PurchaseAsync(this Purchases purchases, Activity activity,
         Package packageToPurchase, CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingMakePurchaseListener(cancellationToken);
-        purchases.PurchasePackage(activity, packageToPurchase, listener);
+        var purchaseParams = new PurchaseParams(new PurchaseParams.Builder(activity, packageToPurchase));
+        purchases.Purchase(purchaseParams, listener);
         return listener.Task;
     }
 

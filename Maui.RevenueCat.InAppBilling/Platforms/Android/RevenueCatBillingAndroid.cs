@@ -108,7 +108,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(_currentActivityContext, packageToBuy, cancellationToken);
+            purchaseSuccessInfo = await _purchases.PurchaseAsync(_currentActivityContext, packageToBuy, cancellationToken);
         }
         catch (PurchasesErrorException ex)
         {
@@ -177,12 +177,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 return new();
             }
 
-            if (customerInfo.AllPurchasedSkus.IsNullOrEmpty())
+            if (customerInfo.AllPurchasedProductIds.IsNullOrEmpty())
             {
                 return new();
             }
 
-            return customerInfo.AllPurchasedSkus.ToList(); ;
+            return customerInfo.AllPurchasedProductIds.ToList(); ;
         }
         catch (Exception ex)
         {
@@ -200,7 +200,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 return null;
             }
 
-            return customerInfo.GetPurchaseDateForSku(productIdentifier).ToDateTime();
+            return customerInfo.GetPurchaseDateForProductId(productIdentifier).ToDateTime();
         }
         catch (Exception ex)
         {
@@ -279,8 +279,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         return new CustomerInfoDto()
         {
             ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToList(),
-            AllPurchasedIdentifiers = customerInfo.AllPurchasedSkus.ToList(),
-            NonConsumablePurchases = customerInfo.PurchasedNonSubscriptionSkus.ToList(),
+            AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIds.ToList(),
+            //Google Play Store does not provide an option to mark IAPs as consumable or non-consumable
+            //https://www.revenuecat.com/docs/non-subscriptions
+            NonConsumablePurchases = new(),
             FirstSeen = customerInfo.FirstSeen.ToDateTime(),
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
             ManagementURL = customerInfo?.ManagementURL?.ToString(),
