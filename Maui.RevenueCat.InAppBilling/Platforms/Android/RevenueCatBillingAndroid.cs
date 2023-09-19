@@ -269,7 +269,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"{RestoreTransactions} failed.");
+            _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
             return null;
         }
     }
