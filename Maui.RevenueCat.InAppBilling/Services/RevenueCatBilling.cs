@@ -30,7 +30,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     public partial void Initialize(string apiKey);
     public partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken);
-    public partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken);
+    public partial Task<List<PackageDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken);
     public partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken);
     public partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken);
     public partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);

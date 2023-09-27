@@ -61,7 +61,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
     }
 
-    public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
+    public async partial Task<List<PackageDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         if (!forceRefresh && !_cachedOfferingPackages.IsNullOrEmpty())
         {

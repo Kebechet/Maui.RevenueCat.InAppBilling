@@ -4,7 +4,8 @@ using System.Globalization;
 
 namespace Maui.RevenueCat.InAppBilling.Extensions;
 
-public static partial class OfferingDtoExtensions
+public static partial class PackageDtoExtensions
+
 {
     private static readonly decimal _daysInWeek = 7m;
     private static readonly decimal _daysInMonth = 30m;
@@ -13,29 +14,29 @@ public static partial class OfferingDtoExtensions
     private static readonly decimal _monthsInHalfYear = 6m;
     private static readonly decimal _monthsInYear = 12m;
 
-    public static decimal GetMonthlyPrice(this OfferingDto offeringDto, bool ignoreExceptions = true)
+    public static decimal GetMonthlyPrice(this PackageDto packageDto, bool ignoreExceptions = true)
     {
         decimal result;
 
-        switch (offeringDto.Identifier)
+        switch (packageDto.Identifier)
         {
-            case DefaultOfferingIdentifier.Weekly:
-                result = offeringDto.Product.Pricing.Price / _daysInWeek * _daysInMonth;
+            case DefaultPackageIdentifier.Weekly:
+                result = packageDto.Product.Pricing.Price / _daysInWeek * _daysInMonth;
                 break;
-            case DefaultOfferingIdentifier.Monthly:
-                result = offeringDto.Product.Pricing.Price;
+            case DefaultPackageIdentifier.Monthly:
+                result = packageDto.Product.Pricing.Price;
                 break;
-            case DefaultOfferingIdentifier.BiMonthly:
-                result = offeringDto.Product.Pricing.Price / _monthsInBiMonthly;
+            case DefaultPackageIdentifier.BiMonthly:
+                result = packageDto.Product.Pricing.Price / _monthsInBiMonthly;
                 break;
-            case DefaultOfferingIdentifier.Quarterly:
-                result = offeringDto.Product.Pricing.Price / _quartalsInYear;
+            case DefaultPackageIdentifier.Quarterly:
+                result = packageDto.Product.Pricing.Price / _quartalsInYear;
                 break;
-            case DefaultOfferingIdentifier.SemiAnnually:
-                result = offeringDto.Product.Pricing.Price / _monthsInHalfYear;
+            case DefaultPackageIdentifier.SemiAnnually:
+                result = packageDto.Product.Pricing.Price / _monthsInHalfYear;
                 break;
-            case DefaultOfferingIdentifier.Annually:
-                result = offeringDto.Product.Pricing.Price / _monthsInYear;
+            case DefaultPackageIdentifier.Annually:
+                result = packageDto.Product.Pricing.Price / _monthsInYear;
                 break;
             default:
                 if (ignoreExceptions)
@@ -49,13 +50,13 @@ public static partial class OfferingDtoExtensions
         return result.RoundUp(2);
     }
 
-    public static string GetMonthlyPriceWithCurrency(this OfferingDto offeringDto, bool ignoreExceptions = true)
+    public static string GetMonthlyPriceWithCurrency(this PackageDto packageDto, bool ignoreExceptions = true)
     {
         try
         {
-            var monthlyPrice = offeringDto.GetMonthlyPrice(ignoreExceptions);
+            var monthlyPrice = packageDto.GetMonthlyPrice(ignoreExceptions);
 
-            var localisedCurrency = GetLocalizedPrice(offeringDto.Product.Pricing.CurrencyCode, monthlyPrice);
+            var localisedCurrency = GetLocalizedPrice(packageDto.Product.Pricing.CurrencyCode, monthlyPrice);
 
             return localisedCurrency;
         }
