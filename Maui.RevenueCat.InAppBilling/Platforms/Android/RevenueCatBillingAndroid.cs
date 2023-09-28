@@ -14,7 +14,7 @@ namespace Maui.RevenueCat.InAppBilling.Services;
 public partial class RevenueCatBilling : IRevenueCatBilling
 {
     private Purchases _purchases = default!;
-    private List<Package> _cachedOfferingPackages = new();
+    private Offerings _cachedOfferingPackages = null;
     private static Activity? _currentActivityContext => Platform.CurrentActivity;
 
     public partial bool IsAnonymous() => Purchases.SharedInstance.IsAnonymous;
@@ -54,38 +54,30 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         throw new NotImplementedException("This method is iOS Only");
     }
 
-    public async partial Task<List<PackageDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
+    public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
-        if (!forceRefresh && !_cachedOfferingPackages.IsNullOrEmpty())
+        if (!forceRefresh && _cachedOfferingPackages != null)
         {
-            return _cachedOfferingPackages.ToOfferDtoList(); ;
+            return _cachedOfferingPackages.ToOfferingDtoList().ToList();
         }
 
         try
         {
-            using var offerings = await Purchases.SharedInstance.GetOfferingsAsync(cancellationToken);
-            if (offerings is null)
+            _cachedOfferingPackages = await Purchases.SharedInstance.GetOfferingsAsync(cancellationToken);
+            if (_cachedOfferingPackages is null)
             {
                 return new();
             }
 
-            using var currentOffering = offerings.Current;
-            if (currentOffering is null)
-            {
-                return new();
-            }
-
-            _cachedOfferingPackages = currentOffering.AvailablePackages.ToList();
-
-            return _cachedOfferingPackages.ToOfferDtoList(); ;
+            return _cachedOfferingPackages.ToOfferingDtoList().ToList();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't suceed.");
+            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't succeed.");
             return new();
         }
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, string packageIdentifier, CancellationToken cancellationToken)
     {
         if (!_isInitialized)
         {
@@ -93,11 +85,18 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("RevenueCatBilling wasn't initialized");
         }
 
-        var packageToBuy = _cachedOfferingPackages.FirstOrDefault(p => p.Identifier == offeringIdentifier);
+        var offeringToBuy = _cachedOfferingPackages.GetOffering(offeringIdentifier);
+        if (offeringToBuy is null)
+        {
+            _logger.LogError("No offering with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.", offeringIdentifier);
+            throw new Exception($"No offering with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.");
+        }
+
+        var packageToBuy = offeringToBuy.AvailablePackages.FirstOrDefault(p => p.Identifier == packageIdentifier);
         if (packageToBuy is null)
         {
-            _logger.LogError("No offering/packege with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.", offeringIdentifier);
-            throw new Exception($"No offering/packege with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.");
+            _logger.LogError("No package with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.", packageIdentifier);
+            throw new Exception($"No offering with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.");
         }
 
         if (_currentActivityContext is null)

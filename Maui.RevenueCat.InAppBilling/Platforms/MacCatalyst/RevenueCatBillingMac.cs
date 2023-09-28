@@ -19,11 +19,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         return new();
     }
 
-    public async partial Task<List<PackageDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
+    public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         return new();
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, string packageIdentifier, CancellationToken cancellationToken)
     {
         return new();
     }

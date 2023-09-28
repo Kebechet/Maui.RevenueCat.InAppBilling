@@ -6,9 +6,9 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
 internal static class PackageListExtensions
 {
-    public static List<PackageDto> ToOfferDtoList(this List<Package> packages)
+    public static List<PackageDto> ToPackageDtoList(this List<Package> packages)
     {
-        var offers = new List<PackageDto>();
+        var packagesDto = new List<PackageDto>();
 
         foreach (var package in packages)
         {
@@ -28,13 +28,13 @@ internal static class PackageListExtensions
                         PriceLocalized = PackageDtoExtensions.GetLocalizedPrice(currencyCode, price)
                     },
                     Sku = package.Product.Sku,
-                    SubscriptionPeriod = package.Product.Period.ToString(),
+                    SubscriptionPeriod = package.Product.Period?.ToString() ?? string.Empty,
                 }
             };
 
-            offers.Add(packageDto);
+            packagesDto.Add(packageDto);
         }
 
-        return offers;
+        return packagesDto;
     }
 }
