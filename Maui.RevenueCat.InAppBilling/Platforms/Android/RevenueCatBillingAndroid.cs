@@ -85,6 +85,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("RevenueCatBilling wasn't initialized");
         }
 
+        if (_currentActivityContext is null)
+        {
+            throw new Exception("Android Current Activity can't be null.");
+        }
+
         var offeringToBuy = _cachedOfferingPackages.GetOffering(offeringIdentifier);
         if (offeringToBuy is null)
         {
@@ -99,10 +104,6 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception($"No offering with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.");
         }
 
-        if (_currentActivityContext is null)
-        {
-            throw new Exception("Android Current Activity can't be null.");
-        }
 
         PurchaseSuccessInfo? purchaseSuccessInfo = null;
 
