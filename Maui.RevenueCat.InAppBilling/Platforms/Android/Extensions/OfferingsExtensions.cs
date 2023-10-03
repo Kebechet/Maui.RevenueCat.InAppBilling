@@ -7,7 +7,7 @@ internal static class OfferingListExtensions
 {
     public static IList<OfferingDto> ToOfferingDtoList(this Offerings offerings)
     {
-        var offersDto = new List<OfferingDto>();
+        var offeringDtos = new List<OfferingDto>();
 
         foreach (var offer in offerings.All.Values)
         {
@@ -18,9 +18,9 @@ internal static class OfferingListExtensions
                 IsCurrent = offer.Identifier == offerings.Current.Identifier
             };
 
-            offersDto.Add(offerDto);
+            offeringDtos.Add(offerDto);
         }
 
-        return offersDto;
+        return offeringDtos;
     }
 }
