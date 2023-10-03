@@ -16,7 +16,7 @@ internal static class OfferingListExtensions
             {
                 Identifier = offer.Identifier,
                 AvailablePackages = offer.AvailablePackages.ToList().ToPackageDtoList(),
-                Current = offer.Identifier == offerings.Current?.Identifier
+                IsCurrent = offer.Identifier == offerings.Current?.Identifier
             };
 
             offersDto.Add(offerDto);
