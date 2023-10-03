@@ -5,7 +5,6 @@ using System.Globalization;
 namespace Maui.RevenueCat.InAppBilling.Extensions;
 
 public static partial class PackageDtoExtensions
-
 {
     private static readonly decimal _daysInWeek = 7m;
     private static readonly decimal _daysInMonth = 30m;
