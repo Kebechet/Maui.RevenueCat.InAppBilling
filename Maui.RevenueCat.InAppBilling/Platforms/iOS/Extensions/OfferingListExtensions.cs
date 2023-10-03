@@ -15,7 +15,7 @@ internal static class OfferingListExtensions
             var offerDto = new OfferingDto()
             {
                 Identifier = offer.Identifier,
-                AvailablePackages = offer.AvailablePackages.ToList().ToPackageDtoList(),
+                AvailablePackages = offer.AvailablePackages.ToPackageDtoList(),
                 IsCurrent = offer.Identifier == offerings.Current?.Identifier
             };
 
