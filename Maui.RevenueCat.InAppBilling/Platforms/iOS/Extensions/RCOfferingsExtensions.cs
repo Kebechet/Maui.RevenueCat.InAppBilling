@@ -1,27 +1,26 @@
-﻿using Maui.RevenueCat.InAppBilling.Extensions;
-using Maui.RevenueCat.InAppBilling.Models;
+﻿using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.iOS;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
-internal static class OfferingListExtensions
+internal static class RCOfferingsExtensions
 {
     public static IList<OfferingDto> ToOfferingDtoList(this RCOfferings offerings)
     {
-        var offersDto = new List<OfferingDto>();
+        var offeringDtos = new List<OfferingDto>();
 
         foreach (var offer in offerings.All.Values)
         {
-            var offerDto = new OfferingDto()
+            var offeringDto = new OfferingDto()
             {
                 Identifier = offer.Identifier,
                 AvailablePackages = offer.AvailablePackages.ToPackageDtoList(),
                 IsCurrent = offer.Identifier == offerings.Current?.Identifier
             };
 
-            offersDto.Add(offerDto);
+            offeringDtos.Add(offeringDto);
         }
 
-        return offersDto;
+        return offeringDtos;
     }
 }
