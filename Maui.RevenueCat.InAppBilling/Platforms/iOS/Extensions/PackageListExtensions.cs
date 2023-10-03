@@ -8,7 +8,7 @@ internal static class PackageListExtensions
 {
     internal static List<PackageDto> ToPackageDtoList(this IList<RCPackage> packages)
     {
-        var packagesDto = new List<PackageDto>();
+        var packageDtos = new List<PackageDto>();
 
         foreach (var package in packages)
         {
@@ -33,9 +33,9 @@ internal static class PackageListExtensions
                 }
             };
 
-            packagesDto.Add(packageDto);
+            packageDtos.Add(packageDto);
         }
 
-        return packagesDto;
+        return packageDtos;
     }
 }
