@@ -14,7 +14,7 @@ namespace Maui.RevenueCat.InAppBilling.Services;
 public partial class RevenueCatBilling : IRevenueCatBilling
 {
     private Purchases _purchases = default!;
-    private RCOfferings _cachedOfferingPackages = null;
+    private RCOfferings? _cachedOfferingPackages = null;
 
     public partial bool IsAnonymous() => Purchases.SharedPurchases.IsAnonymous;
     public partial string GetAppUserId() => Purchases.SharedPurchases.AppUserID;
