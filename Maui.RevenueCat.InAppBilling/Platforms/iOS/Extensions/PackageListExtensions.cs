@@ -28,7 +28,7 @@ internal static class PackageListExtensions
                         PriceLocalized = PackageDtoExtensions.GetLocalizedPrice(currencyCode, price)
                     },
                     Sku = package.StoreProduct.ProductIdentifier,
-                    SubscriptionPeriod = package.StoreProduct.SubscriptionPeriod.ToString(),
+                    SubscriptionPeriod = package.StoreProduct.SubscriptionPeriod?.ToString() ?? string.Empty,
                 }
             };
 
