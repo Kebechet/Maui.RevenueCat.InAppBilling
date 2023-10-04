@@ -3,7 +3,7 @@ using Maui.RevenueCat.InAppBilling.Models;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
-internal static class OfferingListExtensions
+internal static class OfferingsExtensions
 {
     public static IList<OfferingDto> ToOfferingDtoList(this Offerings offerings)
     {
