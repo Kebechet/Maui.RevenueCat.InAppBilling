@@ -90,6 +90,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("Android Current Activity can't be null.");
         }
 
+        if (_cachedOfferingPackages is null)
+        {
+            throw new Exception("LoadOfferings must be called prior to purchasing a product.");
+        }
+
         var offeringToBuy = _cachedOfferingPackages.GetOffering(offeringIdentifier);
         if (offeringToBuy is null)
         {

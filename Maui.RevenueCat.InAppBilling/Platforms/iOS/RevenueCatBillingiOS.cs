@@ -92,6 +92,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("RevenueCatBilling wasn't initialized");
         }
 
+        if (_cachedOfferingPackages is null)
+        {
+            throw new Exception("LoadOfferings must be called prior to purchasing a product.");
+        }
+
         var offeringToBuy = _cachedOfferingPackages.OfferingWithIdentifier(offeringIdentifier);
         if (offeringToBuy is null)
         {
