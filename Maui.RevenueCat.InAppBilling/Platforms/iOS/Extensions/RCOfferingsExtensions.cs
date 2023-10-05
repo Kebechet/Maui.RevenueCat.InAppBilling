@@ -5,7 +5,7 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
 internal static class RCOfferingsExtensions
 {
-    public static IList<OfferingDto> ToOfferingDtoList(this RCOfferings offerings)
+    public static List<OfferingDto> ToOfferingDtoList(this RCOfferings offerings)
     {
         var offeringDtos = new List<OfferingDto>();
 

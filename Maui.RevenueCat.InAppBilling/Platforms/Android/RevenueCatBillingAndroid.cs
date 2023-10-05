@@ -48,7 +48,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw;
         }
     }
-    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken)
+    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         throw new NotImplementedException("This method is iOS Only");
@@ -58,7 +58,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         if (!forceRefresh && _cachedOfferingPackages != null)
         {
-            return _cachedOfferingPackages.ToOfferingDtoList().ToList();
+            return _cachedOfferingPackages.ToOfferingDtoList();
         }
 
         try
@@ -69,7 +69,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 return new();
             }
 
-            return _cachedOfferingPackages.ToOfferingDtoList().ToList();
+            return _cachedOfferingPackages.ToOfferingDtoList();
         }
         catch (Exception ex)
         {
