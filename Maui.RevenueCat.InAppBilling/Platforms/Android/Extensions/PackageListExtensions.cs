@@ -6,7 +6,7 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
 internal static class PackageListExtensions
 {
-    internal static IList<PackageDto> ToPackageDtoList(this IList<Package> packages)
+    internal static List<PackageDto> ToPackageDtoList(this IList<Package> packages)
     {
         var packageDtos = new List<PackageDto>();
 

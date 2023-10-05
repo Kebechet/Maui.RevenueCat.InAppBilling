@@ -5,7 +5,7 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
 internal static class OfferingsExtensions
 {
-    internal static IList<OfferingDto> ToOfferingDtoList(this Offerings offerings)
+    internal static List<OfferingDto> ToOfferingDtoList(this Offerings offerings)
     {
         var offeringDtos = new List<OfferingDto>();
 
@@ -14,7 +14,7 @@ internal static class OfferingsExtensions
             var offerDto = new OfferingDto()
             {
                 Identifier = offer.Identifier,
-                AvailablePackages = offer.AvailablePackages.ToPackageDtoList().ToList(),
+                AvailablePackages = offer.AvailablePackages.ToPackageDtoList(),
                 IsCurrent = offer.Identifier == offerings.Current.Identifier
             };
 
