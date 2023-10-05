@@ -8,4 +8,5 @@ public sealed record CustomerInfoDto
     public required DateTime? FirstSeen { get; init; }
     public required DateTime? LatestExpirationDate { get; init; }
     public required string? ManagementURL { get; init; }
+    public required List<EntitlementInfoDto> Entitlements { get; init; }
 }
