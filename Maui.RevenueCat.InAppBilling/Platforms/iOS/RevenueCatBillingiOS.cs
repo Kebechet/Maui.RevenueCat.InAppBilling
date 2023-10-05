@@ -295,7 +295,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
             FirstSeen = customerInfo.FirstSeen.ToDateTime(),
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-            ManagementURL = customerInfo?.ManagementURL?.ToString(),
+            ManagementURL = customerInfo.ManagementURL?.ToString(),
+            Entitlements = customerInfo.Entitlements.ToEntitlementInfoDtoList().ToList(),
         };
     }
 
