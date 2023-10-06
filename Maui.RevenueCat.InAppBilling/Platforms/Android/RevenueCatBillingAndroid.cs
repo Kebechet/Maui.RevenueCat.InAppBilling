@@ -292,7 +292,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             FirstSeen = customerInfo.FirstSeen.ToDateTime(),
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
             ManagementURL = customerInfo.ManagementURL?.ToString(),
-            Entitlements = customerInfo.Entitlements.ToEntitlementInfoDtoList().ToList(),
+            Entitlements = customerInfo.Entitlements.ToEntitlementInfoDtoList(),
         };
     }
 

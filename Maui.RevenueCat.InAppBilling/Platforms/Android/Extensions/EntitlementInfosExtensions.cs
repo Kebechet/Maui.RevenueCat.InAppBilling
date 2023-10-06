@@ -5,7 +5,7 @@ using Maui.RevenueCat.InAppBilling.Models;
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 internal static class EntitlementInfosExtensions
 {
-    internal static IList<EntitlementInfoDto> ToEntitlementInfoDtoList(this EntitlementInfos entitlements)
+    internal static List<EntitlementInfoDto> ToEntitlementInfoDtoList(this EntitlementInfos entitlements)
     {
         var entitlementInfoDtos = new List<EntitlementInfoDto>();
 
