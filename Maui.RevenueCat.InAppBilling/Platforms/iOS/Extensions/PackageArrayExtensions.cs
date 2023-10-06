@@ -4,7 +4,7 @@ using Maui.RevenueCat.iOS;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
-internal static class PackageListExtensions
+internal static class PackageArrayExtensions
 {
     internal static List<PackageDto> ToPackageDtoList(this RCPackage[] packages)
     {

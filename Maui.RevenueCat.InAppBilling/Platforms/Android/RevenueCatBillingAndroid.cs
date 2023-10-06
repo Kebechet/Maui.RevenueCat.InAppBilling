@@ -77,7 +77,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new();
         }
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, string packageIdentifier, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
         if (!_isInitialized)
         {
@@ -95,18 +95,18 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("LoadOfferings must be called prior to purchasing a product.");
         }
 
-        var offeringToBuy = _cachedOfferingPackages.GetOffering(offeringIdentifier);
+        var offeringToBuy = _cachedOfferingPackages.GetOffering(packageToPurchase.OfferingIdentifier);
         if (offeringToBuy is null)
         {
-            _logger.LogError("No offering with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.", offeringIdentifier);
-            throw new Exception($"No offering with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.");
+            _logger.LogError("No offering with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.", packageToPurchase.OfferingIdentifier);
+            throw new Exception($"No offering with identifier: {packageToPurchase.OfferingIdentifier} found. Make sure you called LoadOfferings before.");
         }
 
-        var packageToBuy = offeringToBuy.AvailablePackages.FirstOrDefault(p => p.Identifier == packageIdentifier);
+        var packageToBuy = offeringToBuy.AvailablePackages.FirstOrDefault(p => p.Identifier == packageToPurchase.Identifier);
         if (packageToBuy is null)
         {
-            _logger.LogError("No package with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.", packageIdentifier);
-            throw new Exception($"No offering with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.");
+            _logger.LogError("No package with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.", packageToPurchase.Identifier);
+            throw new Exception($"No offering with identifier: {packageToPurchase.Identifier} found. Make sure you called LoadOfferings before.");
         }
 
 
