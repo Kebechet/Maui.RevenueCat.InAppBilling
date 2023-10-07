@@ -6,6 +6,15 @@ This plugin is based on:
 
 ## Usage
 
+Firstly add these packages into your main `.csproj` because otherwise Android won't be able to build:
+```
+<ItemGroup Condition="$(TargetFramework.Contains('-android'))">
+	<PackageReference Include="Xamarin.Google.Crypto.Tink.Android" VersionOverride="1.8.0.1" />
+	<PackageReference Include="Xamarin.AndroidX.Activity.Ktx" Version ="1.7.2" />
+	<PackageReference Include="Xamarin.GooglePlayServices.Base" Version ="118.2.0.2" />
+</ItemGroup>
+```
+
 Register package installer in your `MauiProgram.cs`
 ```csharp
  builder.Services.AddRevenueCatBilling();
