@@ -1,3 +1,4 @@
+using Foundation;
 using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Extensions;
 using Maui.RevenueCat.InAppBilling.Models;
@@ -13,7 +14,7 @@ namespace Maui.RevenueCat.InAppBilling.Services;
 public partial class RevenueCatBilling : IRevenueCatBilling
 {
     private Purchases _purchases = default!;
-    private List<RCPackage> _cachedOfferingPackages = new();
+    private RCOfferings? _cachedOfferingPackages = null;
 
     public partial bool IsAnonymous() => Purchases.SharedPurchases.IsAnonymous;
     public partial string GetAppUserId() => Purchases.SharedPurchases.AppUserID;
@@ -35,7 +36,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
     }
 
-    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken)
+    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
         try
         {
@@ -63,28 +64,20 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
-        if (!forceRefresh && !_cachedOfferingPackages.IsNullOrEmpty())
+        if (!forceRefresh && _cachedOfferingPackages != null)
         {
-            return _cachedOfferingPackages.ToOfferDtoList(); ;
+            return _cachedOfferingPackages.ToOfferingDtoList();
         }
 
         try
         {
-            using var offerings = await _purchases.GetOfferingsAsync();
-            if (offerings is null)
+            _cachedOfferingPackages = await _purchases.GetOfferingsAsync();
+            if (_cachedOfferingPackages is null)
             {
                 return new();
             }
 
-            using var currentOffering = offerings.Current;
-            if (currentOffering is null)
-            {
-                return new();
-            }
-
-            _cachedOfferingPackages = currentOffering.AvailablePackages.ToList();
-
-            return _cachedOfferingPackages.ToOfferDtoList(); ;
+            return _cachedOfferingPackages.ToOfferingDtoList();
         }
         catch (Exception ex)
         {
@@ -92,17 +85,28 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new();
         }
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
         if (!_isInitialized)
         {
             throw new Exception("RevenueCatBilling wasn't initialized");
         }
 
-        var packageToBuy = _cachedOfferingPackages.FirstOrDefault(p => p.Identifier == offeringIdentifier);
+        if (_cachedOfferingPackages is null)
+        {
+            throw new Exception("LoadOfferings must be called prior to purchasing a product.");
+        }
+
+        var offeringToBuy = _cachedOfferingPackages.OfferingWithIdentifier(packageToPurchase.OfferingIdentifier);
+        if (offeringToBuy is null)
+        {
+            throw new Exception($"No offering with identifier: {packageToPurchase.OfferingIdentifier} found. Make sure you called LoadOfferings before.");
+        }
+
+        var packageToBuy = offeringToBuy.AvailablePackages.FirstOrDefault(p => p.Identifier == packageToPurchase.Identifier);
         if (packageToBuy is null)
         {
-            throw new Exception($"No offering/packege with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.");
+            throw new Exception($"No package with identifier: {packageToPurchase.Identifier} found. Make sure you called LoadOfferings before.");
         }
 
         PurchaseSuccessInfo? purchaseSuccessInfo = null;

@@ -14,7 +14,7 @@ namespace Maui.RevenueCat.InAppBilling.Services;
 public partial class RevenueCatBilling : IRevenueCatBilling
 {
     private Purchases _purchases = default!;
-    private List<Package> _cachedOfferingPackages = new();
+    private Offerings? _cachedOfferingPackages = null;
     private static Activity? _currentActivityContext => Platform.CurrentActivity;
 
     public partial bool IsAnonymous() => Purchases.SharedInstance.IsAnonymous;
@@ -48,7 +48,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw;
         }
     }
-    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken)
+    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         throw new NotImplementedException("This method is iOS Only");
@@ -56,36 +56,28 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
-        if (!forceRefresh && !_cachedOfferingPackages.IsNullOrEmpty())
+        if (!forceRefresh && _cachedOfferingPackages != null)
         {
-            return _cachedOfferingPackages.ToOfferDtoList(); ;
+            return _cachedOfferingPackages.ToOfferingDtoList();
         }
 
         try
         {
-            using var offerings = await Purchases.SharedInstance.GetOfferingsAsync(cancellationToken);
-            if (offerings is null)
+            _cachedOfferingPackages = await Purchases.SharedInstance.GetOfferingsAsync(cancellationToken);
+            if (_cachedOfferingPackages is null)
             {
                 return new();
             }
 
-            using var currentOffering = offerings.Current;
-            if (currentOffering is null)
-            {
-                return new();
-            }
-
-            _cachedOfferingPackages = currentOffering.AvailablePackages.ToList();
-
-            return _cachedOfferingPackages.ToOfferDtoList(); ;
+            return _cachedOfferingPackages.ToOfferingDtoList();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't suceed.");
+            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't succeed.");
             return new();
         }
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
         if (!_isInitialized)
         {
@@ -93,17 +85,30 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("RevenueCatBilling wasn't initialized");
         }
 
-        var packageToBuy = _cachedOfferingPackages.FirstOrDefault(p => p.Identifier == offeringIdentifier);
-        if (packageToBuy is null)
-        {
-            _logger.LogError("No offering/packege with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.", offeringIdentifier);
-            throw new Exception($"No offering/packege with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.");
-        }
-
         if (_currentActivityContext is null)
         {
             throw new Exception("Android Current Activity can't be null.");
         }
+
+        if (_cachedOfferingPackages is null)
+        {
+            throw new Exception("LoadOfferings must be called prior to purchasing a product.");
+        }
+
+        var offeringToBuy = _cachedOfferingPackages.GetOffering(packageToPurchase.OfferingIdentifier);
+        if (offeringToBuy is null)
+        {
+            _logger.LogError("No offering with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.", packageToPurchase.OfferingIdentifier);
+            throw new Exception($"No offering with identifier: {packageToPurchase.OfferingIdentifier} found. Make sure you called LoadOfferings before.");
+        }
+
+        var packageToBuy = offeringToBuy.AvailablePackages.FirstOrDefault(p => p.Identifier == packageToPurchase.Identifier);
+        if (packageToBuy is null)
+        {
+            _logger.LogError("No package with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.", packageToPurchase.Identifier);
+            throw new Exception($"No offering with identifier: {packageToPurchase.Identifier} found. Make sure you called LoadOfferings before.");
+        }
+
 
         PurchaseSuccessInfo? purchaseSuccessInfo = null;
 

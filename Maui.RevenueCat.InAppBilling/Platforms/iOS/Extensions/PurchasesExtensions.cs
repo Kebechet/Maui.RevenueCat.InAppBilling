@@ -46,7 +46,7 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
-    public static Task<NSDictionary<NSString, RCIntroEligibility>> CheckTrialOrIntroDiscountEligibilityAsync(this RCPurchases purchases, IList<string> identifiers,
+    public static Task<NSDictionary<NSString, RCIntroEligibility>> CheckTrialOrIntroDiscountEligibilityAsync(this RCPurchases purchases, List<string> identifiers,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<NSDictionary<NSString, RCIntroEligibility>>();

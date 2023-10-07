@@ -1,7 +1,7 @@
 ﻿namespace Maui.RevenueCat.InAppBilling.Models;
 
 //https://github.com/RevenueCat/purchases-ios/blob/main/Sources/Purchasing/PackageType.swift#L66
-public static class DefaultOfferingIdentifier
+public static class DefaultPackageIdentifier
 {
     public const string Weekly = "$rc_weekly";
     public const string Monthly = "$rc_monthly";

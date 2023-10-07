@@ -10,9 +10,9 @@ public interface IRevenueCatBilling
     string GetAppUserId();
 
     void Initialize(string apiKey);
-    Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(IList<string> identifiers, CancellationToken cancellationToken = default);
+    Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken = default);
     Task<List<OfferingDto>> LoadOfferings(bool forceRefresh = false, CancellationToken cancellationToken = default);
-    Task<PurchaseResult> PurchaseProduct(string offeringIdentifier, CancellationToken cancellationToken = default);
+    Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken = default);
     Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken = default);
     Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken = default);
     Task<DateTime?> GetPurchaseDateForProductIdentifier(string productSku, CancellationToken cancellationToken = default);

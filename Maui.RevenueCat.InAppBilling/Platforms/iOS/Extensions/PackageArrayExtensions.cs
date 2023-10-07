@@ -4,19 +4,20 @@ using Maui.RevenueCat.iOS;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
-internal static class PackageListExtensions
+internal static class PackageArrayExtensions
 {
-    internal static List<OfferingDto> ToOfferDtoList(this List<RCPackage> packages)
+    internal static List<PackageDto> ToPackageDtoList(this RCPackage[] packages)
     {
-        var offers = new List<OfferingDto>();
+        var packageDtos = new List<PackageDto>();
 
         foreach (var package in packages)
         {
             var currencyCode = package.StoreProduct.CurrencyCode ?? string.Empty;
             var price = Convert.ToDecimal(package.StoreProduct.Price.DoubleValue);
 
-            var offeringDto = new OfferingDto()
+            var packageDto = new PackageDto()
             {
+                OfferingIdentifier = package.OfferingIdentifier,
                 Identifier = package.Identifier,
                 Product = new ProductDto()
                 {
@@ -25,16 +26,16 @@ internal static class PackageListExtensions
                         CurrencyCode = currencyCode,
                         Price = price,
                         PriceMicros = (long)(package.StoreProduct.Price.DoubleValue * Math.Pow(10, 6)),
-                        PriceLocalized = OfferingDtoExtensions.GetLocalizedPrice(currencyCode, price)
+                        PriceLocalized = PackageDtoExtensions.GetLocalizedPrice(currencyCode, price)
                     },
                     Sku = package.StoreProduct.ProductIdentifier,
-                    SubscriptionPeriod = package.StoreProduct.SubscriptionPeriod.ToString(),
+                    SubscriptionPeriod = package.StoreProduct.SubscriptionPeriod?.ToString() ?? string.Empty,
                 }
             };
 
-            offers.Add(offeringDto);
+            packageDtos.Add(packageDto);
         }
 
-        return offers;
+        return packageDtos;
     }
 }
