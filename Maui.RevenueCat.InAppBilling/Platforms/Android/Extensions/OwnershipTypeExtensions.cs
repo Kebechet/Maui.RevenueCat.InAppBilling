@@ -4,10 +4,10 @@ using Com.Revenuecat.Purchases;
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 internal static class OwnershipTypeExtensions
 {
-    internal static OwnershipId ToOwnershipId(this OwnershipType owner)
+    internal static OwnershipId ToOwnershipId(this OwnershipType ownershipType)
     {
-        if (owner == OwnershipType.FamilyShared) return OwnershipId.FamilyShared;
-        if (owner == OwnershipType.Purchased) return OwnershipId.Purchased;
+        if (ownershipType == OwnershipType.FamilyShared) return OwnershipId.FamilyShared;
+        if (ownershipType == OwnershipType.Purchased) return OwnershipId.Purchased;
         return OwnershipId.Unknown;
     }
 }

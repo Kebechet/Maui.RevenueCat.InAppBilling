@@ -4,9 +4,9 @@ using Maui.RevenueCat.iOS;
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 internal static class OwnershipTypeExtensions
 {
-    internal static OwnershipId ToOwnershipId(this RCPurchaseOwnershipType owner)
+    internal static OwnershipId ToOwnershipId(this RCPurchaseOwnershipType ownershipType)
     {
-        switch (owner)
+        switch (ownershipType)
         {
             case RCPurchaseOwnershipType.FamilyShared:
                 return OwnershipId.FamilyShared;
