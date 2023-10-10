@@ -2,7 +2,7 @@
 using Maui.RevenueCat.iOS;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
-internal static class EntitlementInfosExtensions
+internal static class RCEntitlementInfosExtensions
 {
     internal static List<EntitlementInfoDto> ToEntitlementInfoDtoList(this RCEntitlementInfos entitlements)
     {
