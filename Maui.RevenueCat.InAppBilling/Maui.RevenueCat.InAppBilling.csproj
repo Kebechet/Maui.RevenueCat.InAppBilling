@@ -54,19 +54,4 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Platforms\iOS\Extensions\EntitlementInfosExtensions.cs">
-      <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-    </Compile>
-    <Compile Update="Platforms\iOS\Extensions\OwnershipTypeExtensions.cs">
-      <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-    </Compile>
-    <Compile Update="Platforms\iOS\Extensions\PeriodTypeExtensions.cs">
-      <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-    </Compile>
-    <Compile Update="Platforms\iOS\Extensions\StoreExtensions.cs">
-      <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
-    </Compile>
-  </ItemGroup>
 </Project>
