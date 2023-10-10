@@ -4,11 +4,11 @@ using Maui.RevenueCat.iOS;
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 internal static class RCEntitlementInfosExtensions
 {
-    internal static List<EntitlementInfoDto> ToEntitlementInfoDtoList(this RCEntitlementInfos entitlements)
+    internal static List<EntitlementInfoDto> ToEntitlementInfoDtoList(this RCEntitlementInfos entitlementInfos)
     {
         var entitlementInfoDtos = new List<EntitlementInfoDto>();
 
-        foreach (var entitlement in entitlements.All.Values)
+        foreach (var entitlement in entitlementInfos.All.Values)
         {
             var entitlementInfoDto = new EntitlementInfoDto()
             {
@@ -22,7 +22,7 @@ internal static class RCEntitlementInfosExtensions
                 OwnershipType = entitlement.OwnershipType.ToOwnershipType(),
                 PeriodType = entitlement.PeriodType.ToPeriodType(),
                 ProductIdentifier = entitlement.ProductIdentifier,
-                ProductPlanIdentifier = string.Empty, // Does not exist on ios???
+                ProductPlanIdentifier = string.Empty, // this does not exist on iOS
                 Store = entitlement.Store.ToStoreId(),
                 UnsubscribeDetectedAt = entitlement.UnsubscribeDetectedAt.ToDateTime(),
                 WillRenew = entitlement.WillRenew,
