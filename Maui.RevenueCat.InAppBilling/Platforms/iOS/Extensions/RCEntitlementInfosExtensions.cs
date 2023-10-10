@@ -19,8 +19,8 @@ internal static class RCEntitlementInfosExtensions
                 IsSandbox = entitlement.IsSandbox,
                 LatestPurchaseDate = entitlement.LatestPurchaseDate.ToDateTime(),
                 OriginalPurchaseDate = entitlement.OriginalPurchaseDate.ToDateTime(),
-                OwnershipType = entitlement.OwnershipType.ToOwnershipId(),
-                PeriodType = entitlement.PeriodType.ToPeriodId(),
+                OwnershipType = entitlement.OwnershipType.ToOwnershipType(),
+                PeriodType = entitlement.PeriodType.ToPeriodType(),
                 ProductIdentifier = entitlement.ProductIdentifier,
                 ProductPlanIdentifier = string.Empty, // Does not exist on ios???
                 Store = entitlement.Store.ToStoreId(),

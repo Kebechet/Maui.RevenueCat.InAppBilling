@@ -1,14 +1,14 @@
 ﻿using Maui.RevenueCat.InAppBilling.Enums;
-using Com.Revenuecat.Purchases;
+using PeriodTypeNative = Com.Revenuecat.Purchases.PeriodType;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 internal static class PeriodTypeExtensions
 {
-    internal static PeriodId ToPeriodId(this PeriodType periodType)
+    internal static PeriodType ToPeriodTypeFromNative(this PeriodTypeNative periodType)
     {
-        if (periodType == PeriodType.Intro) return PeriodId.Intro;
-        if (periodType == PeriodType.Trial) return PeriodId.Trial;
-        if (periodType == PeriodType.Normal) return PeriodId.Normal;
+        if (periodType == PeriodTypeNative.Intro) return PeriodType.Intro;
+        if (periodType == PeriodTypeNative.Trial) return PeriodType.Trial;
+        if (periodType == PeriodTypeNative.Normal) return PeriodType.Normal;
         throw new ArgumentException();
     }
 }

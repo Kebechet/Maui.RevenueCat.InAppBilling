@@ -4,24 +4,24 @@ using Maui.RevenueCat.iOS;
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 internal static class StoreExtensions
 {
-    internal static StoreId ToStoreId(this RCStore store)
+    internal static StoreType ToStoreId(this RCStore store)
     {
         switch (store)
         {
             case RCStore.AppStore:
-                return StoreId.AppStore;
+                return StoreType.AppStore;
             case RCStore.MacAppStore:
-                return StoreId.MacAppStore;
+                return StoreType.MacAppStore;
             case RCStore.PlayStore:
-                return StoreId.PlayStore;
+                return StoreType.PlayStore;
             case RCStore.Amazon:
-                return StoreId.Amazon;
+                return StoreType.Amazon;
             case RCStore.Promotional:
-                return StoreId.Promotional;
+                return StoreType.Promotional;
             case RCStore.Stripe:
-                return StoreId.Stripe;
+                return StoreType.Stripe;
             default:
-                return StoreId.UnknownStore;
+                return StoreType.UnknownStore;
         }
     }
 }

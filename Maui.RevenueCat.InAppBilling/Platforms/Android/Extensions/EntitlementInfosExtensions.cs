@@ -1,5 +1,4 @@
 ﻿using Com.Revenuecat.Purchases;
-using Maui.RevenueCat.InAppBilling.Extensions;
 using Maui.RevenueCat.InAppBilling.Models;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
@@ -20,8 +19,8 @@ internal static class EntitlementInfosExtensions
                 IsSandbox = entitlement.IsSandbox,
                 LatestPurchaseDate = entitlement.LatestPurchaseDate.ToDateTime(),
                 OriginalPurchaseDate = entitlement.OriginalPurchaseDate.ToDateTime(),
-                OwnershipType = entitlement.OwnershipType.ToOwnershipId(),
-                PeriodType = entitlement.PeriodType.ToPeriodId(),
+                OwnershipType = entitlement.OwnershipType.ToOwnershipTypeFromNative(),
+                PeriodType = entitlement.PeriodType.ToPeriodTypeFromNative(),
                 ProductIdentifier = entitlement.ProductIdentifier,
                 ProductPlanIdentifier = entitlement.ProductPlanIdentifier,
                 Store = entitlement.Store.ToStoreId(),

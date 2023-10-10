@@ -1,13 +1,13 @@
 ﻿using Maui.RevenueCat.InAppBilling.Enums;
-using Com.Revenuecat.Purchases;
+using OwnershipTypeNative = Com.Revenuecat.Purchases.OwnershipType;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 internal static class OwnershipTypeExtensions
 {
-    internal static OwnershipId ToOwnershipId(this OwnershipType ownershipType)
+    internal static OwnershipType ToOwnershipTypeFromNative(this OwnershipTypeNative ownershipType)
     {
-        if (ownershipType == OwnershipType.FamilyShared) return OwnershipId.FamilyShared;
-        if (ownershipType == OwnershipType.Purchased) return OwnershipId.Purchased;
-        return OwnershipId.Unknown;
+        if (ownershipType == OwnershipTypeNative.FamilyShared) return OwnershipType.FamilyShared;
+        if (ownershipType == OwnershipTypeNative.Purchased) return OwnershipType.Purchased;
+        return OwnershipType.Unknown;
     }
 }

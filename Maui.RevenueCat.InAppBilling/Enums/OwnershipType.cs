@@ -1,5 +1,7 @@
 ﻿namespace Maui.RevenueCat.InAppBilling.Enums;
-public enum OwnershipId
+
+public enum OwnershipType
+
 {
     FamilyShared,
     Purchased,

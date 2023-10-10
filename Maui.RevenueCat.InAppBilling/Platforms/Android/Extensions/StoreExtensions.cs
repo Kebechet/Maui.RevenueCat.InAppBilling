@@ -4,14 +4,14 @@ using Maui.RevenueCat.InAppBilling.Enums;
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 internal static class StoreExtensions
 {
-    internal static StoreId ToStoreId(this Store store)
+    internal static StoreType ToStoreId(this Store store)
     {
-        if (store == Store.Promotional) return StoreId.Promotional;
-        if (store == Store.PlayStore) return StoreId.PlayStore;
-        if (store == Store.AppStore) return StoreId.AppStore;
-        if (store == Store.Amazon) return StoreId.Amazon;
-        if (store == Store.Stripe) return StoreId.Stripe;
-        if (store == Store.MacAppStore) return StoreId.MacAppStore;
-        return StoreId.UnknownStore;
+        if (store == Store.Promotional) return StoreType.Promotional;
+        if (store == Store.PlayStore) return StoreType.PlayStore;
+        if (store == Store.AppStore) return StoreType.AppStore;
+        if (store == Store.Amazon) return StoreType.Amazon;
+        if (store == Store.Stripe) return StoreType.Stripe;
+        if (store == Store.MacAppStore) return StoreType.MacAppStore;
+        return StoreType.UnknownStore;
     }
 }
