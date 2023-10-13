@@ -4,7 +4,7 @@ using Maui.RevenueCat.iOS;
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 internal static class StoreExtensions
 {
-    internal static StoreType ToStoreId(this RCStore store)
+    internal static StoreType ToStoreType(this RCStore store)
     {
         switch (store)
         {

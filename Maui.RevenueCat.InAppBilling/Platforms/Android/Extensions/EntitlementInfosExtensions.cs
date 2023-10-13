@@ -23,7 +23,7 @@ internal static class EntitlementInfosExtensions
                 PeriodType = entitlement.PeriodType.ToPeriodTypeFromNative(),
                 ProductIdentifier = entitlement.ProductIdentifier,
                 ProductPlanIdentifier = entitlement.ProductPlanIdentifier,
-                Store = entitlement.Store.ToStoreId(),
+                Store = entitlement.Store.ToStoreType(),
                 UnsubscribeDetectedAt = entitlement.UnsubscribeDetectedAt.ToDateTime(),
                 WillRenew = entitlement.WillRenew,
             };

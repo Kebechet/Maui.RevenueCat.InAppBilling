@@ -4,7 +4,7 @@ using Maui.RevenueCat.InAppBilling.Enums;
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 internal static class StoreExtensions
 {
-    internal static StoreType ToStoreId(this Store store)
+    internal static StoreType ToStoreType(this Store store)
     {
         if (store == Store.Promotional) return StoreType.Promotional;
         if (store == Store.PlayStore) return StoreType.PlayStore;

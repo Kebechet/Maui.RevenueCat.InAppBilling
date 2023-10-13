@@ -23,7 +23,7 @@ internal static class RCEntitlementInfosExtensions
                 PeriodType = entitlement.PeriodType.ToPeriodType(),
                 ProductIdentifier = entitlement.ProductIdentifier,
                 ProductPlanIdentifier = string.Empty, // this does not exist on iOS
-                Store = entitlement.Store.ToStoreId(),
+                Store = entitlement.Store.ToStoreType(),
                 UnsubscribeDetectedAt = entitlement.UnsubscribeDetectedAt.ToDateTime(),
                 WillRenew = entitlement.WillRenew,
             };
