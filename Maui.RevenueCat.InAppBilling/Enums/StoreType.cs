@@ -1,6 +1,6 @@
 namespace Maui.RevenueCat.InAppBilling.Enums;
 
-public enum StoreId
+public enum StoreType
 {
     Amazon,
     AppStore,

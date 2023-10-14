@@ -51,7 +51,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
             ManagementURL = string.Empty,
-            NonConsumablePurchases = new()
+            NonConsumablePurchases = new(),
+            Entitlements = new(),
         };
     }
     public async partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken)
@@ -63,7 +64,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
             ManagementURL = string.Empty,
-            NonConsumablePurchases = new()
+            NonConsumablePurchases = new(),
+            Entitlements = new(),
         };
     }
     public async partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken)
@@ -75,7 +77,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
             ManagementURL = string.Empty,
-            NonConsumablePurchases = new()
+            NonConsumablePurchases = new(),
+            Entitlements = new(),
         };
     }
 

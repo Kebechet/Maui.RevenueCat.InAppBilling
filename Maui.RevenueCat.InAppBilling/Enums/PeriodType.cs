@@ -1,6 +1,6 @@
 namespace Maui.RevenueCat.InAppBilling.Enums;
 
-public enum PeriodId
+public enum PeriodType
 {
     Intro,
     Normal,
