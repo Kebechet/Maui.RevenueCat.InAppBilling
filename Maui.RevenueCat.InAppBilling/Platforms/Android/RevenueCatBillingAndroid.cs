@@ -54,7 +54,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         throw new NotImplementedException("This method is iOS Only");
     }
 
-    public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
+    public async partial Task<List<OfferingDto>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         if (!forceRefresh && _cachedOfferingPackages != null)
         {
@@ -73,7 +73,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't succeed.");
+            _logger.LogError(ex, $"{nameof(GetOfferings)} didn't succeed.");
             return new();
         }
     }
@@ -108,7 +108,6 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             _logger.LogError("No package with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.", packageToPurchase.Identifier);
             throw new Exception($"No offering with identifier: {packageToPurchase.Identifier} found. Make sure you called LoadOfferings before.");
         }
-
 
         PurchaseSuccessInfo? purchaseSuccessInfo = null;
 

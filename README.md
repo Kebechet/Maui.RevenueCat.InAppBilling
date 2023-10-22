@@ -67,9 +67,8 @@ Feel free to create an issue or pull request. In case you would like to do massi
 
 ## TODO
 - [ ] Implement check if GooglePlay/Apple store is activated (installed & user signed in)
-- [ ] Verify overall functionality
-- [ ] Pipeline package build and publish artifacts
-- [ ] Pipeline PR test build
+- [ ] Pipeline - build and publish artifacts
+- [ ] Pipeline - PR build + test
 - [ ] Unify somehow SubscriptionPeriod inside OfferingDto
 
 ## License
