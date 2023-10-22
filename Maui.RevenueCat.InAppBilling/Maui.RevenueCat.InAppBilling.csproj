@@ -29,8 +29,8 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
-    <Version>2.1.1</Version>
-    <PackageReleaseNotes>Fixed package versions</PackageReleaseNotes>
+    <Version>3.0.0</Version>
+    <PackageReleaseNotes>Adjusted method names</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net7.0-ios'">
