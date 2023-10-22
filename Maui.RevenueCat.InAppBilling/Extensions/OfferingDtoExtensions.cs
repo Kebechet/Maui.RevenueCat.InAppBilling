@@ -3,5 +3,8 @@
 namespace Maui.RevenueCat.InAppBilling.Extensions;
 public static partial class OfferingDtoExtensions
 {
-    public static OfferingDto? Current(this List<OfferingDto> offers) => offers.FirstOrDefault(x => x.IsCurrent);
+    public static OfferingDto GetCurrent(this List<OfferingDto> offerings)
+    {
+        return offerings.First(x => x.IsCurrent);
+    }
 }

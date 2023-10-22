@@ -62,7 +62,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
     }
 
-    public async partial Task<List<OfferingDto>> LoadOfferings(bool forceRefresh, CancellationToken cancellationToken)
+    public async partial Task<List<OfferingDto>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         if (!forceRefresh && _cachedOfferingPackages != null)
         {
@@ -81,7 +81,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"{nameof(LoadOfferings)} didn't succeed.");
+            _logger.LogError(ex, $"{nameof(GetOfferings)} didn't succeed.");
             return new();
         }
     }
