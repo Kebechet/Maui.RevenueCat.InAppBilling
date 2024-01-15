@@ -12,7 +12,7 @@ public interface IRevenueCatBilling
     void Initialize(string apiKey);
     Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken = default);
     Task<List<OfferingDto>> GetOfferings(bool forceRefresh = false, CancellationToken cancellationToken = default);
-    Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken = default);
+    Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken = default);
     Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken = default);
     Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken = default);
     Task<DateTime?> GetPurchaseDateForProductIdentifier(string productSku, CancellationToken cancellationToken = default);

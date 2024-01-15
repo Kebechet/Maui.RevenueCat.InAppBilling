@@ -77,7 +77,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new();
         }
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
         if (!_isInitialized)
         {
@@ -119,7 +119,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             _logger.LogError(ex, "PurchasesErrorException");
 
-            return new PurchaseResult
+            return new PurchaseResultDto
             {
                 ErrorStatus = (PurchaseErrorStatus)(ex?.PurchasesError?.Code.Code ?? 0)
             };
@@ -128,7 +128,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             _logger.LogError(ex, "Exception in PurchaseProduct");
 
-            return new PurchaseResult
+            return new PurchaseResultDto
             {
                 ErrorStatus = PurchaseErrorStatus.UnknownError
             };
@@ -138,13 +138,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             _logger.LogError($"{nameof(purchaseSuccessInfo)} is null.");
 
-            return new PurchaseResult
+            return new PurchaseResultDto
             {
                 ErrorStatus = PurchaseErrorStatus.UnknownError
             };
         }
 
-        return new PurchaseResult
+        return new PurchaseResultDto
         {
             IsSuccess = purchaseSuccessInfo.StoreTransaction.PurchaseState == PurchaseState.Purchased
         };

@@ -22,7 +22,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return new();
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
         return new();
     }
