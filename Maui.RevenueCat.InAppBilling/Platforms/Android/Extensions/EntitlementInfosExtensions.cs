@@ -10,6 +10,11 @@ internal static class EntitlementInfosExtensions
 
         foreach (var entitlement in entitlementInfos.All.Values)
         {
+            if (entitlement is null)
+            {
+                continue;
+            }
+
             var entitlementInfoDto = new EntitlementInfoDto()
             {
                 BillingIssueDetectedAt = entitlement.BillingIssueDetectedAt.ToDateTime(),
@@ -22,7 +27,7 @@ internal static class EntitlementInfosExtensions
                 OwnershipType = entitlement.OwnershipType.ToDtoOwnershipType(),
                 PeriodType = entitlement.PeriodType.ToDtoPeriodType(),
                 ProductIdentifier = entitlement.ProductIdentifier,
-                ProductPlanIdentifier = entitlement.ProductPlanIdentifier,
+                ProductPlanIdentifier = entitlement.ProductPlanIdentifier ?? string.Empty,
                 Store = entitlement.Store.ToStoreType(),
                 UnsubscribeDetectedAt = entitlement.UnsubscribeDetectedAt.ToDateTime(),
                 WillRenew = entitlement.WillRenew,
