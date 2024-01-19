@@ -1,21 +1,12 @@
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/kebechet)
+
 # Maui.RevenueCat.InAppBilling
 ## Credits
-This plugin is based on:
-- [Android](https://github.com/thisisthekap/Xamarin.RevenueCat.Android) and [iOS](https://github.com/thisisthekap/Xamarin.RevenueCat.iOS) bindings from [thisisthekap](https://github.com/thisisthekap) and
-- usage example [RevenueCatXamarin](https://github.com/BillFulton/RevenueCatXamarin) from [BillFulton](https://github.com/BillFulton)
+- This plugin use: [Android](https://github.com/Kebechet/Maui.RevenueCat.Android) and [iOS](https://github.com/Kebechet/Maui.RevenueCat.iOS) bindings that are inspired by: [thisisthekap](https://github.com/thisisthekap)'s Xamarin bindings.
+- Usage example [RevenueCatXamarin](https://github.com/BillFulton/RevenueCatXamarin) from [BillFulton](https://github.com/BillFulton)
 
 ## Usage
-
-Firstly add these packages into your main `.csproj` because otherwise Android won't be able to build:
-```
-<ItemGroup Condition="$(TargetFramework.Contains('-android'))">
-	<PackageReference Include="Xamarin.Google.Crypto.Tink.Android" VersionOverride="1.8.0.1" />
-	<PackageReference Include="Xamarin.AndroidX.Activity.Ktx" Version ="1.7.2" />
-	<PackageReference Include="Xamarin.GooglePlayServices.Base" Version ="118.2.0.2" />
-</ItemGroup>
-```
-
-Register package installer in your `MauiProgram.cs`
+Firstly register package installer in your `MauiProgram.cs`
 ```csharp
  builder.Services.AddRevenueCatBilling();
 ```

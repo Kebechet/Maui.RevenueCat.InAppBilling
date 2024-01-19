@@ -8,7 +8,7 @@ internal sealed class DelegatingCallback<TResult> : DelegatingListenerBase<TResu
     {
     }
 
-    public void OnReceived(Java.Lang.Object resultObject)
+    public void OnReceived(Java.Lang.Object? resultObject)
     {
         if (resultObject is TResult result)
         {

@@ -1,42 +1,28 @@
-using Com.Revenuecat.Purchases.Models;
-using Com.Revenuecat.Purchases;
-using Android.App;
-using Maui.RevenueCat.InAppBilling.Models;
-using Maui.RevenueCat.InAppBilling.Extensions;
-using Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
-using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
-using Maui.RevenueCat.InAppBilling.Platforms.Android.Exceptions;
-using Microsoft.Extensions.Logging;
 using Maui.RevenueCat.InAppBilling.Enums;
+using Maui.RevenueCat.InAppBilling.Extensions;
+using Maui.RevenueCat.InAppBilling.Models;
+using Maui.RevenueCat.InAppBilling.Platforms.iOS.Exceptions;
+using Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
+using Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
+using Maui.RevenueCat.iOS;
+using Microsoft.Extensions.Logging;
+using Purchases = Maui.RevenueCat.iOS.RCPurchases;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
 
 public partial class RevenueCatBilling : IRevenueCatBilling
 {
     private Purchases _purchases = default!;
-    private Offerings? _cachedOfferingPackages = null;
-    private static Activity? _currentActivityContext => Platform.CurrentActivity;
+    private RCOfferings? _cachedOfferingPackages = null;
 
-    public partial bool IsAnonymous() => Purchases.SharedInstance.IsAnonymous;
-    public partial string GetAppUserId() => Purchases.SharedInstance.AppUserID;
+    public partial bool IsAnonymous() => Purchases.SharedPurchases.IsAnonymous;
+    public partial string GetAppUserId() => Purchases.SharedPurchases.AppUserID;
 
     public partial void Initialize(string apiKey)
     {
-        if (_currentActivityContext is null)
-        {
-            _logger.LogError("Android Activity is null");
-            throw new Exception("You must call this code in App.xaml->OnStart");
-        }
-
         try
         {
-            _purchases = Purchases.Configure(
-                new PurchasesConfiguration(
-                    new PurchasesConfiguration.Builder(
-                        _currentActivityContext,
-                        apiKey)
-                )
-            );
+            _purchases = Purchases.ConfigureWithAPIKey(apiKey);
 
             _isInitialized = true;
         }
@@ -48,10 +34,31 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw;
         }
     }
+
     public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        throw new NotImplementedException("This method is iOS Only");
+        try
+        {
+            using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers);
+            if (eligibilities.IsNullOrEmpty())
+            {
+                return new();
+            }
+
+            var eligibilitiesResult = new Dictionary<string, IntroElegibilityStatus>();
+
+            for (ulong i = 0; i < eligibilities.Count; i++)
+            {
+                eligibilitiesResult.Add(eligibilities.Keys[i], eligibilities.Values[i].Status.Convert());
+            }
+
+            return eligibilitiesResult;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"{nameof(CheckTrialOrIntroDiscountEligibility)} didn't succeed.");
+            return new();
+        }
     }
 
     public async partial Task<List<OfferingDto>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
@@ -63,7 +70,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            _cachedOfferingPackages = await Purchases.SharedInstance.GetOfferingsAsync(cancellationToken);
+            _cachedOfferingPackages = await _purchases.GetOfferingsAsync();
             if (_cachedOfferingPackages is null)
             {
                 return new();
@@ -77,17 +84,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new();
         }
     }
-    public async partial Task<PurchaseResult> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
+    public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
         if (!_isInitialized)
         {
-            _logger.LogError($"To call {nameof(PurchaseProduct)} you firstly have to call Initialize method.");
             throw new Exception("RevenueCatBilling wasn't initialized");
-        }
-
-        if (_currentActivityContext is null)
-        {
-            throw new Exception("Android Current Activity can't be null.");
         }
 
         if (_cachedOfferingPackages is null)
@@ -95,76 +96,80 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw new Exception("LoadOfferings must be called prior to purchasing a product.");
         }
 
-        var offeringToBuy = _cachedOfferingPackages.GetOffering(packageToPurchase.OfferingIdentifier);
+        var offeringToBuy = _cachedOfferingPackages.OfferingWithIdentifier(packageToPurchase.OfferingIdentifier);
         if (offeringToBuy is null)
         {
-            _logger.LogError("No offering with identifier: {offeringIdentifier} found. Make sure you called LoadOfferings before.", packageToPurchase.OfferingIdentifier);
             throw new Exception($"No offering with identifier: {packageToPurchase.OfferingIdentifier} found. Make sure you called LoadOfferings before.");
         }
 
         var packageToBuy = offeringToBuy.AvailablePackages.FirstOrDefault(p => p.Identifier == packageToPurchase.Identifier);
         if (packageToBuy is null)
         {
-            _logger.LogError("No package with identifier: {packageIdentifier} found. Make sure you called LoadOfferings before.", packageToPurchase.Identifier);
-            throw new Exception($"No offering with identifier: {packageToPurchase.Identifier} found. Make sure you called LoadOfferings before.");
+            throw new Exception($"No package with identifier: {packageToPurchase.Identifier} found. Make sure you called LoadOfferings before.");
         }
 
         PurchaseSuccessInfo? purchaseSuccessInfo = null;
 
         try
         {
-            purchaseSuccessInfo = await _purchases.PurchaseAsync(_currentActivityContext, packageToBuy, cancellationToken);
+            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(packageToBuy);
         }
         catch (PurchasesErrorException ex)
         {
             _logger.LogError(ex, "PurchasesErrorException");
 
-            return new PurchaseResult
+            return new PurchaseResultDto
             {
-                ErrorStatus = (PurchaseErrorStatus)(ex?.PurchasesError?.Code.Code ?? 0)
+                ErrorStatus = (PurchaseErrorStatus)(int)(ex?.PurchasesError?.Code ?? 0)
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception in PurchaseProduct");
 
-            return new PurchaseResult
+            return new PurchaseResultDto
             {
                 ErrorStatus = PurchaseErrorStatus.UnknownError
             };
         }
 
-        if (purchaseSuccessInfo is null)
+        if (purchaseSuccessInfo is null || purchaseSuccessInfo.StoreTransaction.Sk1Transaction is null)
         {
             _logger.LogError($"{nameof(purchaseSuccessInfo)} is null.");
 
-            return new PurchaseResult
+            return new PurchaseResultDto
             {
                 ErrorStatus = PurchaseErrorStatus.UnknownError
             };
         }
 
-        return new PurchaseResult
+        return new PurchaseResultDto
         {
-            IsSuccess = purchaseSuccessInfo.StoreTransaction.PurchaseState == PurchaseState.Purchased
+            IsSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
         };
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
                 return new();
             }
 
-            if (customerInfo.ActiveSubscriptions.IsNullOrEmpty())
+            if (customerInfo.ActiveSubscriptions.ToStringList().IsNullOrEmpty())
             {
                 return new();
             }
 
-            return customerInfo.ActiveSubscriptions.ToList(); ;
+            var activeSubscriptions = new List<string>();
+            foreach (var activeSubscription in customerInfo.ActiveSubscriptions)
+            {
+                activeSubscriptions.Add(activeSubscription.ToString());
+            }
+
+            return activeSubscriptions;
         }
         catch (Exception ex)
         {
@@ -176,18 +181,18 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
                 return new();
             }
 
-            if (customerInfo.AllPurchasedProductIds.IsNullOrEmpty())
+            if (customerInfo.AllPurchasedProductIdentifiers.ToStringList().IsNullOrEmpty())
             {
                 return new();
             }
 
-            return customerInfo.AllPurchasedProductIds.ToList(); ;
+            return customerInfo.AllPurchasedProductIdentifiers.ToStringList(); ;
         }
         catch (Exception ex)
         {
@@ -199,13 +204,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
                 return null;
             }
 
-            return customerInfo.GetPurchaseDateForProductId(productIdentifier).ToDateTime();
+            return customerInfo.PurchaseDateForProductIdentifier(productIdentifier).ToDateTime();
         }
         catch (Exception ex)
         {
@@ -222,10 +227,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null || customerInfo.ManagementURL is null)
             {
-                return null;
+                return string.Empty;
             }
 
             return customerInfo.ManagementURL.ToString()!;
@@ -240,7 +245,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            var customerInfo = await Purchases.SharedInstance.LogInAsync(appUserId, cancellationToken);
+            var loginResult = await Purchases.SharedPurchases.LoginAsync(appUserId, cancellationToken);
+            var customerInfo = loginResult.CustomerInfo;
 
             return CustomerInfoToCustomerInfoDto(customerInfo);
         }
@@ -254,7 +260,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            var customerInfo = await Purchases.SharedInstance.LogOutAsync(cancellationToken);
+            var customerInfo = await Purchases.SharedPurchases.LogOutAsync(cancellationToken);
 
             return CustomerInfoToCustomerInfoDto(customerInfo);
         }
@@ -268,7 +274,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            var customerInfo = await Purchases.SharedInstance.RestorePurchasesAsync(cancellationToken);
+            var customerInfo = await Purchases.SharedPurchases.RestorePurchasesAsync(cancellationToken);
 
             return CustomerInfoToCustomerInfoDto(customerInfo);
         }
@@ -279,15 +285,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
     }
 
-    internal static CustomerInfoDto CustomerInfoToCustomerInfoDto(CustomerInfo customerInfo)
+    internal static CustomerInfoDto CustomerInfoToCustomerInfoDto(RCCustomerInfo customerInfo)
     {
         return new CustomerInfoDto()
         {
-            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToList(),
-            AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIds.ToList(),
-            //Google Play Store does not provide an option to mark IAPs as consumable or non-consumable
-            //https://www.revenuecat.com/docs/non-subscriptions
-            NonConsumablePurchases = new(),
+            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToStringList(),
+            AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIdentifiers.ToStringList(),
+            NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
             FirstSeen = customerInfo.FirstSeen.ToDateTime(),
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
             ManagementURL = customerInfo.ManagementURL?.ToString(),
