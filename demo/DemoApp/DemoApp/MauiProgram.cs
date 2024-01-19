@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Maui.RevenueCat.InAppBilling;
+using Microsoft.Extensions.Logging;
 
 namespace DemoApp;
 public static class MauiProgram
@@ -17,6 +18,8 @@ public static class MauiProgram
 #if DEBUG
 		builder.Logging.AddDebug();
 #endif
+
+        builder.Services.AddRevenueCatBilling();
 
         return builder.Build();
     }
