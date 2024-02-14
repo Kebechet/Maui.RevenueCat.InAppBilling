@@ -20,7 +20,7 @@ public static class NsDictionaryExtensions
             return null;
         }
 
-        var jsonData = NSJsonSerialization.Serialize(dictionary, NSJsonWritingOptions.PrettyPrinted, out var error);
+        var jsonData = NSJsonSerialization.Serialize(dictionary, 0, out var error);
 
         return error is null
             ? NSString.FromData(jsonData, NSStringEncoding.UTF8)
