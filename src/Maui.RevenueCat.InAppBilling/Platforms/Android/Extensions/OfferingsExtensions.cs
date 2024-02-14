@@ -1,8 +1,5 @@
-﻿using System.Collections;
-using Com.Revenuecat.Purchases;
-using Maui.RevenueCat.InAppBilling.Extensions;
+﻿using Com.Revenuecat.Purchases;
 using Maui.RevenueCat.InAppBilling.Models;
-using Org.Json;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
@@ -19,9 +16,7 @@ internal static class OfferingsExtensions
                 Identifier = offer.Identifier,
                 AvailablePackages = offer.AvailablePackages.ToPackageDtoList(),
                 IsCurrent = offer.Identifier == offerings?.Current?.Identifier,
-                Metadata = offer.Metadata.IsNullOrEmpty()
-                    ? null
-                    : new JSONObject((IDictionary)offer.Metadata).ToString()
+                Metadata = offer.Metadata.ToJson()
             };
 
             offeringDtos.Add(offerDto);
