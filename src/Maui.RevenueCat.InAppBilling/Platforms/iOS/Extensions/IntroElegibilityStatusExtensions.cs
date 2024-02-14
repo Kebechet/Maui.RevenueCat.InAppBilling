@@ -2,9 +2,10 @@
 using Maui.RevenueCat.iOS;
 
 namespace Maui.RevenueCat.InAppBilling.Extensions;
+
 internal static class IntroElegibilityStatusExtensions
 {
-    public static IntroElegibilityStatus Convert(this RCIntroEligibilityStatus eligibility)
+    internal static IntroElegibilityStatus Convert(this RCIntroEligibilityStatus eligibility)
     {
         switch (eligibility)
         {

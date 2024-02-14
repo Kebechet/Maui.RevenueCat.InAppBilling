@@ -8,7 +8,7 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
 internal static class PurchasesExtensions
 {
-    public static Task<LoginResult> LoginAsync(this RCPurchases purchases, string appUserId,
+    internal static Task<LoginResult> LoginAsync(this RCPurchases purchases, string appUserId,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<LoginResult>();
@@ -27,7 +27,7 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
-    public static Task<RCCustomerInfo> LogOutAsync(this RCPurchases purchases,
+    internal static Task<RCCustomerInfo> LogOutAsync(this RCPurchases purchases,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<RCCustomerInfo>();
@@ -46,7 +46,7 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
-    public static Task<NSDictionary<NSString, RCIntroEligibility>> CheckTrialOrIntroDiscountEligibilityAsync(this RCPurchases purchases, List<string> identifiers,
+    internal static Task<NSDictionary<NSString, RCIntroEligibility>> CheckTrialOrIntroDiscountEligibilityAsync(this RCPurchases purchases, List<string> identifiers,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<NSDictionary<NSString, RCIntroEligibility>>();
@@ -58,7 +58,7 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
-    public static Task<RCOfferings> GetOfferingsAsync(this RCPurchases purchases,
+    internal static Task<RCOfferings> GetOfferingsAsync(this RCPurchases purchases,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<RCOfferings>();
@@ -77,7 +77,7 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
-    public static Task<PurchaseSuccessInfo> PurchasePackageAsync(this RCPurchases purchases,
+    internal static Task<PurchaseSuccessInfo> PurchasePackageAsync(this RCPurchases purchases,
         RCPackage packageToPurchase, CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<PurchaseSuccessInfo>();
@@ -97,7 +97,7 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
-    public static Task<RCCustomerInfo> RestorePurchasesAsync(this RCPurchases purchases,
+    internal static Task<RCCustomerInfo> RestorePurchasesAsync(this RCPurchases purchases,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<RCCustomerInfo>();
@@ -117,13 +117,13 @@ internal static class PurchasesExtensions
     }
 
     [Obsolete("Obsolete due to confusing naming. Use RestorePurchasesAsync instead.")]
-    public static Task<RCCustomerInfo> RestoreTransactionsAsync(this RCPurchases purchases,
+    internal static Task<RCCustomerInfo> RestoreTransactionsAsync(this RCPurchases purchases,
         CancellationToken cancellationToken = default)
     {
         return purchases.RestorePurchasesAsync(cancellationToken);
     }
 
-    public static Task<RCCustomerInfo> GetCustomerInfoAsync(this RCPurchases purchases,
+    internal static Task<RCCustomerInfo> GetCustomerInfoAsync(this RCPurchases purchases,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<RCCustomerInfo>();

@@ -8,6 +8,8 @@ internal static class IDictonaryExtensions
 {
     internal static string? ToJson<T, U>(this IDictionary<T, U> dictionary)
     {
-        return dictionary.IsNullOrEmpty() ? null : new JSONObject((IDictionary)dictionary).ToString();
+        return dictionary.IsNullOrEmpty()
+            ? null
+            : new JSONObject((IDictionary)dictionary).ToString();
     }
 }

@@ -7,7 +7,7 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
 internal static class PurchasesExtensions
 {
-    public static Task<CustomerInfo> GetCustomerInfoAsync(this Purchases purchases,
+    internal static Task<CustomerInfo> GetCustomerInfoAsync(this Purchases purchases,
         CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingReceiveCustomerInfoCallback(cancellationToken);
@@ -15,7 +15,7 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
-    public static Task<CustomerInfo> LogInAsync(this Purchases purchases, string newAppUserId,
+    internal static Task<CustomerInfo> LogInAsync(this Purchases purchases, string newAppUserId,
         CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingLogInCallback(cancellationToken);
@@ -23,7 +23,7 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
-    public static Task<CustomerInfo> LogOutAsync(this Purchases purchases,
+    internal static Task<CustomerInfo> LogOutAsync(this Purchases purchases,
         CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingReceiveCustomerInfoCallback(cancellationToken);
@@ -31,7 +31,7 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
-    public static Task<Offerings> GetOfferingsAsync(this Purchases purchases,
+    internal static Task<Offerings> GetOfferingsAsync(this Purchases purchases,
         CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingReceiveOfferingsCallback(cancellationToken);
@@ -39,7 +39,7 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
-    public static Task<PurchaseSuccessInfo> PurchaseAsync(this Purchases purchases, Activity activity,
+    internal static Task<PurchaseSuccessInfo> PurchaseAsync(this Purchases purchases, Activity activity,
         Package packageToPurchase, CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingMakePurchaseListener(cancellationToken);
@@ -48,7 +48,7 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
-    public static Task<CustomerInfo> RestorePurchasesAsync(this Purchases purchases,
+    internal static Task<CustomerInfo> RestorePurchasesAsync(this Purchases purchases,
         CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingReceiveCustomerInfoCallback(cancellationToken);

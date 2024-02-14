@@ -2,9 +2,9 @@
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
-public static class NsDictionaryExtensions
+internal static class NsDictionaryExtensions
 {
-    public static bool IsNullOrEmpty<T, U>(this NSDictionary<T, U> dictionary)
+    internal static bool IsNullOrEmpty<T, U>(this NSDictionary<T, U> dictionary)
         where T : NSObject
         where U : NSObject
     {
