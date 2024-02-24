@@ -145,7 +145,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         return new PurchaseResultDto
         {
-            IsSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
+            IsSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased,
+            CustomerInfo = CustomerInfoToCustomerInfoDto(purchaseSuccessInfo.CustomerInfo)
         };
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
