@@ -39,6 +39,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken);
 
     internal static partial void EnableDebugLogs(bool enable);
 }

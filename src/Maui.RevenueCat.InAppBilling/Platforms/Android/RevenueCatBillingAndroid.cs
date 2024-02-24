@@ -279,6 +279,20 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return null;
         }
     }
+    public async partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+
+            return CustomerInfoToCustomerInfoDto(customerInfo);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"{nameof(GetCustomerInfo)} failed.");
+            return null;
+        }
+    }
 
     internal static CustomerInfoDto CustomerInfoToCustomerInfoDto(CustomerInfo customerInfo)
     {
