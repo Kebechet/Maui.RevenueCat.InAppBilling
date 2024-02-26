@@ -147,7 +147,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         return new PurchaseResultDto
         {
             IsSuccess = purchaseSuccessInfo.StoreTransaction.PurchaseState == PurchaseState.Purchased,
-            CustomerInfo= CustomerInfoToCustomerInfoDto(purchaseSuccessInfo.CustomerInfo)
+            CustomerInfo = purchaseSuccessInfo.CustomerInfo.ToCustomerInfoDto()
         };
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
@@ -243,7 +243,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedInstance.LogInAsync(appUserId, cancellationToken);
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
@@ -257,7 +257,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedInstance.LogOutAsync(cancellationToken);
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
@@ -271,7 +271,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedInstance.RestorePurchasesAsync(cancellationToken);
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
@@ -285,29 +285,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(GetCustomerInfo)} failed.");
             return null;
         }
-    }
-
-    internal static CustomerInfoDto CustomerInfoToCustomerInfoDto(CustomerInfo customerInfo)
-    {
-        return new CustomerInfoDto()
-        {
-            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToList(),
-            AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIds.ToList(),
-            //Google Play Store does not provide an option to mark IAPs as consumable or non-consumable
-            //https://www.revenuecat.com/docs/non-subscriptions
-            NonConsumablePurchases = new(),
-            FirstSeen = customerInfo.FirstSeen.ToDateTime(),
-            LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-            ManagementURL = customerInfo.ManagementURL?.ToString(),
-            Entitlements = customerInfo.Entitlements.ToEntitlementInfoDtoList(),
-        };
     }
 
     internal static partial void EnableDebugLogs(bool enable)

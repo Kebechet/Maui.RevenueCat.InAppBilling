@@ -146,7 +146,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         return new PurchaseResultDto
         {
             IsSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased,
-            CustomerInfo = CustomerInfoToCustomerInfoDto(purchaseSuccessInfo.CustomerInfo)
+            CustomerInfo = purchaseSuccessInfo.CustomerInfo.ToCustomerInfoDto()
         };
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
@@ -249,7 +249,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             var loginResult = await Purchases.SharedPurchases.LoginAsync(appUserId, cancellationToken);
             var customerInfo = loginResult.CustomerInfo;
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
@@ -263,7 +263,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedPurchases.LogOutAsync(cancellationToken);
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
@@ -277,7 +277,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedPurchases.RestorePurchasesAsync(cancellationToken);
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
@@ -291,27 +291,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var customerInfo = await Purchases.SharedPurchases.GetCustomerInfoAsync(cancellationToken);
 
-            return CustomerInfoToCustomerInfoDto(customerInfo);
+            return customerInfo.ToCustomerInfoDto();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(GetCustomerInfo)} failed.");
             return null;
         }
-    }
-
-    internal static CustomerInfoDto CustomerInfoToCustomerInfoDto(RCCustomerInfo customerInfo)
-    {
-        return new CustomerInfoDto()
-        {
-            ActiveSubscriptions = customerInfo.ActiveSubscriptions.ToStringList(),
-            AllPurchasedIdentifiers = customerInfo.AllPurchasedProductIdentifiers.ToStringList(),
-            NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
-            FirstSeen = customerInfo.FirstSeen.ToDateTime(),
-            LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-            ManagementURL = customerInfo.ManagementURL?.ToString(),
-            Entitlements = customerInfo.Entitlements.ToEntitlementInfoDtoList(),
-        };
     }
 
     internal static partial void EnableDebugLogs(bool enable)
