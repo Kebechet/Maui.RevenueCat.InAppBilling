@@ -82,6 +82,20 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         };
     }
 
+    public async partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken)
+    {
+        return new()
+        {
+            ActiveSubscriptions = new(),
+            AllPurchasedIdentifiers = new(),
+            FirstSeen = DateTime.MinValue,
+            LatestExpirationDate = DateTime.MinValue,
+            ManagementURL = string.Empty,
+            NonConsumablePurchases = new(),
+            Entitlements = new(),
+        };
+    }
+
     internal static partial void EnableDebugLogs(bool enable)
     {
     }
