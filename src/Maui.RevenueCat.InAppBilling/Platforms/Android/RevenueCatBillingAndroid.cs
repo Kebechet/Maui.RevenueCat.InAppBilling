@@ -146,7 +146,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         return new PurchaseResultDto
         {
-            IsSuccess = purchaseSuccessInfo.StoreTransaction.PurchaseState == PurchaseState.Purchased
+            IsSuccess = purchaseSuccessInfo.StoreTransaction.PurchaseState == PurchaseState.Purchased,
+            CustomerInfo= CustomerInfoToCustomerInfoDto(purchaseSuccessInfo.CustomerInfo)
         };
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
@@ -275,6 +276,20 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
+            return null;
+        }
+    }
+    public async partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+
+            return CustomerInfoToCustomerInfoDto(customerInfo);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"{nameof(GetCustomerInfo)} failed.");
             return null;
         }
     }
