@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>4.2.0</Version>
-    <PackageReleaseNotes>Added method `GetCustomerInfo` by: @varyamereon</PackageReleaseNotes>
+    <Version>4.3.0</Version>
+    <PackageReleaseNotes>Added .NET8 as new platform</PackageReleaseNotes>
   </PropertyGroup>
   
   <!-- .NET -->
