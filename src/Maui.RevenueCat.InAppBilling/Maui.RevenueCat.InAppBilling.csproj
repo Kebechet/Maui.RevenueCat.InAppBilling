@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>4.3.0</Version>
-    <PackageReleaseNotes>Added .NET8 as new platform</PackageReleaseNotes>
+    <Version>4.4.0</Version>
+    <PackageReleaseNotes>Bumped Android package version</PackageReleaseNotes>
   </PropertyGroup>
   
   <!-- .NET -->
@@ -51,7 +51,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="7.2.4" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="7.12.0" />
   </ItemGroup>
 
   <ItemGroup>

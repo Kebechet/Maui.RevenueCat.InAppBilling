@@ -17,7 +17,7 @@ internal static class PackageListExtensions
 
             var packageDto = new PackageDto()
             {
-                OfferingIdentifier = package.Offering,
+                OfferingIdentifier = package.PresentedOfferingContext.OfferingIdentifier,
                 Identifier = package.Identifier,
                 Product = new ProductDto()
                 {
