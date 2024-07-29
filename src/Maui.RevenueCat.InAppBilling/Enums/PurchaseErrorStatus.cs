@@ -4,6 +4,7 @@ namespace Maui.RevenueCat.InAppBilling.Enums;
 
 //https://github.com/RevenueCat/purchases-android/blob/main/public/src/main/java/com/revenuecat/purchases/errors.kt
 //https://github.com/RevenueCat/purchases-ios/blob/main/Sources/Error%20Handling/ErrorCode.swift#L39
+//https://www.revenuecat.com/docs/test-and-launch/errors
 public enum PurchaseErrorStatus
 {
     [EnumMember(Value = "UNKNOWN")]

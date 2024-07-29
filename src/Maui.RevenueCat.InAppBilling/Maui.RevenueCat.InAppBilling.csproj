@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>4.4.0</Version>
-    <PackageReleaseNotes>Bumped Android package version</PackageReleaseNotes>
+    <Version>4.4.1</Version>
+    <PackageReleaseNotes>Removed PurchaseCancelledError from purchase logging</PackageReleaseNotes>
   </PropertyGroup>
   
   <!-- .NET -->

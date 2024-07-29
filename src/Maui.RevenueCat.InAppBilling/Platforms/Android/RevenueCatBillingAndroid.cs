@@ -117,11 +117,16 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (PurchasesErrorException ex)
         {
-            _logger.LogError(ex, "PurchasesErrorException");
+            var purchaseError = (PurchaseErrorStatus)(ex?.PurchasesError?.Code.Code ?? 0);
+
+            if (purchaseError != PurchaseErrorStatus.PurchaseCancelledError)
+            {
+                _logger.LogError(ex, "PurchasesErrorException");
+            }
 
             return new PurchaseResultDto
             {
-                ErrorStatus = (PurchaseErrorStatus)(ex?.PurchasesError?.Code.Code ?? 0)
+                ErrorStatus = purchaseError
             };
         }
         catch (Exception ex)
