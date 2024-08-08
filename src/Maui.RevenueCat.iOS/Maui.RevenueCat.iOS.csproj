@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+      <TargetFramework>net8.0-ios</TargetFramework>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>true</ImplicitUsings>
+      <IsBindingProject>true</IsBindingProject>
+      <SupportedOSPlatformVersion>14.2</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NugetProperties">
+      <Authors>Kebechet</Authors>
+      <IsPackable>true</IsPackable>
+      <PackageId>Kebechet.Maui.RevenueCat.iOS</PackageId>
+      <Description>Contains bindings for https://docs.revenuecat.com/docs/ios</Description>
+      <RepositoryUrl>https://github.com/Kebechet/Maui.RevenueCat.iOS</RepositoryUrl>
+      <PackageProjectUrl>https://github.com/Kebechet/Maui.RevenueCat.iOS</PackageProjectUrl>
+      <PackageReadmeFile>README.md</PackageReadmeFile>
+      <PackageLicenseFile>LICENSE</PackageLicenseFile>
+      <RepositoryType>git</RepositoryType>
+      <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+      <PackageIcon>icon.png</PackageIcon>
+      <Version>4.31.9.2</Version>
+      <PackageReleaseNotes>Swapping iOS framework from .framework to .xcframework</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+      <ObjcBindingApiDefinition Include="ApiDefinitions.cs" />
+      <ObjcBindingCoreSource Include="StructsAndEnums.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <NativeReference Include="nativelib\RevenueCat.xcframework">
+        <Kind>Framework</Kind>
+        <!-- Specifies a space-delimited list of platform Frameworks required by the native library. -->
+        <Frameworks></Frameworks>
+        <!--Additional linker flags that are required for linking the native library to an application.-->
+        <!--<LinkerFlags>-ObjC -framework RevenueCat</LinkerFlags>-->
+        <!-- This value should be set to a string containing a space-delimited list of platform Frameworks (e.g. "CoreBluetooth NewsstandKit Twitter"). -->
+        <WeakFrameworks></WeakFrameworks>
+        <!-- Specifies whether or not the -force_load clang argument is required when linking this native library. -->
+        <ForceLoad>True</ForceLoad>
+        <!-- Specifies whether or not the native library requires linking with the GCC Exception Handling library (libgcc_eh). -->
+        <NeedsGccExceptionHandling>False</NeedsGccExceptionHandling>
+        <!-- Specifies whether or not the native library is a C++ library. -->
+        <IsCxx>False</IsCxx>
+        <!-- This value should be set to true to let Xamarin.iOS determine whether ForceLoad is required or not. -->
+        <SmartLink>False</SmartLink>
+      </NativeReference>
+  </ItemGroup>
+
+  <ItemGroup>
+      <None Include="..\..\LICENSE">
+        <Pack>True</Pack>
+        <PackagePath>\</PackagePath>
+      </None>
+      <None Include="..\..\README.md">
+        <Pack>True</Pack>
+        <PackagePath>\</PackagePath>
+      </None>
+    <None Include="..\..\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+</Project>

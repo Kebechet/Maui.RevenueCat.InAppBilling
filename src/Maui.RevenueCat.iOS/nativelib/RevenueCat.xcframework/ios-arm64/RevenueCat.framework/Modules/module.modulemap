@@ -1,0 +1,11 @@
+framework module RevenueCat {
+  umbrella header "RevenueCat.h"
+
+  export *
+  module * { export * }
+}
+
+module RevenueCat.Swift {
+  header "RevenueCat-Swift.h"
+  requires objc
+}
