@@ -2,7 +2,7 @@
 
 # Maui.RevenueCat.InAppBilling
 ## Credits
-- This plugin use: [Android](https://github.com/Kebechet/Maui.RevenueCat.Android) and [iOS](https://github.com/Kebechet/Maui.RevenueCat.iOS) bindings that are inspired by: [thisisthekap](https://github.com/thisisthekap)'s Xamarin bindings.
+- This plugin use: [Android](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.Android) and [iOS](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.iOS) bindings that are inspired by: [thisisthekap](https://github.com/thisisthekap)'s Xamarin bindings.
 - Abstraction layer based on example [RevenueCatXamarin](https://github.com/BillFulton/RevenueCatXamarin) from [BillFulton](https://github.com/BillFulton)
 
 ## Usage
