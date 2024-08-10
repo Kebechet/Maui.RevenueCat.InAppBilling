@@ -1,6 +1,9 @@
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/kebechet)
 
 # Maui.RevenueCat.Android
+![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.RevenueCat.Android)
+![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.Android)
+
 - this binding is based on: https://github.com/thisisthekap/Xamarin.RevenueCat.Android 
 - it is created for .NET MAUI and targeted to `.NET 8`
 - it contains bindings for RevenueCat Android library
