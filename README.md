@@ -1,6 +1,9 @@
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/kebechet)
 
 # Maui.RevenueCat.InAppBilling
+![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.RevenueCat.InAppBilling)
+![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.InAppBilling)
+
 ## Credits
 - This plugin uses: [Android](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.Android) and [iOS](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.iOS) bindings that are inspired by: [thisisthekap](https://github.com/thisisthekap)'s Xamarin bindings.
 - Abstraction layer based on example [RevenueCatXamarin](https://github.com/BillFulton/RevenueCatXamarin) from [BillFulton](https://github.com/BillFulton)
