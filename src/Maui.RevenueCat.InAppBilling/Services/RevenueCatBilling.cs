@@ -29,6 +29,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial string GetAppUserId();
 
     public partial void Initialize(string apiKey);
+    public partial void Initialize(string apiKey, string appUserId);
+
     public partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken);
     public partial Task<List<OfferingDto>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken);
     public partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken);

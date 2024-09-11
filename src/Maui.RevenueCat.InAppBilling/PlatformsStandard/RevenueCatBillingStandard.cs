@@ -13,7 +13,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         _isInitialized = true;
     }
-
+    public partial void Initialize(string apiKey, string appUserId)
+    {
+        _isInitialized = true;
+    }
     public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
         return new();

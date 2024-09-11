@@ -48,6 +48,36 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             throw;
         }
     }
+    public partial void Initialize(string apiKey, string appUserId)
+    {
+        if (_currentActivityContext is null)
+        {
+            _logger.LogError("Android Activity is null");
+            throw new Exception("You must call this code in App.xaml->OnStart");
+        }
+
+        try
+        {
+            _purchases = Purchases.Configure(
+                new PurchasesConfiguration(
+                    new PurchasesConfiguration.Builder(
+                        _currentActivityContext,
+                        apiKey)
+                    .AppUserID(appUserId)
+                )
+            );
+
+            _isInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            // TODO - Ask user to verify logged in to Google and re-start app
+            // Continuing is possible in some circumstances
+            _logger.LogError(ex, "Initialization exception");
+            throw;
+        }
+    }
+
     public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
