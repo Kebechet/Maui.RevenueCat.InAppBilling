@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>4.4.2</Version>
-    <PackageReleaseNotes>Swapped iOS frameworks</PackageReleaseNotes>
+    <Version>4.5.0</Version>
+    <PackageReleaseNotes>Added overload for Initialize AND changed GetCurrent() to be nullable</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
