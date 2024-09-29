@@ -59,7 +59,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\src\Maui.RevenueCat.InAppBilling\Maui.RevenueCat.InAppBilling.csproj" />
+	  <ProjectReference Include="..\..\..\src\Maui.RevenueCat.InAppBilling\Maui.RevenueCat.csproj" />
 	</ItemGroup>
 
 </Project>
