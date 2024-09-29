@@ -82,6 +82,7 @@ Because of a problem with bitcode I have decided to create completely new bindin
 - removed attributes containing `Name` - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/4aa727562d17829c742dcd6c2f51ba3c3cb836ff)
   - this was because on my windows machine I was getting errors that platform doesnt have symbols specified for this methods containing the name
   - later I completely removed those methods because the error was still there - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/3fcceeb6ff9d8207a3545f89ddf28639cb3c0f79)
+- from `.xcframework` remove all `*.swiftmodule` directories
 - ✅ - Done 
   - I have tested this new binding in the simulator as well as on real device through TestFlight and it works as expected
 ## Additional fix:
