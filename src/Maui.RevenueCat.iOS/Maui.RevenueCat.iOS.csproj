@@ -19,8 +19,8 @@
       <RepositoryType>git</RepositoryType>
       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
       <PackageIcon>icon.png</PackageIcon>
-      <Version>4.31.9.2</Version>
-      <PackageReleaseNotes>Swapping iOS framework from .framework to .xcframework</PackageReleaseNotes>
+      <Version>4.31.9.3</Version>
+      <PackageReleaseNotes>Removed redundant files causing long-path error</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
