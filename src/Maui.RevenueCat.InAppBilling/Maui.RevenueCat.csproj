@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>4.5.2</Version>
-    <PackageReleaseNotes>Removed redundant files causing long-path error</PackageReleaseNotes>
+    <Version>4.5.3</Version>
+    <PackageReleaseNotes>Bumped Android NuGet package to the latest version</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
@@ -51,7 +51,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="7.12.0" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="7.12.0.1" />
   </ItemGroup>
 
   <ItemGroup>
