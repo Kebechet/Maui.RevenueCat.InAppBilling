@@ -23,7 +23,7 @@
 		<DebugSymbols>true</DebugSymbols>
 		<DebugType>embedded</DebugType>
 		<PackageIcon>icon.png</PackageIcon>
-		<Version>7.12.0.0</Version>
+		<Version>7.13.0.0</Version>
 		<PackageReleaseNotes>Bumped to newer RC version</PackageReleaseNotes>
 	</PropertyGroup>
 
@@ -32,23 +32,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Xamarin.Android.Google.BillingClient" Version="6.2.1" />
-		<PackageReference Include="Xamarin.AndroidX.Annotation" Version="1.8.0" />
-		<PackageReference Include="Xamarin.AndroidX.Core.Core.Ktx" Version="1.13.1.2" />
-		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Runtime" Version="2.7.0.4" />
-		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Common" Version="2.7.0.4" />
-		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Process" Version="2.7.0.4" />
-		<PackageReference Include="Xamarin.GooglePlayServices.Ads.Identifier" Version="118.0.1.11" />
-		<PackageReference Include="Xamarin.Google.Crypto.Tink.Android" Version="1.13.0.3" />
+		<PackageReference Include="Xamarin.Android.Google.BillingClient" Version="7.1.1" />
+		<PackageReference Include="Xamarin.AndroidX.Annotation" Version="1.8.2.1" />
+		<PackageReference Include="Xamarin.AndroidX.Core.Core.Ktx" Version="1.13.1.5" />
+		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Runtime" Version="2.8.6" />
+		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Common" Version="2.8.6" />
+		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Process" Version="2.8.6" />
+		<PackageReference Include="Xamarin.GooglePlayServices.Ads.Identifier" Version="118.1.0.2" />
+		<PackageReference Include="Xamarin.Google.Crypto.Tink.Android" Version="1.15.0.1" />
 		<PackageReference Include="org.jetbrains.kotlin.kotlin.parcelize.runtime" Version="1.5.20.1" />
-		<PackageReference Include="Xamarin.Kotlin.StdLib" Version="2.0.0" />
+		<PackageReference Include="Xamarin.Kotlin.StdLib" Version="2.0.20" />
 		<PackageReference Include="nventive.binding.kotlinx.serialization.json" Version="1.2.2" />
 
 		<!--fixed amazon warnings-->
 		<PackageReference Include="Eddys.Amazon.AppStoreSdk.Binding" Version="3.0.3" />
 
 		<!--fixed build error "androidx.collection.ArrayMapKt is defined multiple times"-->
-		<PackageReference Include="Xamarin.AndroidX.Fragment.Ktx" Version="1.7.0.2" />
+		<PackageReference Include="Xamarin.AndroidX.Fragment.Ktx" Version="1.8.4" />
 	</ItemGroup>
 
 	<ItemGroup>
