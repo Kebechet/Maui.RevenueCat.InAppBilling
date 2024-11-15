@@ -1,4 +1,7 @@
-name: Build Maui.RevenueCat.InAppBilling for publishing to nuget
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Build and publish Nuget package
 
 on:
   workflow_dispatch:
@@ -9,6 +12,10 @@ on:
 
 env:
   BUILD_NUMBER: '4.6'
+  BUILD_CONFIGURATION: 'Release'
+  SLN_PATH: 'src/Maui.RevenueCat.InAppBilling.sln'
+  PROJECT_PATH: 'src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj'
+  DOTNET_VERSION: '8.0.x'
 
 jobs:
   build:
@@ -22,19 +29,19 @@ jobs:
     - name: Setup .NET framework
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: ${{ env.DOTNET_VERSION }}
     
     - name: Install required .NET workloads
       run: dotnet workload install maui --ignore-failed-sources
 
     - name: Restore nuget dependencies
-      run: dotnet restore src/Maui.RevenueCat.InAppBilling.sln
+      run: dotnet restore ${{ env.SLN_PATH }}
       
     - name: Build Maui.RevenueCat.InAppBilling solution
-      run: dotnet build src/Maui.RevenueCat.InAppBilling.sln -c Release -p:Version=${{ env.BUILD_NUMBER }}.${{ github.run_number }} --no-restore 
+      run: dotnet build ${{ env.SLN_PATH }} -c ${{ env.BUILD_CONFIGURATION }} -p:Version=${{ env.BUILD_NUMBER }}.${{ github.run_number }} --no-restore 
 
     - name: Creat Maui.RevenueCat.InAppBilling nuget package
-      run: dotnet pack src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj --configuration Release -p:Version=${{ env.BUILD_NUMBER }}.${{ github.run_number }} --output .
+      run: dotnet pack ${{ env.PROJECT_PATH}} --configuration ${{ env.BUILD_CONFIGURATION }} -p:Version=${{ env.BUILD_NUMBER }}.${{ github.run_number }} --output .
 
     - name: Archive Maui.RevenueCat.InAppBilling nuget package
       uses: thedoctor0/zip-release@0.7.5
@@ -54,6 +61,7 @@ jobs:
       # Use --skip-duplicate to prevent errors if a package with the same version already exists.
       # If you retry a failed workflow, already published packages will be skipped without error.
     - name: Push Maui.RevenueCat.InAppBilling to nuget.org
+      if: false # Remove line when NUGET_APIKEY is configured.
       run: |
         foreach($file in (Get-ChildItem "src/Maui.RevenueCat.InAppBilling/bin/release/" -Recurse -Include *.nupkg)) {
             dotnet nuget push $file --api-key "${{ secrets.NUGET_APIKEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
