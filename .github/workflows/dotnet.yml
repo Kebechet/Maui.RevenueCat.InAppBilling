@@ -40,7 +40,7 @@ jobs:
     - name: Build Maui.RevenueCat.InAppBilling solution
       run: dotnet build ${{ env.SLN_PATH }} -c ${{ env.BUILD_CONFIGURATION }} -p:Version=${{ env.BUILD_NUMBER }}.${{ github.run_number }} --no-restore 
 
-    - name: Creat Maui.RevenueCat.InAppBilling nuget package
+    - name: Create Maui.RevenueCat.InAppBilling nuget package
       run: dotnet pack ${{ env.PROJECT_PATH}} --configuration ${{ env.BUILD_CONFIGURATION }} -p:Version=${{ env.BUILD_NUMBER }}.${{ github.run_number }} --output .
 
     - name: Archive Maui.RevenueCat.InAppBilling nuget package
