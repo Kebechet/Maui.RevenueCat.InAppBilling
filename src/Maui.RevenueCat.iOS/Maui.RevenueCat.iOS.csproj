@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-      <TargetFramework>net8.0-ios</TargetFramework>
+      <TargetFramework>net9.0-ios</TargetFramework>
       <Nullable>enable</Nullable>
       <ImplicitUsings>true</ImplicitUsings>
       <IsBindingProject>true</IsBindingProject>
@@ -19,8 +19,8 @@
       <RepositoryType>git</RepositoryType>
       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
       <PackageIcon>icon.png</PackageIcon>
-      <Version>4.31.9.3</Version>
-      <PackageReleaseNotes>Removed redundant files causing long-path error</PackageReleaseNotes>
+      <Version>4.31.9.4</Version>
+      <PackageReleaseNotes>Update to .NET9</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
