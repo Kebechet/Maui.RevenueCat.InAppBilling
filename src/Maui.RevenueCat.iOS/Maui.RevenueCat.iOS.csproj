@@ -19,7 +19,7 @@
       <RepositoryType>git</RepositoryType>
       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
       <PackageIcon>icon.png</PackageIcon>
-      <Version>4.31.9.4</Version>
+      <Version>4.31.9.5</Version>
       <PackageReleaseNotes>Update to .NET9</PackageReleaseNotes>
   </PropertyGroup>
 
