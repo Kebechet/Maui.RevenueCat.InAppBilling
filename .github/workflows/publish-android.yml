@@ -12,7 +12,7 @@ env:
   PROJECT_APP_PATH_FOLDER: src/Maui.RevenueCat.Android
   PROJECT_PATH: src/Maui.RevenueCat.Android/Maui.RevenueCat.Android.csproj 
 
-  ARTIFACT_FOLDER: D:/a/artifacts
+  ARTIFACT_FOLDER: D:\a\artifacts
 
 jobs:
   publish-android:
@@ -65,6 +65,6 @@ jobs:
 
       - name: Publish Nuget
         run: >
-          dotnet nuget push ${{env.ARTIFACT_FOLDER}}/*.nupkg 
+          dotnet nuget push "${{env.ARTIFACT_FOLDER}}\*.nupkg" 
           --api-key ${{ secrets.NUGET_API_KEY }} 
           --source https://api.nuget.org/v3/index.json

@@ -18,12 +18,13 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<RepositoryType>git</RepositoryType>
+		<PackageIcon>icon.png</PackageIcon>
 		<OutputType>Library</OutputType>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<DebugSymbols>true</DebugSymbols>
 		<DebugType>embedded</DebugType>
-		<PackageIcon>icon.png</PackageIcon>
-		<Version>7.12.0.2</Version>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<EmbedAllSources>true</EmbedAllSources>
+		<Version>7.12.0.3</Version>
 		<PackageReleaseNotes>Bumped dependencies</PackageReleaseNotes>
 	</PropertyGroup>
 
