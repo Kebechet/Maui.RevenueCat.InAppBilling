@@ -17,9 +17,10 @@
       <PackageReadmeFile>README.md</PackageReadmeFile>
       <PackageLicenseFile>LICENSE</PackageLicenseFile>
       <RepositoryType>git</RepositoryType>
-      <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
       <PackageIcon>icon.png</PackageIcon>
-      <Version>4.31.9.5</Version>
+      <Version>4.31.9.6</Version>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+      <EmbedAllSources>true</EmbedAllSources>
       <PackageReleaseNotes>Update to .NET9</PackageReleaseNotes>
   </PropertyGroup>
 

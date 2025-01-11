@@ -11,7 +11,7 @@ env:
 
   #https://github.com/actions/runner-images/tree/main/images/macos
   #https://developer.apple.com/support/xcode/
-  # https://xcodereleases.com/
+  #https://xcodereleases.com/
   XCODE_VERSION: 16.2 #remove comment after 16.2 non-beta release: https://github.com/xamarin/xamarin-macios/issues/19157
 
   PROJECT_APP_PATH_FOLDER: src/Maui.RevenueCat.iOS
@@ -45,22 +45,28 @@ jobs:
         run: dotnet restore ${{ env.PROJECT_PATH }} --ignore-failed-sources 
 
       - name: Build MAUI iOS
-        run: dotnet build ${{ env.PROJECT_PATH }} -c ${{ env.BUILD_CONFIGURATION }} --no-restore
+        run: > 
+          dotnet build ${{ env.PROJECT_PATH }} 
+          -c ${{ env.BUILD_CONFIGURATION }} 
+          --no-restore
 
       - name: Pack NuGet Package
         run: >
           dotnet pack ${{ env.PROJECT_PATH }} 
-          -c ${{ env.BUILD_CONFIGURATION }} 
           -o ${{env.ARTIFACT_FOLDER}} 
+          --no-build
+          --no-restore
           --include-symbols 
           --include-source
 
       - uses: actions/upload-artifact@v4
         with:
           name: nuget-package
-          path: ${{env.ARTIFACT_FOLDER}}/*.nupkg
+          path: |
+            ${{env.ARTIFACT_FOLDER}}/*.nupkg
+            ${{env.ARTIFACT_FOLDER}}/*.snupkg
 
-      - name: Publish to NuGet
+      - name: Publish Nuget
         run: >
           dotnet nuget push ${{env.ARTIFACT_FOLDER}}/*.nupkg 
           --api-key ${{ secrets.NUGET_API_KEY }} 
