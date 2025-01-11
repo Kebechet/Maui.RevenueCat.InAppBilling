@@ -1,0 +1,70 @@
+name: Publish Android
+on: workflow_dispatch
+
+env:
+  DOTNET_NOLOGO: true                     # Disable the .NET logo
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true # Disable the .NET first time experience
+  DOTNET_CLI_TELEMETRY_OPTOUT: true       # Disable sending .NET CLI telemetry
+
+  DOTNET_SDK_VERSION: 8.0.404
+  BUILD_CONFIGURATION: Release
+
+  PROJECT_APP_PATH_FOLDER: src/Maui.RevenueCat.Android
+  PROJECT_PATH: src/Maui.RevenueCat.Android/Maui.RevenueCat.Android.csproj 
+
+  ARTIFACT_FOLDER: D:/a/artifacts
+
+jobs:
+  publish-android:
+    name: Build and publish Android binary
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+
+      - name: Create global.json to specify .NET version
+        run: |
+          echo '{"sdk":{"version":"${{ env.DOTNET_SDK_VERSION }}"}}' > ${{github.workspace}}/global.json
+
+      - name: Setup .NET Core SDK ${{ env.DOTNET_SDK_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install MAUI Android
+        run: dotnet workload install android maui-android --ignore-failed-sources --version ${{ env.DOTNET_SDK_VERSION }}
+
+      - name: Restore NuGet packages
+        run: dotnet restore ${{ env.PROJECT_PATH }} --ignore-failed-sources
+
+      - name: Build MAUI Android
+        run: >
+          dotnet build ${{ env.PROJECT_PATH }} 
+          -c ${{ env.BUILD_CONFIGURATION }} 
+          --no-restore
+
+      - name: Pack NuGet Package
+        run: >
+          dotnet pack ${{ env.PROJECT_PATH }} 
+          -o ${{env.ARTIFACT_FOLDER}} 
+          --no-build
+          --no-restore
+          --include-symbols 
+          --include-source
+          
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: |
+            ${{env.ARTIFACT_FOLDER}}/*.nupkg
+            ${{env.ARTIFACT_FOLDER}}/*.snupkg
+
+      - name: Publish Nuget
+        run: >
+          dotnet nuget push ${{env.ARTIFACT_FOLDER}}/*.nupkg 
+          --api-key ${{ secrets.NUGET_API_KEY }} 
+          --source https://api.nuget.org/v3/index.json
