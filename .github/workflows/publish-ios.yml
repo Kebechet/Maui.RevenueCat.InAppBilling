@@ -14,8 +14,8 @@ env:
   # https://xcodereleases.com/
   XCODE_VERSION: 16.2 #remove comment after 16.2 non-beta release: https://github.com/xamarin/xamarin-macios/issues/19157
 
-  PROJECT_APP_PATH_FOLDER: src/Client/SatisFIT.Client.App
-  PROJECT_PATH: src/Client/SatisFIT.Client.App/SatisFIT.Client.App.csproj
+  PROJECT_APP_PATH_FOLDER: src/Maui.RevenueCat.iOS
+  PROJECT_PATH: src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj 
 
   ARTIFACT_FOLDER: ~/artifacts
 
