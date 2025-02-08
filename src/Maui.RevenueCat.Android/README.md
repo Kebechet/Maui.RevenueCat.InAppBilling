@@ -5,7 +5,7 @@
 ![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.Android)
 
 - this binding is based on: https://github.com/thisisthekap/Xamarin.RevenueCat.Android 
-- it is created for .NET MAUI and targeted to `.NET 8`
+- it is created for .NET MAUI
 - it contains bindings for RevenueCat Android library
 	- https://www.revenuecat.com/
 	- https://docs.revenuecat.com/docs/android
