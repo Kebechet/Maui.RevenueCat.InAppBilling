@@ -54,6 +54,12 @@
     <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="7.12.0.5" />
   </ItemGroup>
 
+  <!--Android warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.LiveData 2.8.5.1 requires Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx (>= 2.8.5.1 && < 2.8.6) but version Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx 2.8.7.1 was resolved.-->
+  <!--because MAUI has built-in different versions: https://github.com/dotnet/android/issues/9698-->
+  <PropertyGroup>
+    <NoWarn>NU1608</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="..\..\README.md">
       <Pack>True</Pack>
