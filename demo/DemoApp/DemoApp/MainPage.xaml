@@ -8,7 +8,7 @@
         <VerticalStackLayout
             Padding="30,0"
             Spacing="25">
-            
+
             <Grid Padding="0,20,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -33,11 +33,11 @@
             <Label
                 Text="⚠️ iOS payments in sandbox are slow. But in production they work correctly"
                 Style="{StaticResource SubHeadline2}"
-                IsVisible="{Binding AreOfferingsLoaded}"/>    
+                IsVisible="{Binding AreOfferingsLoaded}"/>
 
             <Button
                 x:Name="BtnPurchase"
-                Text="Load RevenueCat offerings" 
+                Text="Load RevenueCat offerings"
                 SemanticProperties.Hint="Counts the number of times you click"
                 Clicked="LoadOfferings"
                 HorizontalOptions="Fill"
@@ -51,14 +51,14 @@
 
             <Button
                 x:Name="BtnMonthly"
-                Text="{Binding MonthlyButtonText}" 
+                Text="{Binding MonthlyButtonText}"
                 HorizontalOptions="Fill"
                 Clicked="BuyItem"
                 IsVisible="{Binding AreOfferingsLoaded}"/>
 
             <Button
                 x:Name="BtnYearly"
-                Text="{Binding YearlyButtonText}" 
+                Text="{Binding YearlyButtonText}"
                 HorizontalOptions="Fill"
                 Clicked="BuyItem"
                 IsVisible="{Binding AreOfferingsLoaded}"/>
@@ -71,14 +71,14 @@
 
             <Button
                 x:Name="BtnConsumable1"
-                Text="{Binding Consumable1ButtonText}" 
+                Text="{Binding Consumable1ButtonText}"
                 HorizontalOptions="Fill"
                 Clicked="BuyItem"
                 IsVisible="{Binding AreOfferingsLoaded}"/>
 
             <Button
                 x:Name="BtnConsumable2"
-                Text="{Binding Consumable2ButtonText}" 
+                Text="{Binding Consumable2ButtonText}"
                 HorizontalOptions="Fill"
                 Clicked="BuyItem"
                 IsVisible="{Binding AreOfferingsLoaded}"/>

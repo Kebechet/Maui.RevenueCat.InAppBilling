@@ -34,10 +34,10 @@ public partial class MainPage : ContentPage, INotifyPropertyChanged
         BindingContext = this;
     }
 
-    private void LoadOfferings(object sender, EventArgs e)
+    private async void LoadOfferings(object sender, EventArgs e)
     {
         //this is just to showcase functionality. For running async actions use Commands and for UI updating proper NotifyPropertyChanged flow
-        Task.Run(async () =>
+        await Task.Run(async () =>
         {
             _loadedOfferings = await _revenueCatBilling.GetOfferings();
 
@@ -50,12 +50,12 @@ public partial class MainPage : ContentPage, INotifyPropertyChanged
                 .First(x => x.Identifier == DefaultPackageIdentifier.Annually);
 
             _consumable1 = _loadedOfferings
-                .First(x => x.Identifier == _consumableOfferingIdentifier)
-                .AvailablePackages.First(x => x.Identifier == $"{_consumablePackageIdentifierPrefix}3");
+                .SelectMany(x => x.AvailablePackages)
+                .First(x => x.Identifier == $"{_consumablePackageIdentifierPrefix}3");
 
             _consumable2 = _loadedOfferings
-                .First(x => x.Identifier == _consumableOfferingIdentifier)
-                .AvailablePackages.First(x => x.Identifier == $"{_consumablePackageIdentifierPrefix}5");
+                .SelectMany(x => x.AvailablePackages)
+                .First(x => x.Identifier == $"{_consumablePackageIdentifierPrefix}5");
 
             NotifyPropertyChanged(nameof(AreOfferingsLoaded));
             NotifyPropertyChanged(nameof(MonthlyButtonText));
