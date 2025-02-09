@@ -4,6 +4,8 @@
 ![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.RevenueCat.InAppBilling)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.InAppBilling)
 
+This library serves as an abstraction for both platforms and abstracts away the need for you to use platform-specific code from [Android](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.Android) and [iOS](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.iOS) bindings for native RevenueCat libraries.
+
 ## Credits
 - This plugin uses: [Android](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.Android) and [iOS](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.iOS) bindings that are inspired by: [thisisthekap](https://github.com/thisisthekap)'s Xamarin bindings.
 - Abstraction layer based on example [RevenueCatXamarin](https://github.com/BillFulton/RevenueCatXamarin) from [BillFulton](https://github.com/BillFulton)
