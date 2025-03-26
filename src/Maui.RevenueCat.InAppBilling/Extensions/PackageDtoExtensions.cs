@@ -13,7 +13,7 @@ public static partial class PackageDtoExtensions
     private static readonly decimal _monthsInHalfYear = 6m;
     private static readonly decimal _monthsInYear = 12m;
 
-    public static decimal GetMonthlyPrice(this PackageDto packageDto, bool ignoreExceptions = true)
+    public static decimal GetMonthlyPrice(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
     {
         decimal result;
 
@@ -46,14 +46,25 @@ public static partial class PackageDtoExtensions
                 throw new NotImplementedException("Specified offering identifier is not supported.");
         }
 
-        return result.RoundUp(2);
+        return decimalRoundUpTo is null
+            ? result
+            : result.RoundUp(decimalRoundUpTo.Value);
+    }
+    public static decimal GetWeeklyPrice(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
+    {
+        var monthlyPrice = GetMonthlyPrice(packageDto, ignoreExceptions, null);
+        var weeklyPrice = monthlyPrice / _daysInMonth * _daysInWeek;
+
+        return decimalRoundUpTo is null
+            ? weeklyPrice
+            : weeklyPrice.RoundUp(decimalRoundUpTo.Value);
     }
 
-    public static string GetMonthlyPriceWithCurrency(this PackageDto packageDto, bool ignoreExceptions = true)
+    public static string GetMonthlyPriceWithCurrency(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
     {
         try
         {
-            var monthlyPrice = packageDto.GetMonthlyPrice(ignoreExceptions);
+            var monthlyPrice = packageDto.GetMonthlyPrice(ignoreExceptions, decimalRoundUpTo);
 
             var localisedCurrency = GetLocalizedPrice(packageDto.Product.Pricing.CurrencyCode, monthlyPrice);
 
@@ -69,8 +80,28 @@ public static partial class PackageDtoExtensions
             throw;
         }
     }
+    public static string GetWeeklyPriceWithCurrency(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
+    {
+        try
+        {
+            var weeklyPrice = packageDto.GetWeeklyPrice(ignoreExceptions, decimalRoundUpTo);
 
-    internal static string GetLocalizedPrice(string priceIsoCurrencyCode, decimal price)
+            var localisedCurrency = GetLocalizedPrice(packageDto.Product.Pricing.CurrencyCode, weeklyPrice);
+
+            return localisedCurrency;
+        }
+        catch (Exception)
+        {
+            if (ignoreExceptions)
+            {
+                return "$0.00";
+            }
+
+            throw;
+        }
+    }
+
+    public static string GetLocalizedPrice(string priceIsoCurrencyCode, decimal price)
     {
         var currencyCulture = GetCulture(priceIsoCurrencyCode);
 
