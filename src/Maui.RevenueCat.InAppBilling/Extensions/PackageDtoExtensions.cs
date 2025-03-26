@@ -9,7 +9,7 @@ public static partial class PackageDtoExtensions
     private static readonly decimal _daysInWeek = 7m;
     private static readonly decimal _daysInMonth = 30m;
     private static readonly decimal _monthsInBiMonthly = 2m;
-    private static readonly decimal _quartalsInYear = 4m;
+    private static readonly decimal _monthsInQuartal = 3m;
     private static readonly decimal _monthsInHalfYear = 6m;
     private static readonly decimal _monthsInYear = 12m;
 
@@ -29,7 +29,7 @@ public static partial class PackageDtoExtensions
                 result = packageDto.Product.Pricing.Price / _monthsInBiMonthly;
                 break;
             case DefaultPackageIdentifier.Quarterly:
-                result = packageDto.Product.Pricing.Price / _quartalsInYear;
+                result = packageDto.Product.Pricing.Price / _monthsInQuartal;
                 break;
             case DefaultPackageIdentifier.SemiAnnually:
                 result = packageDto.Product.Pricing.Price / _monthsInHalfYear;
