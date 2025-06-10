@@ -3,6 +3,7 @@
 # Maui.RevenueCat.InAppBilling
 ![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.RevenueCat.InAppBilling)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.InAppBilling)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/samuel_sidor.svg?style=social&label=Follow%20samuel_sidor)](https://x.com/samuel_sidor)
 
 This library serves as an abstraction for both platforms and abstracts away the need for you to use platform-specific code from [Android](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.Android) and [iOS](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/tree/main/src/Maui.RevenueCat.iOS) bindings for native RevenueCat libraries.
 
