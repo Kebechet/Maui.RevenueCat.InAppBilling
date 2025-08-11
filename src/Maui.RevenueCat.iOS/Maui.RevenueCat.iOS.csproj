@@ -20,8 +20,8 @@
       <PackageIcon>icon.png</PackageIcon>
       <SymbolPackageFormat>snupkg</SymbolPackageFormat>
       <EmbedAllSources>true</EmbedAllSources>
-      <Version>4.31.9.6</Version>
-      <PackageReleaseNotes>Update to .NET9</PackageReleaseNotes>
+      <Version>5.34.0.0</Version>
+      <PackageReleaseNotes>Native library bump</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

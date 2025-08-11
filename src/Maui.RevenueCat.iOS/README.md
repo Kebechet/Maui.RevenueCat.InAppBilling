@@ -1,14 +1,15 @@
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/kebechet)
 
 # Maui.RevenueCat.iOS
-![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.RevenueCat.iOS)
-![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.iOS)
+[![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.RevenueCat.iOS)](https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.iOS/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.iOS)](https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.iOS/)
 
 - this binding is based on: https://github.com/thisisthekap/Xamarin.RevenueCat.iOS 
 - it is created for .NET MAUI
 - it contains bindings for RevenueCat iOS plugin
 	- https://www.revenuecat.com/
 	- https://docs.revenuecat.com/docs/ios
+    - https://github.com/RevenueCat/purchases-ios
 
 ## Versioning Scheme
 The versioning scheme of `Maui.RevenueCat.iOS` is derived from the versioning of `revenuecat/purchases-ios`.
@@ -34,19 +35,19 @@ Because of a problem with bitcode I have decided to create completely new bindin
 
 ### Generating binding files
 - On my MAC I have downloaded and installed [Objective Sharpie](https://learn.microsoft.com/en-us/xamarin/cross-platform/macios/binding/objective-sharpie/)
-- I have downloaded [RevenueCat.framework.zip](https://github.com/RevenueCat/purchases-ios/releases/tag/4.19.0) of `purchases-ios v4.19.0`
-- I have extracted the `iOS` folder on my MAC desktop
+- I have downloaded [RevenueCat.xcframework.zip](https://github.com/RevenueCat/purchases-ios/releases/tag/4.19.0) of `purchases-ios v4.19.0`
+- Extract inner `RevenueCat.xcframework/ios-arm64` folder on MAC desktop. 
 - started terminal, then `cd ~/Desktop`
 - firstly check what versions of xcode SDKs you have installed by `sharpie xcode -sdks` and use the `iphoneosXX.Y` version you have
-- I used command `sharpie bind -framework iOS/RevenueCat.framework -sdk iphoneos16.4 -scope iOS/RevenueCat.framework/Headers`
+- I used command `sharpie bind -framework ios-arm64/RevenueCat.framework -sdk iphoneos18.4 -scope ios-arm64/RevenueCat.framework/Headers`
   - this command generated `ApiDefinitions.cs` and `StructsAndEnums.cs` files
   - in case it did not and gives you error: `RevenueCat: framework requires SDK 'iphoneosXX.Y' which is not installed. You may need a newer Xcode.` In my case it was `iphoneos16.4`
 	- if you have older Xcode then update it
 	- if you have newest Xcode then you need to install older iOS SDKs
 	  - go to [Apple developer web](https://developer.apple.com/download/all/) and download Xcode that contains that SDK. In my case `Xcode 14.3.1` contains `iphoneos16.4`
 	  - after the download extract `.xip` file and after extraction right click on extracted Xcode file and `Show Package Contents`
-	  - then navigate there into `/Applications/Xcode/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs` and copy `iPhoneOsXX.Y.sdk` (if it is just link/alias then copy the `iPhoneOs.sdk` and rename it to `iPhoneOsXX.Y.sdk` in my case `iPhoneOS16.4.sdk`)
-	  - then go to location of your original Xcode -> `Show Package Contents` -> navigate again to: `/Applications/Xcode/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs` and paste the copied `iPhoneOSXX.Y.sdk` there
+	  - then navigate there into `Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs` and copy `iPhoneOsXX.Y.sdk` (if it is just link/alias then copy the `iPhoneOs.sdk` and rename it to `iPhoneOsXX.Y.sdk` in my case `iPhoneOS16.4.sdk`)
+	  - then go to location of your original Xcode -> `Show Package Contents` -> navigate again to: `Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs` and paste the copied `iPhoneOSXX.Y.sdk` there
 	  - restart Xcode
 	  - to verify you did everything correctly run in terminal: `sharpie xcode -sdks` and the new SDK you copied should be now there as well
 	  - then run the `sharpie` command to generate  `ApiDefinitions.cs` and `StructsAndEnums.cs` files again
@@ -71,8 +72,10 @@ Because of a problem with bitcode I have decided to create completely new bindin
 - remove Protocols that were used for inheritance - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/b614289e0dbc4edefb4c6c7e024ae1586a6ebf83)
 - removed delegate that was not used anywhere - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/d408d99423226391f7b37f73791bad7fc4772326)
 - added `INativeObject` inheritance for interfaces that were used in dictionaries and was of type `NSObject` - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/ea45d9555946887aa814fb470af45f616c89785d)
+    - error example: `cannot be used as type parameter 'TValue' in the generic type or method 'NSDictionary<TKey, TValue>'`  
 - replaced `NSUrlRequest` for `NSMutableUrlRequest` - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/df1bb5ef23fa7176f3cc4f2b6a4778dea7baa53b)
 - created delegates for Purchases - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/464d0e3028fea089bdb133bc8575381087f9d294)
+    - when delegates are not replaced then error `Trampolines.g.cs(433,25,433,26): error CS1026: ) expected`   
 - removed inherited `NSObject` methods - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/5fd366f5eb58903b1788a3781a9f6d00a470f681)
   - `isEqual` and `Description` 
   - also removed `DebugDescription` - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/d3741f1ce23b4b46e1a0184b03baafd1ff715201)
@@ -82,6 +85,7 @@ Because of a problem with bitcode I have decided to create completely new bindin
 - removed attributes containing `Name` - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/4aa727562d17829c742dcd6c2f51ba3c3cb836ff)
   - this was because on my windows machine I was getting errors that platform doesnt have symbols specified for this methods containing the name
   - later I completely removed those methods because the error was still there - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/3fcceeb6ff9d8207a3545f89ddf28639cb3c0f79)
+- From `[Obsoleted]` remove all new line characters `\n`
 - from `.xcframework` remove all `*.swiftmodule` directories
 - ✅ - Done 
   - I have tested this new binding in the simulator as well as on real device through TestFlight and it works as expected

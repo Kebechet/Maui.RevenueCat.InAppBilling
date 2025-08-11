@@ -1,7 +1,7 @@
 framework module RevenueCat {
   umbrella header "RevenueCat.h"
-
   export *
+
   module * { export * }
 }
 
