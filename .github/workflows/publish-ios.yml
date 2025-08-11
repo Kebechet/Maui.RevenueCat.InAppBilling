@@ -12,7 +12,7 @@ env:
   #https://github.com/actions/runner-images/tree/main/images/macos
   #https://developer.apple.com/support/xcode/
   #https://xcodereleases.com/
-  XCODE_VERSION: 16.2 #remove comment after 16.2 non-beta release: https://github.com/xamarin/xamarin-macios/issues/19157
+  XCODE_VERSION: 16.4
 
   PROJECT_APP_PATH_FOLDER: src/Maui.RevenueCat.iOS
   PROJECT_PATH: src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj 
