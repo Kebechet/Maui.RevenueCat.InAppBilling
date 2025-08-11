@@ -1,25 +1,35 @@
 ﻿<metadata>
 	<remove-node
         path="//field[@final='true' and @name='CREATOR' and @jni-signature='Landroid/os/Parcelable$Creator;' and @static='true' and @type='android.os.Parcelable.Creator']" />
-
-	<remove-node path="//implements[@name='android.os.Parcelable.Creator']" />
+	<remove-node
+        path="//implements[@name='android.os.Parcelable.Creator']" />
 	<remove-node
         path="api/package[@name='com.revenuecat.purchases']/interface[@name='ProrationMode']/method[@name='getName']" />
-	<remove-node path="/api/package[@name='com.revenuecat.purchases.models']/class[@name='SubscriptionOptions']/implements[@name='java.util.List']" />
-	<attr
-        path="/api/package[@name='com.revenuecat.purchases.amazon']/class[@name='AmazonStoreProduct']/method[@name='getPurchasingData' and count(parameter)=0]"
-        name="managedReturn">
-		Com.Revenuecat.Purchases.Models.IPurchasingData
-	</attr>
+	<remove-node
+        path="/api/package[@name='com.revenuecat.purchases.models']/class[@name='SubscriptionOptions']/implements[@name='java.util.List']" />
 	<remove-node
         path="api/package[@name='com.revenuecat.purchases']/interface[@name='ReplacementMode']/method[@name='getName']" />
-	<!-- This will change the access modifier of the ReservedSubscriberAttribute enum class from internal to public -->
+    <remove-node
+        path="/api/package[@name='com.revenuecat.purchases.paywalls']/class[@name='PaywallColor.Serializer']/implements[@name='kotlinx.serialization.KSerializer']" />
+
+    <attr
+        path="/api/package[@name='com.revenuecat.purchases.amazon']/class[@name='AmazonStoreProduct']/method[@name='getPurchasingData' and count(parameter)=0]"
+        name="managedReturn">
+        Com.Revenuecat.Purchases.Models.IPurchasingData
+    </attr>
+
+    <!--error CS0738: 'GoogleSubscriptionOption' does not implement interface member 'ISubscriptionOption.InstallmentsInfo'. 'GoogleSubscriptionOption.InstallmentsInfo' cannot implement 'ISubscriptionOption.InstallmentsInfo' because it does not have the matching return type of 'IInstallmentsInfo'-->
+    <!--https://github.com/RevenueCat/purchases-android/blob/0096eb96c8c17b9eda2c137030320e00d5f88bea/purchases/src/main/kotlin/com/revenuecat/purchases/models/GoogleInstallmentsInfo.kt-->
+    <attr
+        path="/api/package[@name='com.revenuecat.purchases.models']/class[@name='GoogleSubscriptionOption']/method[@name='getInstallmentsInfo' and count(parameter)=0]"
+        name="managedReturn">
+        Com.Revenuecat.Purchases.Models.IInstallmentsInfo
+    </attr>
+
+    <!-- This will change the access modifier of the ReservedSubscriberAttribute enum class from internal to public -->
 	<attr
         path="/api/package[@name='com.revenuecat.purchases.common.subscriberattributes']/class[@name='ReservedSubscriberAttribute']"
         name="visibility">
 		public
 	</attr>
-
-	<!--this should be nullable instead of removing -> Object? -->
-	<remove-node path="/api/package[@name='com.revenuecat.purchases.paywalls']/class[@name='PaywallColor.Serializer']/implements[@name='kotlinx.serialization.KSerializer']" />
 </metadata>
