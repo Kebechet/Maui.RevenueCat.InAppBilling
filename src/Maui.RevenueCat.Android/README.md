@@ -9,6 +9,7 @@
 - it contains bindings for RevenueCat Android library
 	- https://www.revenuecat.com/
 	- https://docs.revenuecat.com/docs/android
+    - https://github.com/RevenueCat/purchases-android/releases
 
 ## Versioning Scheme
 The versioning scheme of `Maui.RevenueCat.Android` is derived from the versioning of `revenuecat/purchases-android`.

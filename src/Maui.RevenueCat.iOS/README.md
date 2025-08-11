@@ -9,6 +9,7 @@
 - it contains bindings for RevenueCat iOS plugin
 	- https://www.revenuecat.com/
 	- https://docs.revenuecat.com/docs/ios
+    - https://github.com/RevenueCat/purchases-ios
 
 ## Versioning Scheme
 The versioning scheme of `Maui.RevenueCat.iOS` is derived from the versioning of `revenuecat/purchases-ios`.
