@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>5.2.0</Version>
-    <PackageReleaseNotes>Updated with latest native libraries</PackageReleaseNotes>
+    <Version>5.2.1</Version>
+    <PackageReleaseNotes>Fixed iOS long path problem for VS</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
@@ -47,7 +47,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-ios'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="5.34.0" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="5.34.0.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
