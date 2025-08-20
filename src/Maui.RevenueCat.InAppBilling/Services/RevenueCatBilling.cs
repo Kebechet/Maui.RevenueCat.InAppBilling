@@ -43,5 +43,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken);
 
+    // Subscriber Attributes
+    public partial void SetEmail(string email);
+    public partial void SetDisplayName(string name);
+    public partial void SetPhoneNumber(string phone);
+    public partial void SetAttributes(IDictionary<string, string> attributes);
+
     internal static partial void EnableDebugLogs(bool enable);
 }

@@ -329,6 +329,27 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
     }
 
+    // Subscriber Attributes
+    public partial void SetEmail(string email)
+    {
+        Purchases.SharedInstance.SetEmail(email);
+    }
+
+    public partial void SetDisplayName(string name)
+    {
+        Purchases.SharedInstance.SetDisplayName(name);
+    }
+
+    public partial void SetPhoneNumber(string phone)
+    {
+        Purchases.SharedInstance.SetPhoneNumber(phone);
+    }
+
+    public partial void SetAttributes(IDictionary<string, string> attributes)
+    {
+        Purchases.SharedInstance.SetAttributes(attributes);
+    }
+
     internal static partial void EnableDebugLogs(bool enable)
     {
         if (!enable)
