@@ -334,17 +334,14 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         Purchases.SharedInstance.SetEmail(email);
     }
-
     public partial void SetDisplayName(string name)
     {
         Purchases.SharedInstance.SetDisplayName(name);
     }
-
     public partial void SetPhoneNumber(string phone)
     {
         Purchases.SharedInstance.SetPhoneNumber(phone);
     }
-
     public partial void SetAttributes(IDictionary<string, string> attributes)
     {
         Purchases.SharedInstance.SetAttributes(attributes);
