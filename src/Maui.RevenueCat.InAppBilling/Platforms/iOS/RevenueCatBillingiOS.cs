@@ -5,7 +5,9 @@ using Maui.RevenueCat.InAppBilling.Platforms.iOS.Exceptions;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
 using Maui.RevenueCat.iOS;
+using Maui.RevenueCat.Platforms.iOS.Extensions;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using Purchases = Maui.RevenueCat.iOS.RCPurchases;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
@@ -325,22 +327,23 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     // Subscriber Attributes
     public partial void SetEmail(string email)
     {
-        Purchases.SharedPurchases.SetEmail(email);
+        Purchases.SharedPurchases.Attribution.SetEmail(email);
     }
 
     public partial void SetDisplayName(string name)
     {
-        Purchases.SharedPurchases.SetDisplayName(name);
+        Purchases.SharedPurchases.Attribution.SetDisplayName(name);
     }
 
     public partial void SetPhoneNumber(string phone)
     {
-        Purchases.SharedPurchases.SetPhoneNumber(phone);
+        Purchases.SharedPurchases.Attribution.SetPhoneNumber(phone);
     }
 
     public partial void SetAttributes(IDictionary<string, string> attributes)
     {
-        Purchases.SharedPurchases.SetAttributes(attributes);
+        var nsAttributes = attributes.ToNSDictionary();
+        Purchases.SharedPurchases.Attribution.SetAttributes(nsAttributes);
     }
 
     internal static partial void EnableDebugLogs(bool enable)
