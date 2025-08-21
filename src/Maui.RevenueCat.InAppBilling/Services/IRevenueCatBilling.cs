@@ -21,4 +21,10 @@ public interface IRevenueCatBilling
     Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken = default);
     Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken = default);
     Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken = default);
+
+    // Subscriber Attributes
+    void SetEmail(string email);
+    void SetDisplayName(string name);
+    void SetPhoneNumber(string phone);
+    void SetAttributes(IDictionary<string, string> attributes);
 }
