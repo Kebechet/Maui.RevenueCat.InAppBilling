@@ -10,7 +10,6 @@ public partial class App : Application
     {
         InitializeComponent();
 
-        MainPage = new AppShell();
         _revenueCatBilling = revenueCatBilling;
     }
 
@@ -27,5 +26,10 @@ public partial class App : Application
         _revenueCatBilling.Initialize(revenueCatApiKey);
 
         base.OnStart();
+    }
+
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        return new Window(new AppShell());
     }
 }
