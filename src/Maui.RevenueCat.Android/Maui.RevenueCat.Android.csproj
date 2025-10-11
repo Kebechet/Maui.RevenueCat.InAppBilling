@@ -24,8 +24,8 @@
 		<DebugType>embedded</DebugType>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<EmbedAllSources>true</EmbedAllSources>
-		<Version>9.2.0.0</Version>
-		<PackageReleaseNotes>Bump to latest version</PackageReleaseNotes>
+		<Version>9.2.0.1</Version>
+		<PackageReleaseNotes>Potential fix for project unloading</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -45,7 +45,7 @@
 		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Process" Version="2.9.1" />
 		<PackageReference Include="Xamarin.GooglePlayServices.Ads.Identifier" Version="118.1.0.3" />
 		<PackageReference Include="Xamarin.Google.Crypto.Tink.Android" Version="1.15.0.1" />
-		<PackageReference Include="Dev.Drewhamilton.Poko.PokoAnnotations" Version="0.17.2" />
+		<PackageReference Include="Dev.Drewhamilton.Poko.PokoAnnotations" Version="0.17.2.2" />
 		<PackageReference Include="Xamarin.Kotlin.Parcelize.Runtime" Version="2.0.21.4" />
     <PackageReference Include="Xamarin.KotlinX.Serialization.Json" Version="1.7.3.5" />
 
