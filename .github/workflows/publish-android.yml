@@ -49,19 +49,15 @@ jobs:
 
       - name: Pack NuGet Package
         run: >
-          dotnet pack ${{ env.PROJECT_PATH }} 
-          -o ${{env.ARTIFACT_FOLDER}} 
+          dotnet pack ${{ env.PROJECT_PATH }}
+          -o ${{env.ARTIFACT_FOLDER}}
           --no-build
           --no-restore
-          --include-symbols 
-          --include-source
           
       - uses: actions/upload-artifact@v4
         with:
           name: nuget-package
-          path: |
-            ${{env.ARTIFACT_FOLDER}}/*.nupkg
-            ${{env.ARTIFACT_FOLDER}}/*.snupkg
+          path: ${{env.ARTIFACT_FOLDER}}/*.nupkg
 
       - name: Publish Nuget
         run: >
