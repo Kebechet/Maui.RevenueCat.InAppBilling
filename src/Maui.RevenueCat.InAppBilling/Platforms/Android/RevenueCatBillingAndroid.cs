@@ -8,6 +8,7 @@ using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Exceptions;
 using Microsoft.Extensions.Logging;
 using Maui.RevenueCat.InAppBilling.Enums;
+using IsNullOrEmpty.Extensions;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
 
