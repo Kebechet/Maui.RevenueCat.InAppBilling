@@ -58,7 +58,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers);
+            using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers, cancellationToken);
             if (eligibilities.IsNullOrEmpty())
             {
                 return [];
@@ -89,7 +89,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            _cachedOfferingPackages = await _purchases.GetOfferingsAsync();
+            _cachedOfferingPackages = await _purchases.GetOfferingsAsync(cancellationToken);
             if (_cachedOfferingPackages is null)
             {
                 return [];
@@ -131,7 +131,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(packageToBuy);
+            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(packageToBuy, cancellationToken);
         }
         catch (PurchasesErrorException ex)
         {
@@ -182,7 +182,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
                 return [];
@@ -211,7 +211,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
                 return [];
@@ -234,7 +234,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
                 return null;
@@ -257,7 +257,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null || customerInfo.ManagementURL is null)
             {
                 return string.Empty;
