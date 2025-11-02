@@ -157,7 +157,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             };
         }
 
-        if (purchaseSuccessInfo is null || purchaseSuccessInfo.StoreTransaction.Sk1Transaction is null)
+        if (purchaseSuccessInfo is null)
         {
             _logger.LogError($"{nameof(purchaseSuccessInfo)} is null.");
 
@@ -167,9 +167,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             };
         }
 
+        var isSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction is not null
+            ? purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
+            : !purchaseSuccessInfo.StoreTransaction.TransactionIdentifier.IsNullOrEmpty();
+
         return new PurchaseResultDto
         {
-            IsSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased,
+            IsSuccess = isSuccess,
             CustomerInfo = purchaseSuccessInfo.CustomerInfo.ToCustomerInfoDto()
         };
     }
