@@ -4,6 +4,8 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
 internal static class JavaDateExtensions
 {
+    private static readonly DateTime _epoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     internal static DateTime? ToDateTime(this Date? date)
     {
         if (date is null)
@@ -11,7 +13,11 @@ internal static class JavaDateExtensions
             return null;
         }
 
-        var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        return epoch.AddMilliseconds(date.Time);
+        return _epoch.AddMilliseconds(date.Time);
+    }
+
+    internal static DateTime ToDateTime(this long milliseconds)
+    {
+        return _epoch.AddMilliseconds(milliseconds);
     }
 }

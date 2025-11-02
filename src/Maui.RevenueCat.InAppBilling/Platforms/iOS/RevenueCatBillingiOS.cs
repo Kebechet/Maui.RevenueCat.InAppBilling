@@ -174,6 +174,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         return new PurchaseResultDto
         {
             IsSuccess = isSuccess,
+            Transaction = purchaseSuccessInfo.StoreTransaction.ToStoreTransactionDto(),
             CustomerInfo = purchaseSuccessInfo.CustomerInfo.ToCustomerInfoDto()
         };
     }
