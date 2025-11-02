@@ -64,3 +64,25 @@ jobs:
           --api-key ${{ secrets.NUGET_API_KEY }}
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
+
+      - name: Extract version from csproj
+        id: get_version
+        shell: pwsh
+        run: |
+          [xml]$csproj = Get-Content "${{ env.PROJECT_PATH }}"
+          $version = $csproj.Project.PropertyGroup.Version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          $releaseNotes = $csproj.Project.PropertyGroup.PackageReleaseNotes
+          echo "RELEASE_NOTES=$releaseNotes" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          body: ${{ steps.get_version.outputs.RELEASE_NOTES }}
+          files: ${{env.ARTIFACT_FOLDER}}/*.nupkg
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
