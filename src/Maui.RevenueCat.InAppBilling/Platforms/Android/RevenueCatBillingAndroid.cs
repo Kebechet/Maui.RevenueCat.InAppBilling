@@ -276,7 +276,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve purchase date.");
-            return new();
+            return null;
         }
     }
     public async partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
