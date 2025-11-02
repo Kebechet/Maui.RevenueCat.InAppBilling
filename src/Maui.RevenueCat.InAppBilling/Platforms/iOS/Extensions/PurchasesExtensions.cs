@@ -1,5 +1,4 @@
 using Foundation;
-using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Exceptions;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
 using Maui.RevenueCat.iOS;
@@ -114,13 +113,6 @@ internal static class PurchasesExtensions
             }
         });
         return tcs.Task;
-    }
-
-    [Obsolete("Obsolete due to confusing naming. Use RestorePurchasesAsync instead.")]
-    internal static Task<RCCustomerInfo> RestoreTransactionsAsync(this RCPurchases purchases,
-        CancellationToken cancellationToken = default)
-    {
-        return purchases.RestorePurchasesAsync(cancellationToken);
     }
 
     internal static Task<RCCustomerInfo> GetCustomerInfoAsync(this RCPurchases purchases,
