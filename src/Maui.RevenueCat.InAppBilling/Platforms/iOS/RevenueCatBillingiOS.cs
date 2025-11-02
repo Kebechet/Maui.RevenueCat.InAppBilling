@@ -61,7 +61,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers);
             if (eligibilities.IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             var eligibilitiesResult = new Dictionary<string, IntroElegibilityStatus>();
@@ -76,7 +76,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(CheckTrialOrIntroDiscountEligibility)} didn't succeed.");
-            return new();
+            return [];
         }
     }
 
@@ -92,7 +92,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             _cachedOfferingPackages = await _purchases.GetOfferingsAsync();
             if (_cachedOfferingPackages is null)
             {
-                return new();
+                return [];
             }
 
             return _cachedOfferingPackages.ToOfferingDtoList();
@@ -100,7 +100,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(GetOfferings)} didn't succeed.");
-            return new();
+            return [];
         }
     }
     public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
@@ -185,12 +185,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
-                return new();
+                return [];
             }
 
             if (customerInfo.ActiveSubscriptions.ToStringList().IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             var activeSubscriptions = new List<string>();
@@ -204,7 +204,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve active subscriptions.");
-            return new();
+            return [];
         }
     }
     public async partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
@@ -214,12 +214,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             using var customerInfo = await _purchases.GetCustomerInfoAsync();
             if (customerInfo is null)
             {
-                return new();
+                return [];
             }
 
             if (customerInfo.AllPurchasedProductIdentifiers.ToStringList().IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             return customerInfo.AllPurchasedProductIdentifiers.ToStringList(); ;
@@ -227,7 +227,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve all purchased identifiers.");
-            return new();
+            return [];
         }
     }
     public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)

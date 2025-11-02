@@ -97,7 +97,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             _cachedOfferingPackages = await Purchases.SharedInstance.GetOfferingsAsync(cancellationToken);
             if (_cachedOfferingPackages is null)
             {
-                return new();
+                return [];
             }
 
             return _cachedOfferingPackages.ToOfferingDtoList();
@@ -105,7 +105,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(GetOfferings)} didn't succeed.");
-            return new();
+            return [];
         }
     }
     public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
@@ -194,12 +194,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
-                return new();
+                return [];
             }
 
             if (customerInfo.ActiveSubscriptions.IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             return customerInfo.ActiveSubscriptions.ToList(); ;
@@ -207,7 +207,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve active subscriptions.");
-            return new();
+            return [];
         }
     }
     public async partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
@@ -217,12 +217,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
-                return new();
+                return [];
             }
 
             if (customerInfo.AllPurchasedProductIds.IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             return customerInfo.AllPurchasedProductIds.ToList(); ;
@@ -230,7 +230,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve all purchased identifiers.");
-            return new();
+            return [];
         }
     }
     public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
