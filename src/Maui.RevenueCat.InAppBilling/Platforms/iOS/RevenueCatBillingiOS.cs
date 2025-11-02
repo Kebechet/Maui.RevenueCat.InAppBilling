@@ -73,6 +73,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return eligibilitiesResult;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(CheckTrialOrIntroDiscountEligibility)} was cancelled.");
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(CheckTrialOrIntroDiscountEligibility)} didn't succeed.");
@@ -96,6 +101,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             }
 
             return _cachedOfferingPackages.ToOfferingDtoList();
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetOfferings)} was cancelled.");
+            return [];
         }
         catch (Exception ex)
         {
@@ -145,6 +155,14 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new PurchaseResultDto
             {
                 ErrorStatus = purchaseError
+            };
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(PurchaseProduct)} was cancelled.");
+            return new PurchaseResultDto
+            {
+                ErrorStatus = PurchaseErrorStatus.PurchaseCancelledError
             };
         }
         catch (Exception ex)
@@ -201,6 +219,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return activeSubscriptions;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetActiveSubscriptions)} was cancelled.");
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve active subscriptions.");
@@ -224,6 +247,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return customerInfo.AllPurchasedProductIdentifiers.ToStringList(); ;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetAllPurchasedIdentifiers)} was cancelled.");
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve all purchased identifiers.");
@@ -241,6 +269,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             }
 
             return customerInfo.PurchaseDateForProductIdentifier(productIdentifier).ToDateTime();
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetPurchaseDateForProductIdentifier)} was cancelled.");
+            return null;
         }
         catch (Exception ex)
         {
@@ -265,6 +298,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return customerInfo.ManagementURL.ToString()!;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetManagementSubscriptionUrl)} was cancelled.");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve management url.");
@@ -280,6 +318,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return customerInfo.ToCustomerInfoDto();
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(Login)} was cancelled.");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(Login)} failed.");
@@ -293,6 +336,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             var customerInfo = await Purchases.SharedPurchases.LogOutAsync(cancellationToken);
 
             return customerInfo.ToCustomerInfoDto();
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(Logout)} was cancelled.");
+            return null;
         }
         catch (Exception ex)
         {
@@ -308,6 +356,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return customerInfo.ToCustomerInfoDto();
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(RestoreTransactions)} was cancelled.");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
@@ -321,6 +374,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             var customerInfo = await Purchases.SharedPurchases.GetCustomerInfoAsync(cancellationToken);
 
             return customerInfo.ToCustomerInfoDto();
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetCustomerInfo)} was cancelled.");
+            return null;
         }
         catch (Exception ex)
         {
