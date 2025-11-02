@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Kebechet.Extensions.IsNullOrEmpty" Version="1.0.1" />
+    <PackageReference Include="Kebechet.Extensions.IsNullOrEmpty" Version="1.0.1" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
   </ItemGroup>
