@@ -1,3 +1,4 @@
+using IsNullOrEmpty.Extensions;
 using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Extensions;
 using Maui.RevenueCat.InAppBilling.Models;
@@ -57,10 +58,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers);
+            using var eligibilities = await _purchases.CheckTrialOrIntroDiscountEligibilityAsync(identifiers, cancellationToken);
             if (eligibilities.IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             var eligibilitiesResult = new Dictionary<string, IntroElegibilityStatus>();
@@ -72,10 +73,15 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return eligibilitiesResult;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(CheckTrialOrIntroDiscountEligibility)} was cancelled.");
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(CheckTrialOrIntroDiscountEligibility)} didn't succeed.");
-            return new();
+            return [];
         }
     }
 
@@ -88,18 +94,23 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            _cachedOfferingPackages = await _purchases.GetOfferingsAsync();
+            _cachedOfferingPackages = await _purchases.GetOfferingsAsync(cancellationToken);
             if (_cachedOfferingPackages is null)
             {
-                return new();
+                return [];
             }
 
             return _cachedOfferingPackages.ToOfferingDtoList();
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetOfferings)} was cancelled.");
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(GetOfferings)} didn't succeed.");
-            return new();
+            return [];
         }
     }
     public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
@@ -130,7 +141,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(packageToBuy);
+            purchaseSuccessInfo = await _purchases.PurchasePackageAsync(packageToBuy, cancellationToken);
         }
         catch (PurchasesErrorException ex)
         {
@@ -146,6 +157,14 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 ErrorStatus = purchaseError
             };
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(PurchaseProduct)} was cancelled.");
+            return new PurchaseResultDto
+            {
+                ErrorStatus = PurchaseErrorStatus.PurchaseCancelledError
+            };
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception in PurchaseProduct");
@@ -156,7 +175,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             };
         }
 
-        if (purchaseSuccessInfo is null || purchaseSuccessInfo.StoreTransaction.Sk1Transaction is null)
+        if (purchaseSuccessInfo is null)
         {
             _logger.LogError($"{nameof(purchaseSuccessInfo)} is null.");
 
@@ -166,9 +185,14 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             };
         }
 
+        var isSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction is not null
+            ? purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
+            : !purchaseSuccessInfo.StoreTransaction.TransactionIdentifier.IsNullOrEmpty();
+
         return new PurchaseResultDto
         {
-            IsSuccess = purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased,
+            IsSuccess = isSuccess,
+            Transaction = purchaseSuccessInfo.StoreTransaction.ToStoreTransactionDto(),
             CustomerInfo = purchaseSuccessInfo.CustomerInfo.ToCustomerInfoDto()
         };
     }
@@ -176,15 +200,15 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
-                return new();
+                return [];
             }
 
             if (customerInfo.ActiveSubscriptions.ToStringList().IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             var activeSubscriptions = new List<string>();
@@ -195,40 +219,50 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return activeSubscriptions;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetActiveSubscriptions)} was cancelled.");
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve active subscriptions.");
-            return new();
+            return [];
         }
     }
     public async partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
     {
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
-                return new();
+                return [];
             }
 
             if (customerInfo.AllPurchasedProductIdentifiers.ToStringList().IsNullOrEmpty())
             {
-                return new();
+                return [];
             }
 
             return customerInfo.AllPurchasedProductIdentifiers.ToStringList(); ;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetAllPurchasedIdentifiers)} was cancelled.");
+            return [];
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve all purchased identifiers.");
-            return new();
+            return [];
         }
     }
     public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
     {
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null)
             {
                 return null;
@@ -236,10 +270,15 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return customerInfo.PurchaseDateForProductIdentifier(productIdentifier).ToDateTime();
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetPurchaseDateForProductIdentifier)} was cancelled.");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Couldn't retrieve purchase date.");
-            return new();
+            return null;
         }
     }
     public async partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
@@ -251,13 +290,18 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            using var customerInfo = await _purchases.GetCustomerInfoAsync();
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(cancellationToken);
             if (customerInfo is null || customerInfo.ManagementURL is null)
             {
                 return string.Empty;
             }
 
             return customerInfo.ManagementURL.ToString()!;
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetManagementSubscriptionUrl)} was cancelled.");
+            return null;
         }
         catch (Exception ex)
         {
@@ -274,6 +318,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return customerInfo.ToCustomerInfoDto();
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(Login)} was cancelled.");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(Login)} failed.");
@@ -287,6 +336,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             var customerInfo = await Purchases.SharedPurchases.LogOutAsync(cancellationToken);
 
             return customerInfo.ToCustomerInfoDto();
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(Logout)} was cancelled.");
+            return null;
         }
         catch (Exception ex)
         {
@@ -302,6 +356,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return customerInfo.ToCustomerInfoDto();
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(RestoreTransactions)} was cancelled.");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
@@ -315,6 +374,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             var customerInfo = await Purchases.SharedPurchases.GetCustomerInfoAsync(cancellationToken);
 
             return customerInfo.ToCustomerInfoDto();
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetCustomerInfo)} was cancelled.");
+            return null;
         }
         catch (Exception ex)
         {

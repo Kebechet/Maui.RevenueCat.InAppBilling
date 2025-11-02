@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>5.3.2</Version>
-    <PackageReleaseNotes>Fix for project unloading</PackageReleaseNotes>
+    <Version>5.4.0</Version>
+    <PackageReleaseNotes>Added proper cancellation token handling with debug logging, fixed StoreKit2 support, added transaction details mapping, improved code quality</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
@@ -42,6 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Kebechet.Extensions.IsNullOrEmpty" Version="1.0.1" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
   </ItemGroup>

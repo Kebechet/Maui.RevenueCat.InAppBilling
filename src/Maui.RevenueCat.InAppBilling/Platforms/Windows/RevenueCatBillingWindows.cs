@@ -19,12 +19,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     }
     public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
-        return new();
+        return [];
     }
 
     public async partial Task<List<OfferingDto>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
-        return new();
+        return [];
     }
     public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
@@ -32,11 +32,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     }
     public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
     {
-        return new();
+        return [];
     }
     public async partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
     {
-        return new();
+        return [];
     }
     public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
     {
@@ -50,39 +50,39 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return new()
         {
-            ActiveSubscriptions = new(),
-            AllPurchasedIdentifiers = new(),
+            ActiveSubscriptions = [],
+            AllPurchasedIdentifiers = [],
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
             ManagementURL = string.Empty,
-            NonConsumablePurchases = new(),
-            Entitlements = new(),
+            NonConsumablePurchases = [],
+            Entitlements = [],
         };
     }
     public async partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken)
     {
         return new()
         {
-            ActiveSubscriptions = new(),
-            AllPurchasedIdentifiers = new(),
+            ActiveSubscriptions = [],
+            AllPurchasedIdentifiers = [],
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
             ManagementURL = string.Empty,
-            NonConsumablePurchases = new(),
-            Entitlements = new(),
+            NonConsumablePurchases = [],
+            Entitlements = [],
         };
     }
     public async partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken)
     {
         return new()
         {
-            ActiveSubscriptions = new(),
-            AllPurchasedIdentifiers = new(),
+            ActiveSubscriptions = [],
+            AllPurchasedIdentifiers = [],
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
             ManagementURL = string.Empty,
-            NonConsumablePurchases = new(),
-            Entitlements = new(),
+            NonConsumablePurchases = [],
+            Entitlements = [],
         };
     }
 
@@ -90,13 +90,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return new()
         {
-            ActiveSubscriptions = new(),
-            AllPurchasedIdentifiers = new(),
+            ActiveSubscriptions = [],
+            AllPurchasedIdentifiers = [],
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
             ManagementURL = string.Empty,
-            NonConsumablePurchases = new(),
-            Entitlements = new(),
+            NonConsumablePurchases = [],
+            Entitlements = [],
         };
     }
 
