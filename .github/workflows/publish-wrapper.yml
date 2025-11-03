@@ -62,7 +62,7 @@ jobs:
 
       - name: Publish Nuget
         run: >
-          dotnet nuget push "${{env.ARTIFACT_FOLDER}}/*.nupkg"
+          dotnet nuget push "${{env.ARTIFACT_FOLDER}}\*.nupkg"
           --api-key ${{ secrets.NUGET_API_KEY }}
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
@@ -83,7 +83,7 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.VERSION }}
           name: Release v${{ steps.get_version.outputs.VERSION }}
           body: ${{ steps.get_version.outputs.RELEASE_NOTES }}
-          files: ${{env.ARTIFACT_FOLDER}}/*.nupkg
+          files: ${{env.ARTIFACT_FOLDER}}\*.nupkg
           draft: false
           prerelease: false
         env:
