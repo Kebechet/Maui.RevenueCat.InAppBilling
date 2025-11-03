@@ -51,6 +51,7 @@ jobs:
       - name: Pack NuGet Package
         run: >
           dotnet pack ${{ env.PROJECT_PATH }}
+          -c ${{ env.BUILD_CONFIGURATION }}
           -o ${{env.ARTIFACT_FOLDER}}
           --no-build
           --no-restore
@@ -72,7 +73,7 @@ jobs:
         shell: pwsh
         run: |
           [xml]$csproj = Get-Content "${{ env.PROJECT_PATH }}"
-          $version = $csproj.Project.PropertyGroup.Version
+          $version = $csproj.Project.PropertyGroup.Version.Trim()
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           $releaseNotes = $csproj.Project.PropertyGroup.PackageReleaseNotes
           echo "RELEASE_NOTES=$releaseNotes" >> $env:GITHUB_OUTPUT
