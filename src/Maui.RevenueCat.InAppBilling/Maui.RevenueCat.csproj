@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>5.4.1</Version>
-    <PackageReleaseNotes>Fixed iOS payment error</PackageReleaseNotes>
+    <Version>5.4.2</Version>
+    <PackageReleaseNotes>Removed redundant dependency Maui.Controls.Compatibility</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
