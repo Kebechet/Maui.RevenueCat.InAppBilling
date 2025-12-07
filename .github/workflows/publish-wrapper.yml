@@ -73,9 +73,14 @@ jobs:
         shell: pwsh
         run: |
           [xml]$csproj = Get-Content "${{ env.PROJECT_PATH }}"
-          $version = $csproj.Project.PropertyGroup.Version.Trim()
+          $versionGroup = $csproj.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1
+          if ($null -eq $versionGroup) {
+            throw "No Version element found in ${{ env.PROJECT_PATH }}"
+          }
+          $version = $versionGroup.Version.Trim()
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-          $releaseNotes = $csproj.Project.PropertyGroup.PackageReleaseNotes
+          $releaseNotesGroup = $csproj.Project.PropertyGroup | Where-Object { $_.PackageReleaseNotes } | Select-Object -First 1
+          $releaseNotes = if ($releaseNotesGroup) { $releaseNotesGroup.PackageReleaseNotes } else { "" }
           echo "RELEASE_NOTES=$releaseNotes" >> $env:GITHUB_OUTPUT
 
       - name: Create GitHub Release
