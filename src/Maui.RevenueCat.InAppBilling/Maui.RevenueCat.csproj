@@ -31,8 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>5.4.2</Version>
-    <PackageReleaseNotes>Removed redundant dependency Maui.Controls.Compatibility</PackageReleaseNotes>
+    <Version>5.4.3</Version>
+    <PackageReleaseNotes>Fixed price formatting to hide .00 decimals for whole numbers</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
