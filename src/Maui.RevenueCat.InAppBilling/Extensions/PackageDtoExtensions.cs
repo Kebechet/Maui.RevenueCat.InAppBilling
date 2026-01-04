@@ -105,6 +105,11 @@ public static partial class PackageDtoExtensions
     {
         var currencyCulture = GetCulture(priceIsoCurrencyCode);
 
+        if (price == Math.Floor(price))
+        {
+            return price.ToString("C0", currencyCulture);
+        }
+
         return price.ToString("C", currencyCulture);
     }
 
