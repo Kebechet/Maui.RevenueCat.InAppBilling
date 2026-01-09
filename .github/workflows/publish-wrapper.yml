@@ -62,7 +62,7 @@ jobs:
           name: nuget-package
           path: ${{env.ARTIFACT_FOLDER}}/*.nupkg
 
-      - name: Publish to NuGet.org
+      - name: Publish Nuget
         run: >
           dotnet nuget push "${{env.ARTIFACT_FOLDER}}\*.nupkg"
           --api-key ${{ secrets.NUGET_API_KEY }}

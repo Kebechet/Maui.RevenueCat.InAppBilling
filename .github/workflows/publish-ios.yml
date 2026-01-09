@@ -69,12 +69,11 @@ jobs:
             ${{env.ARTIFACT_FOLDER}}/*.nupkg
             ${{env.ARTIFACT_FOLDER}}/*.snupkg
 
-      - name: Publish to NuGet.org
+      - name: Publish Nuget
         run: >
           dotnet nuget push ${{env.ARTIFACT_FOLDER}}/*.nupkg 
           --api-key ${{ secrets.NUGET_API_KEY }} 
           --source https://api.nuget.org/v3/index.json
-          --skip-duplicate
 
       - name: Publish to GitHub Packages
         run: >
