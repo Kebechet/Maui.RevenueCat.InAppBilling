@@ -18,6 +18,9 @@ jobs:
   publish-android:
     name: Build and publish Android binary
     runs-on: windows-latest
+    permissions:
+      packages: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -59,8 +62,15 @@ jobs:
           name: nuget-package
           path: ${{env.ARTIFACT_FOLDER}}/*.nupkg
 
-      - name: Publish Nuget
+      - name: Publish to NuGet.org
         run: >
           dotnet nuget push "${{env.ARTIFACT_FOLDER}}\*.nupkg" 
           --api-key ${{ secrets.NUGET_API_KEY }} 
           --source https://api.nuget.org/v3/index.json
+
+      - name: Publish to GitHub Packages
+        run: >
+          dotnet nuget push "${{env.ARTIFACT_FOLDER}}\*.nupkg"
+          --api-key ${{ secrets.GITHUB_TOKEN }}
+          --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+          --skip-duplicate
