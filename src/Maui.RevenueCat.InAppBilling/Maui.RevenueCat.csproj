@@ -7,6 +7,7 @@
     <SingleProject>true</SingleProject>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!--https://learn.microsoft.com/en-us/dotnet/maui/supported-platforms-->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
@@ -31,8 +32,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>5.4.3</Version>
-    <PackageReleaseNotes>Fixed price formatting to hide .00 decimals for whole numbers</PackageReleaseNotes>
+    <Version>5.4.4</Version>
+    <PackageReleaseNotes>Enabled XML documentation generation for IntelliSense support</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
