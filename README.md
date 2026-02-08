@@ -161,7 +161,7 @@ public class PurchaseService
     public async Task<bool> HasActiveSubscription(string entitlementId)
     {
         var customerInfo = await _revenueCat.GetCustomerInfo();
-        return customerInfo?.ActiveEntitlements
+        return customerInfo?.Entitlements
             .Any(e => e.Identifier == entitlementId) ?? false;
     }
 }
