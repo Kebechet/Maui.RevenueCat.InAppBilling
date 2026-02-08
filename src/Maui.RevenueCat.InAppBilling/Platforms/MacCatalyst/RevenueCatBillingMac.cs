@@ -8,6 +8,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public partial bool IsAnonymous() => true;
     public partial string GetAppUserId() => string.Empty;
+    public async partial Task<bool> CanMakePayments(CancellationToken cancellationToken)
+    {
+        return false;
+    }
 
     public partial void Initialize(string apiKey)
     {

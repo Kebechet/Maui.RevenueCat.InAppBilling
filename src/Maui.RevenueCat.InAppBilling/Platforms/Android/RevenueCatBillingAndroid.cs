@@ -21,6 +21,24 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial bool IsAnonymous() => Purchases.SharedInstance.IsAnonymous;
     public partial string GetAppUserId() => Purchases.SharedInstance.AppUserID;
 
+    public async partial Task<bool> CanMakePayments(CancellationToken cancellationToken)
+    {
+        if (_currentActivityContext is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return await _purchases.CanMakePaymentsAsync(_currentActivityContext, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"{nameof(CanMakePayments)} failed.");
+            return false;
+        }
+    }
+
     public partial void Initialize(string apiKey)
     {
         if (_currentActivityContext is null)
