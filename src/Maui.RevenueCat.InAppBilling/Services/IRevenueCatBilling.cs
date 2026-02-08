@@ -8,6 +8,7 @@ public interface IRevenueCatBilling
     bool IsInitialized();
     bool IsAnonymous();
     string GetAppUserId();
+    Task<bool> CanMakePayments(CancellationToken cancellationToken = default);
 
     void Initialize(string apiKey);
     Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken = default);

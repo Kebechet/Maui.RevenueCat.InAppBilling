@@ -1,4 +1,5 @@
 using Android.App;
+using Android.Content;
 using Com.Revenuecat.Purchases;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
@@ -7,6 +8,15 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 
 internal static class PurchasesExtensions
 {
+    internal static async Task<bool> CanMakePaymentsAsync(this Purchases purchases, Context context,
+        CancellationToken cancellationToken = default)
+    {
+        var callback = new DelegatingCallback<Java.Lang.Boolean>(cancellationToken);
+        Purchases.CanMakePayments(context, callback);
+        var result = await callback.Task;
+        return result.BooleanValue();
+    }
+
     internal static Task<CustomerInfo> GetCustomerInfoAsync(this Purchases purchases,
         CancellationToken cancellationToken = default)
     {

@@ -20,6 +20,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial bool IsAnonymous() => Purchases.SharedPurchases.IsAnonymous;
     public partial string GetAppUserId() => Purchases.SharedPurchases.AppUserID;
 
+    public partial Task<bool> CanMakePayments(CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Purchases.CanMakePayments);
+    }
+
     public partial void Initialize(string apiKey)
     {
         try

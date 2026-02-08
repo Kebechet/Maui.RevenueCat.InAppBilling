@@ -32,8 +32,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>5.4.4</Version>
-    <PackageReleaseNotes>Enabled XML documentation generation for IntelliSense support</PackageReleaseNotes>
+    <Version>5.5.0</Version>
+    <PackageReleaseNotes>Added new API CanMakePayments</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->

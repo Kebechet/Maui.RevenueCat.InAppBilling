@@ -27,6 +27,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public bool IsInitialized() => _isInitialized;
     public partial bool IsAnonymous();
     public partial string GetAppUserId();
+    public partial Task<bool> CanMakePayments(CancellationToken cancellationToken);
 
     public partial void Initialize(string apiKey);
     public partial void Initialize(string apiKey, string appUserId);
