@@ -118,6 +118,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
     }
 
+    // Offer Codes
+    public partial void PresentCodeRedemptionSheet()
+    {
+    }
+
     internal static partial void EnableDebugLogs(bool enable)
     {
     }

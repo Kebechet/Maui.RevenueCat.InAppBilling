@@ -411,6 +411,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         Purchases.SharedPurchases.Attribution.SetAttributes(nsAttributes);
     }
 
+    // Offer Codes
+    public partial void PresentCodeRedemptionSheet()
+    {
+        _purchases.PresentCodeRedemptionSheet();
+    }
+
     internal static partial void EnableDebugLogs(bool enable)
     {
         if (!enable)

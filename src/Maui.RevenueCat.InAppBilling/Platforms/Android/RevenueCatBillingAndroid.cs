@@ -420,6 +420,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         Purchases.SharedInstance.SetAttributes(attributes);
     }
 
+    // Offer Codes
+    public partial void PresentCodeRedemptionSheet()
+    {
+    }
+
     internal static partial void EnableDebugLogs(bool enable)
     {
         if (!enable)

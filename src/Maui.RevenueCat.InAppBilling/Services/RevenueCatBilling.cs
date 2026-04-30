@@ -50,5 +50,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial void SetPhoneNumber(string phone);
     public partial void SetAttributes(IDictionary<string, string> attributes);
 
+    // Offer Codes
+    public partial void PresentCodeRedemptionSheet();
+
     internal static partial void EnableDebugLogs(bool enable);
 }

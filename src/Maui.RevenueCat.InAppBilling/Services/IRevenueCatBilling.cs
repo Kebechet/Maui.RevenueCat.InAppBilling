@@ -28,4 +28,7 @@ public interface IRevenueCatBilling
     void SetDisplayName(string name);
     void SetPhoneNumber(string phone);
     void SetAttributes(IDictionary<string, string> attributes);
+
+    // Offer Codes
+    void PresentCodeRedemptionSheet();
 }
