@@ -25,6 +25,8 @@ A .NET MAUI wrapper library for [RevenueCat](https://www.revenuecat.com/) in-app
 dotnet add package Kebechet.Maui.RevenueCat.InAppBilling
 ```
 
+Android note: version `6.0.0+` requires Android API level `23` or newer because RevenueCat Android SDK `10.x` no longer supports API `21/22`.
+
 ## Quick Start
 
 ### 1. Register the service

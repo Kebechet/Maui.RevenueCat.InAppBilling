@@ -20,6 +20,12 @@ internal static class StoreExtensions
                 return StoreType.Promotional;
             case RCStore.Stripe:
                 return StoreType.Stripe;
+            case RCStore.Billing:
+                return StoreType.RcBilling;
+            case RCStore.External:
+                return StoreType.External;
+            case RCStore.Paddle:
+                return StoreType.Paddle;
             default:
                 return StoreType.UnknownStore;
         }

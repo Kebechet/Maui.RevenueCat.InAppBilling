@@ -82,4 +82,6 @@ public enum PurchaseErrorStatus
     FeatureNotAvailableInCustomEntitlementsComputationMode = 36,
     [EnumMember(Value = "SIGNATURE_VERIFICATION_FAILED")]
     SignatureVerificationFailed = 37,
+    [EnumMember(Value = "TEST_STORE_SIMULATED_PURCHASE_ERROR")]
+    TestStoreSimulatedPurchaseError = 42,
 }
