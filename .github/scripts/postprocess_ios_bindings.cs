@@ -110,10 +110,17 @@ static class Postprocess
     // action depends on whether the project actually links these symbols.
     private static readonly string[] LinkerRiskSymbols =
     {
+        // README's original list (RevenueCat 5.34 / earlier).
         "FakeASIdManager", "FakeAfficheClient", "FakeTrackingManager",
         "NetworkOperation", "PaymentQueueWrapper", "ProductsFetcherSK1",
         "PurchasesReceiptParser", "StoreKit1Wrapper", "StoreKitRequestFetcher",
         "TrackingManagerProxy",
+        // Added in RevenueCat 5.72 — same symptoms: "Undefined symbols for
+        // architecture arm64: _OBJC_CLASS_$_<Name>" at link time. Sharpie
+        // binds these as if they were public framework classes, but the
+        // RevenueCat dylib doesn't export them.
+        "StoreKit2PromotionalOfferPurchaseOptions",
+        "RedirectLoggerSessionDelegate",
     };
 
     // Obj-C selectors of NSObject methods bindings inherit and shouldn't

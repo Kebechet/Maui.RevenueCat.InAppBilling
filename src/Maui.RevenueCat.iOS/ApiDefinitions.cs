@@ -1866,37 +1866,11 @@ interface RCPurchasesDiagnostics
 
 
 
-// @interface RedirectLoggerSessionDelegate : NSObject <NSUrlSessionTaskDelegate>
-[BaseType (typeof(NSObject), Name = "_TtC10RevenueCat29RedirectLoggerSessionDelegate")]
-interface RedirectLoggerSessionDelegate : INSUrlSessionTaskDelegate
-{
-	// -(void)URLSession:(NSUrlSession * _Nonnull)session task:(NSUrlSessionTask * _Nonnull)task willPerformHTTPRedirection:(NSHttpUrlResponse * _Nonnull)response newRequest:(NSMutableUrlRequest * _Nonnull)request completionHandler:(void (^ _Nonnull)(NSMutableUrlRequest * _Nullable))completionHandler;
-	[Export ("URLSession:task:willPerformHTTPRedirection:newRequest:completionHandler:")]
-	void URLSession (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSMutableUrlRequest request, Action<NSMutableUrlRequest> completionHandler);
-}
 
 
 
 
 
-// @interface StoreKit2PromotionalOfferPurchaseOptions : NSObject
-[BaseType (typeof(NSObject))]
-[DisableDefaultCtor]
-interface StoreKit2PromotionalOfferPurchaseOptions
-{
-	// @property (readonly, copy, nonatomic) NSString * _Nonnull offerID;
-	[Export ("offerID")]
-	string OfferID { get; }
-
-	// @property (readonly, copy, nonatomic) NSString * _Nonnull compactJWS;
-	[Export ("compactJWS")]
-	string CompactJWS { get; }
-
-	// -(instancetype _Nonnull)initWithOfferID:(NSString * _Nonnull)offerID compactJWS:(NSString * _Nonnull)compactJWS __attribute__((objc_designated_initializer));
-	[Export ("initWithOfferID:compactJWS:")]
-	[DesignatedInitializer]
-	NativeHandle Constructor (string offerID, string compactJWS);
-}
 
 
 
