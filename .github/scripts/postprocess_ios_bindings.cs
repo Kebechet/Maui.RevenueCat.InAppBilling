@@ -315,6 +315,11 @@ static class Postprocess
     // Canonical's attributes/base list are preserved; only the suffix
     // interface's *members* are appended. The suffix block (lead attributes
     // + body) is removed in full.
+    //
+    // A single canonical can have multiple suffix counterparts (sharpie emits
+    // a new `_Swift_NNNN` per category). All of them must be folded into ONE
+    // composite edit on the canonical, otherwise two edits at the same range
+    // applied in sequence corrupt indices and produce broken output.
     private static string MergeSwiftSuffixInterfaces(string text)
     {
         var byName = new Dictionary<string, Match>();
@@ -323,37 +328,68 @@ static class Postprocess
             byName[m.Groups["name"].Value] = m;
         }
 
-        var edits = new List<(int Start, int End, string Replacement)>();
+        // Group all suffix interfaces by their canonical target so each
+        // canonical receives exactly one merge edit.
+        var suffixesByCanonical = new Dictionary<string, List<Match>>();
         foreach (var (name, m) in byName)
         {
             var sm = SwiftSuffixRe.Match(name);
             if (!sm.Success) continue;
-            if (!byName.TryGetValue(sm.Groups["base"].Value, out var canonical)) continue;
-
-            var suffixInner = m.Groups["inner"].Value;
-            if (string.IsNullOrWhiteSpace(suffixInner))
+            var baseName = sm.Groups["base"].Value;
+            if (!byName.ContainsKey(baseName)) continue;
+            if (!suffixesByCanonical.TryGetValue(baseName, out var list))
             {
-                edits.Add((m.Index, m.Index + m.Length, ""));
-                continue;
+                list = new List<Match>();
+                suffixesByCanonical[baseName] = list;
             }
+            list.Add(m);
+        }
 
-            var canonicalInner = canonical.Groups["inner"].Value.TrimEnd();
-            var newInner = canonicalInner + "\n\n" + suffixInner.Trim('\n') + "\n";
-            var newBody = "{" + newInner + "}";
+        if (suffixesByCanonical.Count == 0) return text;
 
+        var edits = new List<(int Start, int End, string Replacement)>();
+        foreach (var (canonicalName, suffixes) in suffixesByCanonical)
+        {
+            var canonical = byName[canonicalName];
+
+            // Concatenate suffix bodies in source order. Preserve the
+            // pre-`}` whitespace from canonical's body (typically `\n\t`)
+            // so the closing brace stays indented after we rewrite the body.
+            suffixes.Sort((a, b) => a.Index.CompareTo(b.Index));
+            var origInner = canonical.Groups["inner"].Value;
+            var innerNoTrailingWs = origInner.TrimEnd();
+            var preCloseWs = origInner[innerNoTrailingWs.Length..]; // "\n\t" etc.
+
+            var sb = new StringBuilder(innerNoTrailingWs);
+            foreach (var s in suffixes)
+            {
+                var si = s.Groups["inner"].Value.Trim('\n').TrimEnd();
+                if (si.Length == 0) continue;
+                sb.Append("\n\n").Append(si);
+            }
+            sb.Append(preCloseWs);
+            var newInner = sb.ToString();
+
+            // Preserve canonical's body indentation (`\t{`) and its trailing
+            // whitespace/newline so the rest of the file stays formatted.
             var origBody = canonical.Groups["body"].Value;
+            var openIdx = origBody.IndexOf('{');
+            var leadingWs = openIdx > 0 ? origBody[..openIdx] : "";
             var trailing = origBody[origBody.TrimEnd().Length..];
+
+            var newBody = leadingWs + "{" + newInner + "}" + trailing;
             var newCanonical =
                 canonical.Groups["lead"].Value +
                 canonical.Groups["decl"].Value +
-                newBody +
-                trailing;
+                newBody;
 
             edits.Add((canonical.Index, canonical.Index + canonical.Length, newCanonical));
-            edits.Add((m.Index, m.Index + m.Length, ""));
+            foreach (var s in suffixes)
+            {
+                edits.Add((s.Index, s.Index + s.Length, ""));
+            }
         }
 
-        if (edits.Count == 0) return text;
         edits.Sort((a, b) => b.Start.CompareTo(a.Start));
         foreach (var (start, end, replacement) in edits)
         {
@@ -431,8 +467,10 @@ static class Postprocess
     // was not used anywhere").
     private static string RemoveUnusedDelegates(string text)
     {
+        // `[ \t]*` allows the delegate to live inside a block-namespace
+        // (sharpie's default) where it would be indented one level.
         var declRe = new Regex(
-            @"^delegate[ \t]+[^\n;]+?[ \t](?<name>[A-Za-z_]\w*)[ \t]*\([^;]*\);[ \t]*\n",
+            @"^[ \t]*delegate[ \t]+[^\n;]+?[ \t](?<name>[A-Za-z_]\w*)[ \t]*\([^;]*\);[ \t]*\n",
             RegexOptions.Multiline);
 
         var matches = declRe.Matches(text).Cast<Match>().ToList();

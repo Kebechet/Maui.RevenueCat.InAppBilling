@@ -24,6 +24,12 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Run post-processor tests
+        # Fail fast if the post-processor regressed before we spend time on
+        # sharpie. Tests invoke the script via subprocess, so they cover the
+        # exact code path used by the cleanup step below.
+        run: dotnet test tests/Postprocess.Tests/Postprocess.Tests.csproj --nologo
+
       - name: Resolve RevenueCat version and download URL
         id: rc_info
         env:
