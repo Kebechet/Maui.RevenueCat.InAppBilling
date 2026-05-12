@@ -24,7 +24,7 @@
 		<DebugType>embedded</DebugType>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<EmbedAllSources>true</EmbedAllSources>
-		<Version>10.1.2.1</Version>
+		<Version>10.1.2.0</Version>
 		<PackageReleaseNotes>Updated to RevenueCat Android SDK 10.1.2 with Test Store support</PackageReleaseNotes>
 	</PropertyGroup>
 

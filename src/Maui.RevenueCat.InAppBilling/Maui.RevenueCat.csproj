@@ -55,7 +55,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.1.2.1" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.1.2.0" />
   </ItemGroup>
 
   <!--Android warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.LiveData 2.8.5.1 requires Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx (>= 2.8.5.1 && < 2.8.6) but version Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx 2.8.7.1 was resolved.-->
