@@ -141,7 +141,31 @@ jobs:
           echo "🧹 Removing .swiftmodule and .dSYM directories (required for Windows build)..."
           find "$FRAMEWORK_DIR" -type d -name "*.swiftmodule" -exec rm -rf {} + 2>/dev/null || true
           find "$FRAMEWORK_DIR" -type d -name "*.dSYM" -exec rm -rf {} + 2>/dev/null || true
+          # Top-level `dSYMs/` folders are referenced by Info.plist's
+          # `DebugSymbolsPath`; drop them too so `dotnet pack` doesn't try to
+          # include them via the plist (the deeper `*.dSYM` rule above misses
+          # the wrapping `dSYMs/` parent).
+          find "$FRAMEWORK_DIR" -type d -name "dSYMs" -exec rm -rf {} + 2>/dev/null || true
           echo "✅ .swiftmodule and .dSYM directories removed"
+
+          echo "🧹 Stripping DebugSymbolsPath entries from Info.plist (NU5123 path-too-long warnings)..."
+          # `dotnet pack` reads `DebugSymbolsPath` from the xcframework's
+          # top-level Info.plist and expands it to dSYM file references, which
+          # produces the NU5123 path-too-long warning during pack even when the
+          # dSYM directories themselves have been deleted. Drop the keys here
+          # so the pack target has nothing to expand. python3 ships with the
+          # macos-latest runner; plistlib handles binary or XML plists.
+          python3 - "$FRAMEWORK_DIR/Info.plist" <<'PY'
+          import plistlib, sys
+          path = sys.argv[1]
+          with open(path, "rb") as f:
+              data = plistlib.load(f)
+          for lib in data.get("AvailableLibraries", []):
+              lib.pop("DebugSymbolsPath", None)
+          with open(path, "wb") as f:
+              plistlib.dump(data, f)
+          PY
+          echo "✅ DebugSymbolsPath entries stripped"
 
           echo "📁 Framework structure:"
           ls -la "$FRAMEWORK_DIR"
