@@ -20,8 +20,8 @@
       <PackageIcon>icon.png</PackageIcon>
       <SymbolPackageFormat>snupkg</SymbolPackageFormat>
       <EmbedAllSources>true</EmbedAllSources>
-      <Version>5.34.0.1</Version>
-      <PackageReleaseNotes>Shortened package paths (removed dSYMs)</PackageReleaseNotes>
+      <Version>5.72.0.0</Version>
+      <PackageReleaseNotes>Updated to RevenueCat purchases-ios 5.72.0; bindings regenerated via .github/workflows/generate-ios-bindings.yml</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

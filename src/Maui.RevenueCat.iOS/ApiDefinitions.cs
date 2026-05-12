@@ -1,19 +1,381 @@
+using System;
 using Foundation;
 using ObjCRuntime;
 using StoreKit;
-using System;
-using System.ComponentModel;
 
 namespace Maui.RevenueCat.iOS;
 
-delegate void ReadyForPromotedProductCallbackHandler(RCStoreTransaction transaction, RCCustomerInfo customerInfo, NSError error, bool userCancelled);
-delegate void StartPurchaseHandler([BlockCallback] ReadyForPromotedProductCallbackHandler defermentBlock);
+// Named delegates for callbacks that bgen's Trampolines generator can't
+// emit from inline `Action<Action<...>>` (System.Action`4 mangling breaks
+// the generated trampoline). See README "created delegates for Purchases".
+delegate void ReadyForPromotedProductCallbackHandler (RCStoreTransaction transaction, RCCustomerInfo customerInfo, NSError error, bool userCancelled);
+delegate void StartPurchaseHandler ([BlockCallback] ReadyForPromotedProductCallbackHandler defermentBlock);
+
+[Static]
+partial interface Constants
+{
+	// extern double RevenueCatVersionNumber;
+	[Field ("RevenueCatVersionNumber", "__Internal")]
+	double RevenueCatVersionNumber { get; }
+}
+
+// @interface RCAdDisplayed : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdDisplayed
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nullable networkName;
+	[NullAllowed, Export ("networkName")]
+	string NetworkName { get; }
+
+	// @property (readonly, nonatomic, strong) RCMediatorName * _Nonnull mediatorName;
+	[Export ("mediatorName", ArgumentSemantic.Strong)]
+	RCMediatorName MediatorName { get; }
+
+	// @property (readonly, nonatomic, strong) RCAdFormat * _Nonnull adFormat;
+	[Export ("adFormat", ArgumentSemantic.Strong)]
+	RCAdFormat AdFormat { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nullable placement;
+	[NullAllowed, Export ("placement")]
+	string Placement { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull adUnitId;
+	[Export ("adUnitId")]
+	string AdUnitId { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull impressionId;
+	[Export ("impressionId")]
+	string ImpressionId { get; }
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat placement:(NSString * _Nullable)placement adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId __attribute__((objc_designated_initializer));
+	[Export ("initWithNetworkName:mediatorName:adFormat:placement:adUnitId:impressionId:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, [NullAllowed] string placement, string adUnitId, string impressionId);
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId;
+	[Export ("initWithNetworkName:mediatorName:adFormat:adUnitId:impressionId:")]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, string adUnitId, string impressionId);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
+// @interface RCAdFailedToLoad : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdFailedToLoad
+{
+	// @property (readonly, nonatomic, strong) RCMediatorName * _Nonnull mediatorName;
+	[Export ("mediatorName", ArgumentSemantic.Strong)]
+	RCMediatorName MediatorName { get; }
+
+	// @property (readonly, nonatomic, strong) RCAdFormat * _Nonnull adFormat;
+	[Export ("adFormat", ArgumentSemantic.Strong)]
+	RCAdFormat AdFormat { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nullable placement;
+	[NullAllowed, Export ("placement")]
+	string Placement { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull adUnitId;
+	[Export ("adUnitId")]
+	string AdUnitId { get; }
+
+	// @property (readonly, nonatomic, strong) NSNumber * _Nullable mediatorErrorCode;
+	[NullAllowed, Export ("mediatorErrorCode", ArgumentSemantic.Strong)]
+	NSNumber MediatorErrorCode { get; }
+
+	// -(instancetype _Nonnull)initWithMediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat placement:(NSString * _Nullable)placement adUnitId:(NSString * _Nonnull)adUnitId mediatorErrorCode:(NSNumber * _Nullable)mediatorErrorCode __attribute__((objc_designated_initializer));
+	[Export ("initWithMediatorName:adFormat:placement:adUnitId:mediatorErrorCode:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (RCMediatorName mediatorName, RCAdFormat adFormat, [NullAllowed] string placement, string adUnitId, [NullAllowed] NSNumber mediatorErrorCode);
+
+	// -(instancetype _Nonnull)initWithMediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat adUnitId:(NSString * _Nonnull)adUnitId mediatorErrorCode:(NSNumber * _Nullable)mediatorErrorCode;
+	[Export ("initWithMediatorName:adFormat:adUnitId:mediatorErrorCode:")]
+	NativeHandle Constructor (RCMediatorName mediatorName, RCAdFormat adFormat, string adUnitId, [NullAllowed] NSNumber mediatorErrorCode);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
+// @interface RCAdFormat : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdFormat
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull rawValue;
+	[Export ("rawValue")]
+	string RawValue { get; }
+
+	// -(instancetype _Nonnull)initWithRawValue:(NSString * _Nonnull)rawValue __attribute__((objc_designated_initializer));
+	[Export ("initWithRawValue:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (string rawValue);
+
+	// @property (readonly, nonatomic, strong, class) RCAdFormat * _Nonnull other;
+	[Static]
+	[Export ("other", ArgumentSemantic.Strong)]
+	RCAdFormat Other { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdFormat * _Nonnull banner;
+	[Static]
+	[Export ("banner", ArgumentSemantic.Strong)]
+	RCAdFormat Banner { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdFormat * _Nonnull interstitial;
+	[Static]
+	[Export ("interstitial", ArgumentSemantic.Strong)]
+	RCAdFormat Interstitial { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdFormat * _Nonnull rewarded;
+	[Static]
+	[Export ("rewarded", ArgumentSemantic.Strong)]
+	RCAdFormat Rewarded { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdFormat * _Nonnull rewardedInterstitial;
+	[Static]
+	[Export ("rewardedInterstitial", ArgumentSemantic.Strong)]
+	RCAdFormat RewardedInterstitial { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdFormat * _Nonnull native;
+	[Static]
+	[Export ("native", ArgumentSemantic.Strong)]
+	RCAdFormat Native { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdFormat * _Nonnull appOpen;
+	[Static]
+	[Export ("appOpen", ArgumentSemantic.Strong)]
+	RCAdFormat AppOpen { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
+// @interface RCAdLoaded : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdLoaded
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nullable networkName;
+	[NullAllowed, Export ("networkName")]
+	string NetworkName { get; }
+
+	// @property (readonly, nonatomic, strong) RCMediatorName * _Nonnull mediatorName;
+	[Export ("mediatorName", ArgumentSemantic.Strong)]
+	RCMediatorName MediatorName { get; }
+
+	// @property (readonly, nonatomic, strong) RCAdFormat * _Nonnull adFormat;
+	[Export ("adFormat", ArgumentSemantic.Strong)]
+	RCAdFormat AdFormat { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nullable placement;
+	[NullAllowed, Export ("placement")]
+	string Placement { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull adUnitId;
+	[Export ("adUnitId")]
+	string AdUnitId { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull impressionId;
+	[Export ("impressionId")]
+	string ImpressionId { get; }
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat placement:(NSString * _Nullable)placement adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId __attribute__((objc_designated_initializer));
+	[Export ("initWithNetworkName:mediatorName:adFormat:placement:adUnitId:impressionId:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, [NullAllowed] string placement, string adUnitId, string impressionId);
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId;
+	[Export ("initWithNetworkName:mediatorName:adFormat:adUnitId:impressionId:")]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, string adUnitId, string impressionId);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
+// @interface RCAdOpened : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdOpened
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nullable networkName;
+	[NullAllowed, Export ("networkName")]
+	string NetworkName { get; }
+
+	// @property (readonly, nonatomic, strong) RCMediatorName * _Nonnull mediatorName;
+	[Export ("mediatorName", ArgumentSemantic.Strong)]
+	RCMediatorName MediatorName { get; }
+
+	// @property (readonly, nonatomic, strong) RCAdFormat * _Nonnull adFormat;
+	[Export ("adFormat", ArgumentSemantic.Strong)]
+	RCAdFormat AdFormat { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nullable placement;
+	[NullAllowed, Export ("placement")]
+	string Placement { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull adUnitId;
+	[Export ("adUnitId")]
+	string AdUnitId { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull impressionId;
+	[Export ("impressionId")]
+	string ImpressionId { get; }
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat placement:(NSString * _Nullable)placement adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId __attribute__((objc_designated_initializer));
+	[Export ("initWithNetworkName:mediatorName:adFormat:placement:adUnitId:impressionId:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, [NullAllowed] string placement, string adUnitId, string impressionId);
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId;
+	[Export ("initWithNetworkName:mediatorName:adFormat:adUnitId:impressionId:")]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, string adUnitId, string impressionId);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
+// @interface RCAdRevenue : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdRevenue
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nullable networkName;
+	[NullAllowed, Export ("networkName")]
+	string NetworkName { get; }
+
+	// @property (readonly, nonatomic, strong) RCMediatorName * _Nonnull mediatorName;
+	[Export ("mediatorName", ArgumentSemantic.Strong)]
+	RCMediatorName MediatorName { get; }
+
+	// @property (readonly, nonatomic, strong) RCAdFormat * _Nonnull adFormat;
+	[Export ("adFormat", ArgumentSemantic.Strong)]
+	RCAdFormat AdFormat { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nullable placement;
+	[NullAllowed, Export ("placement")]
+	string Placement { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull adUnitId;
+	[Export ("adUnitId")]
+	string AdUnitId { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull impressionId;
+	[Export ("impressionId")]
+	string ImpressionId { get; }
+
+	// @property (readonly, nonatomic) NSInteger revenueMicros;
+	[Export ("revenueMicros")]
+	nint RevenueMicros { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull currency;
+	[Export ("currency")]
+	string Currency { get; }
+
+	// @property (readonly, nonatomic, strong) RCAdRevenuePrecision * _Nonnull precision;
+	[Export ("precision", ArgumentSemantic.Strong)]
+	RCAdRevenuePrecision Precision { get; }
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat placement:(NSString * _Nullable)placement adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId revenueMicros:(NSInteger)revenueMicros currency:(NSString * _Nonnull)currency precision:(RCAdRevenuePrecision * _Nonnull)precision __attribute__((objc_designated_initializer));
+	[Export ("initWithNetworkName:mediatorName:adFormat:placement:adUnitId:impressionId:revenueMicros:currency:precision:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, [NullAllowed] string placement, string adUnitId, string impressionId, nint revenueMicros, string currency, RCAdRevenuePrecision precision);
+
+	// -(instancetype _Nonnull)initWithNetworkName:(NSString * _Nullable)networkName mediatorName:(RCMediatorName * _Nonnull)mediatorName adFormat:(RCAdFormat * _Nonnull)adFormat adUnitId:(NSString * _Nonnull)adUnitId impressionId:(NSString * _Nonnull)impressionId revenueMicros:(NSInteger)revenueMicros currency:(NSString * _Nonnull)currency precision:(RCAdRevenuePrecision * _Nonnull)precision;
+	[Export ("initWithNetworkName:mediatorName:adFormat:adUnitId:impressionId:revenueMicros:currency:precision:")]
+	NativeHandle Constructor ([NullAllowed] string networkName, RCMediatorName mediatorName, RCAdFormat adFormat, string adUnitId, string impressionId, nint revenueMicros, string currency, RCAdRevenuePrecision precision);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
+
+// @interface RCAdRevenuePrecision : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdRevenuePrecision
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull rawValue;
+	[Export ("rawValue")]
+	string RawValue { get; }
+
+	// -(instancetype _Nonnull)initWithRawValue:(NSString * _Nonnull)rawValue __attribute__((objc_designated_initializer));
+	[Export ("initWithRawValue:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (string rawValue);
+
+	// @property (readonly, nonatomic, strong, class) RCAdRevenuePrecision * _Nonnull exact;
+	[Static]
+	[Export ("exact", ArgumentSemantic.Strong)]
+	RCAdRevenuePrecision Exact { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdRevenuePrecision * _Nonnull publisherDefined;
+	[Static]
+	[Export ("publisherDefined", ArgumentSemantic.Strong)]
+	RCAdRevenuePrecision PublisherDefined { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdRevenuePrecision * _Nonnull estimated;
+	[Static]
+	[Export ("estimated", ArgumentSemantic.Strong)]
+	RCAdRevenuePrecision Estimated { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCAdRevenuePrecision * _Nonnull unknown;
+	[Static]
+	[Export ("unknown", ArgumentSemantic.Strong)]
+	RCAdRevenuePrecision Unknown { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
+// @interface RCAdTracker : NSObject
+[Watch (8,0), TV (15,0), Mac (12,0), iOS (15,0)]
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCAdTracker
+{
+	// -(void)trackAdFailedToLoad:(RCAdFailedToLoad * _Nonnull)data;
+	[Export ("trackAdFailedToLoad:")]
+	void TrackAdFailedToLoad (RCAdFailedToLoad data);
+
+	// -(void)trackAdLoaded:(RCAdLoaded * _Nonnull)data;
+	[Export ("trackAdLoaded:")]
+	void TrackAdLoaded (RCAdLoaded data);
+
+	// -(void)trackAdDisplayed:(RCAdDisplayed * _Nonnull)data;
+	[Export ("trackAdDisplayed:")]
+	void TrackAdDisplayed (RCAdDisplayed data);
+
+	// -(void)trackAdOpened:(RCAdOpened * _Nonnull)data;
+	[Export ("trackAdOpened:")]
+	void TrackAdOpened (RCAdOpened data);
+
+	// -(void)trackAdRevenue:(RCAdRevenue * _Nonnull)data;
+	[Export ("trackAdRevenue:")]
+	void TrackAdRevenue (RCAdRevenue data);
+}
 
 // @interface RCAttribution : NSObject
 [BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
 interface RCAttribution
 {
+
 	// -(void)enableAdServicesAttributionTokenCollection;
 	[Export ("enableAdServicesAttributionTokenCollection")]
 	void EnableAdServicesAttributionTokenCollection ();
@@ -78,9 +440,25 @@ interface RCAttribution
 	[Export ("setCleverTapID:")]
 	void SetCleverTapID ([NullAllowed] string cleverTapID);
 
+	// -(void)setAirbridgeDeviceID:(NSString * _Nullable)airbridgeDeviceID;
+	[Export ("setAirbridgeDeviceID:")]
+	void SetAirbridgeDeviceID ([NullAllowed] string airbridgeDeviceID);
+
 	// -(void)setKochavaDeviceID:(NSString * _Nullable)kochavaDeviceID;
 	[Export ("setKochavaDeviceID:")]
 	void SetKochavaDeviceID ([NullAllowed] string kochavaDeviceID);
+
+	// -(void)setSolarEngineDistinctId:(NSString * _Nullable)solarEngineDistinctId;
+	[Export ("setSolarEngineDistinctId:")]
+	void SetSolarEngineDistinctId ([NullAllowed] string solarEngineDistinctId);
+
+	// -(void)setSolarEngineAccountId:(NSString * _Nullable)solarEngineAccountId;
+	[Export ("setSolarEngineAccountId:")]
+	void SetSolarEngineAccountId ([NullAllowed] string solarEngineAccountId);
+
+	// -(void)setSolarEngineVisitorId:(NSString * _Nullable)solarEngineVisitorId;
+	[Export ("setSolarEngineVisitorId:")]
+	void SetSolarEngineVisitorId ([NullAllowed] string solarEngineVisitorId);
 
 	// -(void)setMixpanelDistinctID:(NSString * _Nullable)mixpanelDistinctID;
 	[Export ("setMixpanelDistinctID:")]
@@ -129,7 +507,17 @@ interface RCAttribution
 	// -(void)setCreative:(NSString * _Nullable)creative;
 	[Export ("setCreative:")]
 	void SetCreative ([NullAllowed] string creative);
+
+	// -(void)setAppsFlyerConversionData:(NSDictionary * _Nullable)data;
+	[Export ("setAppsFlyerConversionData:")]
+	void SetAppsFlyerConversionData ([NullAllowed] NSDictionary data);
+
+	// -(void)setAppstackAttributionParams:(NSDictionary<NSString *,id> * _Nullable)data completion:(void (^ _Nonnull)(RCOfferings * _Nullable, NSError * _Nullable))completion;
+	[Export ("setAppstackAttributionParams:completion:")]
+	void SetAppstackAttributionParams ([NullAllowed] NSDictionary<NSString, NSObject> data, Action<RCOfferings, NSError> completion);
 }
+
+
 
 // @interface RCConfigurationBuilder : NSObject
 [BaseType (typeof(NSObject))]
@@ -182,6 +570,7 @@ interface RCConfigurationBuilder
 	RCConfigurationBuilder WithEntitlementVerificationMode (RCEntitlementVerificationMode mode);
 
 	// -(RCConfigurationBuilder * _Nonnull)withDiagnosticsEnabled:(BOOL)diagnosticsEnabled __attribute__((warn_unused_result(""))) __attribute__((availability(watchos, introduced=8.0))) __attribute__((availability(macos, introduced=12.0))) __attribute__((availability(tvos, introduced=15.0))) __attribute__((availability(ios, introduced=15.0)));
+	[Watch (8,0), TV (15,0), Mac (12,0), iOS (15,0)]
 	[Export ("withDiagnosticsEnabled:")]
 	RCConfigurationBuilder WithDiagnosticsEnabled (bool diagnosticsEnabled);
 
@@ -189,22 +578,24 @@ interface RCConfigurationBuilder
 	[Export ("withStoreKitVersion:")]
 	RCConfigurationBuilder WithStoreKitVersion (RCStoreKitVersion version);
 
+	// -(RCConfigurationBuilder * _Nonnull)withAutomaticDeviceIdentifierCollectionEnabled:(BOOL)automaticDeviceIdentifierCollectionEnabled __attribute__((warn_unused_result("")));
+	[Export ("withAutomaticDeviceIdentifierCollectionEnabled:")]
+	RCConfigurationBuilder WithAutomaticDeviceIdentifierCollectionEnabled (bool automaticDeviceIdentifierCollectionEnabled);
+
 	// -(RCConfiguration * _Nonnull)build __attribute__((warn_unused_result("")));
 	[Export ("build")]
 	RCConfiguration Build { get; }
 
-	// -(RCConfigurationBuilder * _Nonnull)withObserverMode:(BOOL)observerMode __attribute__((warn_unused_result(""))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'with' has been renamed to 'withPurchasesAreCompletedBy:storeKitVersion:': Observer Mode is now named PurchasesAreCompletedBy.")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'with' has been renamed to 'withPurchasesAreCompletedBy:storeKitVersion:': Observer Mode is now named PurchasesAreCompletedBy.")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'with' has been renamed to 'withPurchasesAreCompletedBy:storeKitVersion:': Observer Mode is now named PurchasesAreCompletedBy.")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'with' has been renamed to 'withPurchasesAreCompletedBy:storeKitVersion:': Observer Mode is now named PurchasesAreCompletedBy.")]
-	[Export ("withObserverMode:")]
-	RCConfigurationBuilder WithObserverMode (bool observerMode);
-
 	// -(RCConfigurationBuilder * _Nonnull)withUsesStoreKit2IfAvailable:(BOOL)usesStoreKit2IfAvailable __attribute__((warn_unused_result(""))) __attribute__((deprecated("Use .with(storeKitVersion:) to enable StoreKit 2")));
 	[Export ("withUsesStoreKit2IfAvailable:")]
 	RCConfigurationBuilder WithUsesStoreKit2IfAvailable (bool usesStoreKit2IfAvailable);
+
+	// -(RCConfigurationBuilder * _Nonnull)withObserverMode:(BOOL)observerMode __attribute__((warn_unused_result(""))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
 }
+
+
+
+
 
 // @interface RCConfiguration : NSObject
 [BaseType (typeof(NSObject))]
@@ -215,6 +606,30 @@ interface RCConfiguration
 	[Static]
 	[Export ("builderWithAPIKey:")]
 	RCConfigurationBuilder BuilderWithAPIKey (string apiKey);
+}
+
+
+// @interface RCCustomPaywallImpressionParams : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCCustomPaywallImpressionParams
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nullable paywallId;
+	[NullAllowed, Export ("paywallId")]
+	string PaywallId { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nullable offeringId;
+	[NullAllowed, Export ("offeringId")]
+	string OfferingId { get; }
+
+	// -(instancetype _Nonnull)initWithPaywallId:(NSString * _Nullable)paywallId offeringId:(NSString * _Nullable)offeringId __attribute__((objc_designated_initializer));
+	[Export ("initWithPaywallId:offeringId:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor ([NullAllowed] string paywallId, [NullAllowed] string offeringId);
+
+	// -(instancetype _Nonnull)initWithPaywallId:(NSString * _Nullable)paywallId;
+	[Export ("initWithPaywallId:")]
+	NativeHandle Constructor ([NullAllowed] string paywallId);
 }
 
 // @interface RCCustomerInfo : NSObject
@@ -254,7 +669,7 @@ interface RCCustomerInfo
 	[Export ("originalAppUserId")]
 	string OriginalAppUserId { get; }
 
-	// @property (readonly, copy, nonatomic) NSURL * _Nullable managementURL;
+	// @property (readonly, copy, nonatomic) NSUrl * _Nullable managementURL;
 	[NullAllowed, Export ("managementURL", ArgumentSemantic.Copy)]
 	NSUrl ManagementURL { get; }
 
@@ -290,9 +705,12 @@ interface RCCustomerInfo
 	[return: NullAllowed]
 	NSDate PurchaseDateForEntitlement (string entitlementIdentifier);
 
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 
 	// @property (readonly, copy, nonatomic) NSDictionary<NSString *,id> * _Nonnull rawData;
 	[Export ("rawData", ArgumentSemantic.Copy)]
@@ -306,6 +724,8 @@ interface RCCustomerInfo
 	[Export ("nonSubscriptionTransactions", ArgumentSemantic.Copy)]
 	RCStoreTransaction[] NonSubscriptionTransactions { get; }
 }
+
+
 
 // @interface RCDangerousSettings : NSObject
 [BaseType (typeof(NSObject))]
@@ -327,6 +747,7 @@ interface RCDangerousSettings
 	[Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
 	NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
 }
+
 
 // @interface RCEntitlementInfo : NSObject
 [BaseType (typeof(NSObject))]
@@ -397,6 +818,8 @@ interface RCEntitlementInfo : INativeObject
 	[Export ("rawData", ArgumentSemantic.Copy)]
 	NSDictionary<NSString, NSObject> RawData { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
@@ -409,6 +832,7 @@ interface RCEntitlementInfo : INativeObject
 	[Export ("isActiveInAnyEnvironment")]
 	bool IsActiveInAnyEnvironment { get; }
 }
+
 
 // @interface RCEntitlementInfos : NSObject
 [BaseType (typeof(NSObject))]
@@ -428,6 +852,9 @@ interface RCEntitlementInfos
 	[Export ("verification")]
 	RCVerificationResult Verification { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+
 	// @property (readonly, copy, nonatomic) NSDictionary<NSString *,RCEntitlementInfo *> * _Nonnull active;
 	[Export ("active", ArgumentSemantic.Copy)]
 	NSDictionary<NSString, RCEntitlementInfo> Active { get; }
@@ -441,6 +868,20 @@ interface RCEntitlementInfos
 	NSDictionary<NSString, RCEntitlementInfo> ActiveInAnyEnvironment { get; }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // @interface RCIntroEligibility : NSObject
 [BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
@@ -450,6 +891,42 @@ interface RCIntroEligibility : INativeObject
 	[Export ("status")]
 	RCIntroEligibilityStatus Status { get; }
 
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull debugDescription;
+}
+
+
+
+// @interface RCMediatorName : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCMediatorName
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull rawValue;
+	[Export ("rawValue")]
+	string RawValue { get; }
+
+	// -(instancetype _Nonnull)initWithRawValue:(NSString * _Nonnull)rawValue __attribute__((objc_designated_initializer));
+	[Export ("initWithRawValue:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (string rawValue);
+
+	// @property (readonly, nonatomic, strong, class) RCMediatorName * _Nonnull adMob;
+	[Static]
+	[Export ("adMob", ArgumentSemantic.Strong)]
+	RCMediatorName AdMob { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCMediatorName * _Nonnull appLovin;
+	[Static]
+	[Export ("appLovin", ArgumentSemantic.Strong)]
+	RCMediatorName AppLovin { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
@@ -487,6 +964,8 @@ interface RCNonSubscriptionTransaction
 	// @property (readonly, nonatomic) BOOL isSandbox;
 	[Export ("isSandbox")]
 	bool IsSandbox { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 }
 
 // @interface RCOffering : NSObject
@@ -538,10 +1017,11 @@ interface RCOffering : INativeObject
 	[NullAllowed, Export ("weekly", ArgumentSemantic.Strong)]
 	RCPackage Weekly { get; }
 
-	// @property (readonly, copy, nonatomic) NSURL * _Nullable webCheckoutUrl;
+	// @property (readonly, copy, nonatomic) NSUrl * _Nullable webCheckoutUrl;
 	[NullAllowed, Export ("webCheckoutUrl", ArgumentSemantic.Copy)]
 	NSUrl WebCheckoutUrl { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 	// -(RCPackage * _Nullable)packageWithIdentifier:(NSString * _Nullable)identifier __attribute__((warn_unused_result("")));
 	[Export ("packageWithIdentifier:")]
 	[return: NullAllowed]
@@ -552,7 +1032,7 @@ interface RCOffering : INativeObject
 	[return: NullAllowed]
 	RCPackage ObjectForKeyedSubscript (string key);
 
-	// -(instancetype _Nonnull)initWithIdentifier:(NSString * _Nonnull)identifier serverDescription:(NSString * _Nonnull)serverDescription metadata:(NSDictionary<NSString *,id> * _Nonnull)metadata availablePackages:(NSArray<RCPackage *> * _Nonnull)availablePackages webCheckoutUrl:(NSURL * _Nullable)webCheckoutUrl;
+	// -(instancetype _Nonnull)initWithIdentifier:(NSString * _Nonnull)identifier serverDescription:(NSString * _Nonnull)serverDescription metadata:(NSDictionary<NSString *,id> * _Nonnull)metadata availablePackages:(NSArray<RCPackage *> * _Nonnull)availablePackages webCheckoutUrl:(NSUrl * _Nullable)webCheckoutUrl;
 	[Export ("initWithIdentifier:serverDescription:metadata:availablePackages:webCheckoutUrl:")]
 	NativeHandle Constructor (string identifier, string serverDescription, NSDictionary<NSString, NSObject> metadata, RCPackage[] availablePackages, [NullAllowed] NSUrl webCheckoutUrl);
 }
@@ -580,11 +1060,13 @@ interface RCOfferings
 	[return: NullAllowed]
 	RCOffering ObjectForKeyedSubscript (string key);
 
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 	// -(RCOffering * _Nullable)currentOfferingForPlacement:(NSString * _Nonnull)placementIdentifier __attribute__((warn_unused_result("")));
 	[Export ("currentOfferingForPlacement:")]
 	[return: NullAllowed]
 	RCOffering CurrentOfferingForPlacement (string placementIdentifier);
 }
+
 
 // @interface RCPackage : NSObject
 [BaseType (typeof(NSObject))]
@@ -615,32 +1097,25 @@ interface RCPackage
 	[NullAllowed, Export ("localizedIntroductoryPriceString")]
 	string LocalizedIntroductoryPriceString { get; }
 
-	// @property (readonly, copy, nonatomic) NSURL * _Nullable webCheckoutUrl;
+	// @property (readonly, copy, nonatomic) NSUrl * _Nullable webCheckoutUrl;
 	[NullAllowed, Export ("webCheckoutUrl", ArgumentSemantic.Copy)]
 	NSUrl WebCheckoutUrl { get; }
 
-	// -(instancetype _Nonnull)initWithIdentifier:(NSString * _Nonnull)identifier packageType:(enum RCPackageType)packageType storeProduct:(RCStoreProduct * _Nonnull)storeProduct offeringIdentifier:(NSString * _Nonnull)offeringIdentifier webCheckoutUrl:(NSURL * _Nullable)webCheckoutUrl;
+	// -(instancetype _Nonnull)initWithIdentifier:(NSString * _Nonnull)identifier packageType:(enum RCPackageType)packageType storeProduct:(RCStoreProduct * _Nonnull)storeProduct offeringIdentifier:(NSString * _Nonnull)offeringIdentifier webCheckoutUrl:(NSUrl * _Nullable)webCheckoutUrl;
 	[Export ("initWithIdentifier:packageType:storeProduct:offeringIdentifier:webCheckoutUrl:")]
 	NativeHandle Constructor (string identifier, RCPackageType packageType, RCStoreProduct storeProduct, string offeringIdentifier, [NullAllowed] NSUrl webCheckoutUrl);
 
-	// -(instancetype _Nonnull)initWithIdentifier:(NSString * _Nonnull)identifier packageType:(enum RCPackageType)packageType storeProduct:(RCStoreProduct * _Nonnull)storeProduct presentedOfferingContext:(RCPresentedOfferingContext * _Nonnull)presentedOfferingContext webCheckoutUrl:(NSURL * _Nullable)webCheckoutUrl __attribute__((objc_designated_initializer));
+	// -(instancetype _Nonnull)initWithIdentifier:(NSString * _Nonnull)identifier packageType:(enum RCPackageType)packageType storeProduct:(RCStoreProduct * _Nonnull)storeProduct presentedOfferingContext:(RCPresentedOfferingContext * _Nonnull)presentedOfferingContext webCheckoutUrl:(NSUrl * _Nullable)webCheckoutUrl __attribute__((objc_designated_initializer));
 	[Export ("initWithIdentifier:packageType:storeProduct:presentedOfferingContext:webCheckoutUrl:")]
 	[DesignatedInitializer]
 	NativeHandle Constructor (string identifier, RCPackageType packageType, RCStoreProduct storeProduct, RCPresentedOfferingContext presentedOfferingContext, [NullAllowed] NSUrl webCheckoutUrl);
 
-
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(maccatalyst,obsoleted=1,message="'product' has been renamed to 'storeProduct': Use StoreProduct instead") SKProduct * product __attribute__((availability(maccatalyst, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacCatalyst, 1, 0, message: "'product' has been renamed to 'storeProduct': Use StoreProduct instead")]
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'product' has been renamed to 'storeProduct': Use StoreProduct instead")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'product' has been renamed to 'storeProduct': Use StoreProduct instead")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'product' has been renamed to 'storeProduct': Use StoreProduct instead")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'product' has been renamed to 'storeProduct': Use StoreProduct instead")]
-	[Export ("product", ArgumentSemantic.Strong)]
-	SKProduct Product { get; }
 
 	// +(NSString * _Nullable)stringFrom:(enum RCPackageType)packageType __attribute__((warn_unused_result("")));
 	[Static]
@@ -657,6 +1132,31 @@ interface RCPackage
 	[Export ("offeringIdentifier")]
 	string OfferingIdentifier { get; }
 }
+
+
+
+// @protocol PaymentQueueWrapperType
+/*
+  Check whether adding [Model] to this declaration is appropriate.
+  [Model] is used to generate a C# class that implements this protocol,
+  and might be useful for protocols that consumers are supposed to implement,
+  since consumers can subclass the generated class instead of implementing
+  the generated interface. If consumers are not supposed to implement this
+  protocol, then [Model] is redundant and will generate code that will never
+  be used.
+*/
+
+
+
+
+
+
+
+
+
+
+
+
 
 // @interface RCPresentedOfferingContext : NSObject
 [BaseType (typeof(NSObject))]
@@ -684,6 +1184,7 @@ interface RCPresentedOfferingContext
 	[Export ("initWithOfferingIdentifier:")]
 	NativeHandle Constructor (string offeringIdentifier);
 
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
@@ -720,7 +1221,14 @@ interface RCProductPaidPrice
 	// @property (readonly, nonatomic) double amount;
 	[Export ("amount")]
 	double Amount { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull formatted;
+	[Export ("formatted")]
+	string Formatted { get; }
 }
+
+
+
 
 // @interface RCPromotionalOffer : NSObject
 [BaseType (typeof(NSObject))]
@@ -736,6 +1244,7 @@ interface RCPromotionalOffer : INativeObject
 	RCPromotionalOfferSignedData SignedData { get; }
 }
 
+
 // @interface RCPromotionalOfferSignedData : NSObject
 [BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
@@ -749,7 +1258,7 @@ interface RCPromotionalOfferSignedData
 	[Export ("keyIdentifier")]
 	string KeyIdentifier { get; }
 
-	// @property (readonly, copy, nonatomic) NSUUID * _Nonnull nonce;
+	// @property (readonly, copy, nonatomic) NSUuid * _Nonnull nonce;
 	[Export ("nonce", ArgumentSemantic.Copy)]
 	NSUuid Nonce { get; }
 
@@ -760,14 +1269,11 @@ interface RCPromotionalOfferSignedData
 	// @property (readonly, nonatomic) NSInteger timestamp;
 	[Export ("timestamp")]
 	nint Timestamp { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 }
 
-// @interface RCPurchaseParams : NSObject
-[BaseType(typeof(NSObject))]
-[DisableDefaultCtor]
-interface RCPurchaseParams
-{
-}
+
 
 // @interface RCPurchaseParamsBuilder : NSObject
 [BaseType (typeof(NSObject))]
@@ -788,125 +1294,172 @@ interface RCPurchaseParamsBuilder
 	[Export ("withPromotionalOffer:")]
 	RCPurchaseParamsBuilder WithPromotionalOffer (RCPromotionalOffer promotionalOffer);
 
+	// -(instancetype _Nonnull)withQuantity:(NSInteger)quantity __attribute__((warn_unused_result("")));
+	[Export ("withQuantity:")]
+	RCPurchaseParamsBuilder WithQuantity (nint quantity);
+
 	// -(instancetype _Nonnull)withWinBackOffer:(RCWinBackOffer * _Nonnull)winBackOffer __attribute__((warn_unused_result(""))) __attribute__((availability(visionos, introduced=2.0))) __attribute__((availability(watchos, introduced=11.0))) __attribute__((availability(tvos, introduced=18.0))) __attribute__((availability(macos, introduced=15.0))) __attribute__((availability(ios, introduced=18.0)));
+	[Watch (11,0), TV (18,0), Mac (15,0), iOS (18,0)]
 	[Export ("withWinBackOffer:")]
 	RCPurchaseParamsBuilder WithWinBackOffer (RCWinBackOffer winBackOffer);
+
+	// -(instancetype _Nonnull)withIntroductoryOfferEligibilityJWS:(NSString * _Nonnull)introductoryOfferEligibilityJWS __attribute__((warn_unused_result(""))) __attribute__((availability(visionos, introduced=2.4))) __attribute__((availability(watchos, introduced=11.4))) __attribute__((availability(tvos, introduced=18.4))) __attribute__((availability(macos, introduced=15.4))) __attribute__((availability(ios, introduced=15.0)));
+	[Watch (11,4), TV (18,4), Mac (15,4), iOS (15,0)]
+	[Export ("withIntroductoryOfferEligibilityJWS:")]
+	RCPurchaseParamsBuilder WithIntroductoryOfferEligibilityJWS (string introductoryOfferEligibilityJWS);
 
 	// -(RCPurchaseParams * _Nonnull)build __attribute__((warn_unused_result("")));
 	[Export ("build")]
 	RCPurchaseParams Build { get; }
 }
 
-// @interface RCPlatformInfo : NSObject
+// Forward declarations for sharpie-emitted opaque types used only as
+// parameter / return types. The script's keep-if-referenced rule will
+// preserve these on regen; this manual block bridges the gap when the
+// post-processor was first run before that rule existed.
 [BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
-interface RCPlatformInfo
-{
-	// -(instancetype _Nonnull)initWithFlavor:(NSString * _Nonnull)flavor version:(NSString * _Nonnull)version __attribute__((objc_designated_initializer));
-	[Export ("initWithFlavor:version:")]
-	[DesignatedInitializer]
-	NativeHandle Constructor (string flavor, string version);
-}
+interface RCPurchaseParams { }
+
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCWebPurchaseRedemption { }
+
+
+// @protocol RCPurchasesType
+/*
+  Check whether adding [Model] to this declaration is appropriate.
+  [Model] is used to generate a C# class that implements this protocol,
+  and might be useful for protocols that consumers are supposed to implement,
+  since consumers can subclass the generated class instead of implementing
+  the generated interface. If consumers are not supposed to implement this
+  protocol, then [Model] is redundant and will generate code that will never
+  be used.
+*/
 
 // @interface RCPurchases : NSObject <RCPurchasesType>
-[BaseType(typeof(NSObject))]
+[BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
 interface RCPurchases
 {
-    // @property (readonly, nonatomic, strong, class) RCPurchases * _Nonnull sharedPurchases;
-    [Static]
-    [Export("sharedPurchases", ArgumentSemantic.Strong)]
-    RCPurchases SharedPurchases { get; }
+	// @property (readonly, nonatomic, strong, class) RCPurchases * _Nonnull sharedPurchases;
+	[Static]
+	[Export ("sharedPurchases", ArgumentSemantic.Strong)]
+	RCPurchases SharedPurchases { get; }
 
-    // @property (readonly, nonatomic, class) BOOL isConfigured;
-    [Static]
-    [Export("isConfigured")]
-    bool IsConfigured { get; }
+	// @property (readonly, nonatomic, class) BOOL isConfigured;
+	[Static]
+	[Export ("isConfigured")]
+	bool IsConfigured { get; }
 
-    [Wrap("WeakDelegate")]
-    [NullAllowed]
-    RCPurchasesDelegate Delegate { get; set; }
+	[Wrap ("WeakDelegate")]
+	[NullAllowed]
+	RCPurchasesDelegate Delegate { get; set; }
 
-    // @property (nonatomic, strong) id<RCPurchasesDelegate> _Nullable delegate;
-    [NullAllowed, Export("delegate", ArgumentSemantic.Strong)]
-    NSObject WeakDelegate { get; set; }
+	// @property (nonatomic, strong) id<RCPurchasesDelegate> _Nullable delegate;
+	[NullAllowed, Export ("delegate", ArgumentSemantic.Strong)]
+	NSObject WeakDelegate { get; set; }
 
-    // @property (nonatomic, class) enum RCLogLevel logLevel;
-    [Static]
-    [Export("logLevel", ArgumentSemantic.Assign)]
-    RCLogLevel LogLevel { get; set; }
+	// @property (nonatomic, class) enum RCLogLevel logLevel;
+	[Static]
+	[Export ("logLevel", ArgumentSemantic.Assign)]
+	RCLogLevel LogLevel { get; set; }
 
-    // @property (copy, nonatomic, class) NSURL * _Nullable proxyURL;
-    [Static]
-    [NullAllowed, Export("proxyURL", ArgumentSemantic.Copy)]
-    NSUrl ProxyURL { get; set; }
+	// @property (copy, nonatomic, class) NSUrl * _Nullable proxyURL;
+	[Static]
+	[NullAllowed, Export ("proxyURL", ArgumentSemantic.Copy)]
+	NSUrl ProxyURL { get; set; }
 
-    // @property (nonatomic, class) BOOL forceUniversalAppStore;
-    [Static]
-    [Export("forceUniversalAppStore")]
-    bool ForceUniversalAppStore { get; set; }
+	// @property (nonatomic, class) BOOL forceUniversalAppStore;
+	[Static]
+	[Export ("forceUniversalAppStore")]
+	bool ForceUniversalAppStore { get; set; }
 
-    // @property (nonatomic, class) BOOL simulatesAskToBuyInSandbox __attribute__((availability(maccatalyst, introduced=13.0))) __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(macos, introduced=10.14))) __attribute__((availability(ios, introduced=8.0)));
-    [Static]
-    [Export("simulatesAskToBuyInSandbox")]
-    bool SimulatesAskToBuyInSandbox { get; set; }
+	// @property (nonatomic, class) BOOL simulatesAskToBuyInSandbox __attribute__((availability(maccatalyst, introduced=13.0))) __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(macos, introduced=10.14))) __attribute__((availability(ios, introduced=8.0)));
+	[Watch (6, 2), MacCatalyst (13, 0), Mac (10, 14), iOS (8, 0)]
+	[Static]
+	[Export ("simulatesAskToBuyInSandbox")]
+	bool SimulatesAskToBuyInSandbox { get; set; }
 
-    // +(BOOL)canMakePayments __attribute__((warn_unused_result("")));
-    [Static]
-    [Export("canMakePayments")]
-    bool CanMakePayments { get; }
+	// +(BOOL)canMakePayments __attribute__((warn_unused_result("")));
+	[Static]
+	[Export ("canMakePayments")]
+	bool CanMakePayments { get; }
 
-    // @property (copy, nonatomic, class) void (^ _Nonnull)(enum RCLogLevel, NSString * _Nonnull) logHandler;
-    [Static]
-    [Export("logHandler", ArgumentSemantic.Copy)]
-    Action<RCLogLevel, NSString> LogHandler { get; set; }
+	// @property (copy, nonatomic, class) void (^ _Nonnull)(enum RCLogLevel, NSString * _Nonnull) logHandler;
+	[Static]
+	[Export ("logHandler", ArgumentSemantic.Copy)]
+	Action<RCLogLevel, NSString> LogHandler { get; set; }
 
-    // @property (copy, nonatomic, class) void (^ _Nonnull)(enum RCLogLevel, NSString * _Nonnull, NSString * _Nullable, NSString * _Nullable, NSUInteger) verboseLogHandler;
-    [Static]
-    [Export("verboseLogHandler", ArgumentSemantic.Copy)]
-    Action<RCLogLevel, NSString, NSString, NSString, nuint> VerboseLogHandler { get; set; }
+	// @property (copy, nonatomic, class) void (^ _Nonnull)(enum RCLogLevel, NSString * _Nonnull, NSString * _Nullable, NSString * _Nullable, NSUInteger) verboseLogHandler;
+	[Static]
+	[Export ("verboseLogHandler", ArgumentSemantic.Copy)]
+	Action<RCLogLevel, NSString, NSString, NSString, nuint> VerboseLogHandler { get; set; }
 
-    // @property (nonatomic, class) BOOL verboseLogs;
-    [Static]
-    [Export("verboseLogs")]
-    bool VerboseLogs { get; set; }
+	// @property (nonatomic, class) BOOL verboseLogs;
+	[Static]
+	[Export ("verboseLogs")]
+	bool VerboseLogs { get; set; }
 
-    // @property (readonly, copy, nonatomic, class) NSString * _Nonnull frameworkVersion;
-    [Static]
-    [Export("frameworkVersion")]
-    string FrameworkVersion { get; }
+	// @property (readonly, copy, nonatomic, class) NSString * _Nonnull frameworkVersion;
+	[Static]
+	[Export ("frameworkVersion")]
+	string FrameworkVersion { get; }
 
-    // @property (readonly, nonatomic, strong) RCAttribution * _Nonnull attribution;
-    [Export("attribution", ArgumentSemantic.Strong)]
-    RCAttribution Attribution { get; }
+	// @property (readonly, nonatomic, strong) RCAttribution * _Nonnull attribution;
+	[Export ("attribution", ArgumentSemantic.Strong)]
+	RCAttribution Attribution { get; }
 
-    // @property (nonatomic) enum RCPurchasesAreCompletedBy purchasesAreCompletedBy;
-    [Export("purchasesAreCompletedBy", ArgumentSemantic.Assign)]
-    RCPurchasesAreCompletedBy PurchasesAreCompletedBy { get; set; }
+	// @property (nonatomic) enum RCPurchasesAreCompletedBy purchasesAreCompletedBy;
+	[Export ("purchasesAreCompletedBy", ArgumentSemantic.Assign)]
+	RCPurchasesAreCompletedBy PurchasesAreCompletedBy { get; set; }
 
-    // @property (readonly, copy, nonatomic) NSString * _Nullable storeFrontCountryCode;
-    [NullAllowed, Export("storeFrontCountryCode")]
-    string StoreFrontCountryCode { get; }
+	// @property (readonly, copy, nonatomic) NSString * _Nullable storeFrontCountryCode;
+	[NullAllowed, Export ("storeFrontCountryCode")]
+	string StoreFrontCountryCode { get; }
 
-    // @property (nonatomic, strong, class) RCPlatformInfo * _Nullable platformInfo;
-    [Static]
-    [NullAllowed, Export("platformInfo", ArgumentSemantic.Strong)]
-    RCPlatformInfo PlatformInfo { get; set; }
+	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(watchos,introduced=9.0) NSLocale * storeFrontLocale __attribute__((availability(watchos, introduced=9.0))) __attribute__((availability(tvos, introduced=16.0))) __attribute__((availability(macos, introduced=13.0))) __attribute__((availability(ios, introduced=16.0)));
+	[Watch (9, 0), TV (16, 0), Mac (13, 0), iOS (16, 0)]
+	[Export ("storeFrontLocale", ArgumentSemantic.Copy)]
+	NSLocale StoreFrontLocale { get; }
 
-    // -(void)eligibleWinBackOffersForProduct:(RCStoreProduct * _Nonnull)product completion:(void (^ _Nonnull)(NSArray<RCWinBackOffer *> * _Nullable, NSError * _Nullable))completion;
-    [Export("eligibleWinBackOffersForProduct:completion:")]
-    void EligibleWinBackOffersForProduct(RCStoreProduct product, Action<NSArray<RCWinBackOffer>, NSError> completion);
+	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=8.0) RCAdTracker * adTracker __attribute__((availability(watchos, introduced=8.0))) __attribute__((availability(macos, introduced=12.0))) __attribute__((availability(tvos, introduced=15.0))) __attribute__((availability(ios, introduced=15.0)));
+	[Watch (8, 0), TV (15, 0), Mac (12, 0), iOS (15, 0)]
+	[Export ("adTracker", ArgumentSemantic.Strong)]
+	RCAdTracker AdTracker { get; }
 
-    // -(void)eligibleWinBackOffersForPackage:(RCPackage * _Nonnull)package completion:(void (^ _Nonnull)(NSArray<RCWinBackOffer *> * _Nullable, NSError * _Nullable))completion __attribute__((availability(visionos, introduced=2.0))) __attribute__((availability(watchos, introduced=11.0))) __attribute__((availability(tvos, introduced=18.0))) __attribute__((availability(macos, introduced=15.0))) __attribute__((availability(ios, introduced=18.0)));
-    [Export("eligibleWinBackOffersForPackage:completion:")]
-    void EligibleWinBackOffersForPackage(RCPackage package, Action<NSArray<RCWinBackOffer>, NSError> completion);
-    // -(void)readyForPromotedProduct:(RCStoreProduct * _Nonnull)product purchase:(void (^ _Nonnull)(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL)))startPurchase;
-    [Export ("readyForPromotedProduct:purchase:")]
+	// -(void)trackCustomPaywallImpression:(RCCustomPaywallImpressionParams * _Nonnull)params __attribute__((availability(watchos, introduced=8.0))) __attribute__((availability(tvos, introduced=15.0))) __attribute__((availability(macos, introduced=12.0))) __attribute__((availability(ios, introduced=15.0)));
+	[Watch (8,0), TV (15,0), Mac (12,0), iOS (15,0)]
+	[Export ("trackCustomPaywallImpression:")]
+	void TrackCustomPaywallImpression (RCCustomPaywallImpressionParams @params);
+
+	// -(void)trackCustomPaywallImpression __attribute__((availability(watchos, introduced=8.0))) __attribute__((availability(tvos, introduced=15.0))) __attribute__((availability(macos, introduced=12.0))) __attribute__((availability(ios, introduced=15.0)));
+	[Watch (8,0), TV (15,0), Mac (12,0), iOS (15,0)]
+	[Export ("trackCustomPaywallImpression")]
+	void TrackCustomPaywallImpression ();
+
+	// @property (nonatomic, strong, class) RCPlatformInfo * _Nullable platformInfo;
+	[Static]
+	[NullAllowed, Export ("platformInfo", ArgumentSemantic.Strong)]
+	RCPlatformInfo PlatformInfo { get; set; }
+
+	// -(void)readyForPromotedProduct:(RCStoreProduct * _Nonnull)product purchase:(void (^ _Nonnull)(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL)))startPurchase;
+	[Export ("readyForPromotedProduct:purchase:")]
 	void ReadyForPromotedProduct (RCStoreProduct product, StartPurchaseHandler startPurchase);
 
 	// @property (readonly, nonatomic) BOOL shouldShowPriceConsent __attribute__((availability(maccatalyst, introduced=13.4))) __attribute__((availability(ios, introduced=13.4)));
+	[MacCatalyst (13, 4), iOS (13, 4)]
 	[Export ("shouldShowPriceConsent")]
 	bool ShouldShowPriceConsent { get; }
+
+	// -(void)eligibleWinBackOffersForProduct:(RCStoreProduct * _Nonnull)product completion:(void (^ _Nonnull)(NSArray<RCWinBackOffer *> * _Nullable, NSError * _Nullable))completion;
+	[Export ("eligibleWinBackOffersForProduct:completion:")]
+	void EligibleWinBackOffersForProduct (RCStoreProduct product, Action<NSArray<RCWinBackOffer>, NSError> completion);
+
+	// -(void)eligibleWinBackOffersForPackage:(RCPackage * _Nonnull)package completion:(void (^ _Nonnull)(NSArray<RCWinBackOffer *> * _Nullable, NSError * _Nullable))completion __attribute__((availability(visionos, introduced=2.0))) __attribute__((availability(watchos, introduced=11.0))) __attribute__((availability(tvos, introduced=18.0))) __attribute__((availability(macos, introduced=15.0))) __attribute__((availability(ios, introduced=18.0)));
+	[Watch (11,0), TV (18,0), Mac (15,0), iOS (18,0)]
+	[Export ("eligibleWinBackOffersForPackage:completion:")]
+	void EligibleWinBackOffersForPackage (RCPackage package, Action<NSArray<RCWinBackOffer>, NSError> completion);
 
 	// -(void)getVirtualCurrenciesWithCompletion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
 	[Export ("getVirtualCurrenciesWithCompletion:")]
@@ -920,16 +1473,22 @@ interface RCPurchases
 	[Export ("invalidateVirtualCurrenciesCache")]
 	void InvalidateVirtualCurrenciesCache ();
 
+	// -(void)showStoreMessagesWithCompletion:(void (^ _Nonnull)(void))completion __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(ios, introduced=16.0)));
+	[NoWatch, NoTV, NoMac, iOS (16,0)]
+	[Export ("showStoreMessagesWithCompletion:")]
+	void ShowStoreMessagesWithCompletion (Action completion);
+
+	// -(void)showStoreMessagesForTypes:(NSSet * _Nonnull)types completion:(void (^ _Nonnull)(void))completion __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(ios, introduced=16.0)));
+	[NoWatch, NoTV, NoMac, iOS (16,0)]
+	[Export ("showStoreMessagesForTypes:completion:")]
+	void ShowStoreMessagesForTypes (NSSet types, Action completion);
+
 	// @property (nonatomic, class) BOOL debugLogsEnabled __attribute__((deprecated("use Purchases.logLevel instead")));
 	[Static]
 	[Export ("debugLogsEnabled")]
 	bool DebugLogsEnabled { get; set; }
 
-	// @property (nonatomic) BOOL allowSharingAppStoreAccount __attribute__((deprecated("
-    //Configure behavior through the RevenueCat dashboard instead. If you have configured the "Legacy" restore
-    //behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep
-    //this setting active.
-    //")));
+	// @property (nonatomic) BOOL allowSharingAppStoreAccount __attribute__((deprecated(" Configure behavior through the RevenueCat dashboard instead. If you have configured the "Legacy" restore behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep this setting active. ")));
 	[Export ("allowSharingAppStoreAccount")]
 	bool AllowSharingAppStoreAccount { get; set; }
 
@@ -978,7 +1537,7 @@ interface RCPurchases
 
 	// -(void)logIn:(NSString * _Nonnull)appUserID completionHandler:(void (^ _Nonnull)(RCCustomerInfo * _Nullable, BOOL, NSError * _Nullable))completionHandler;
 	[Export ("logIn:completionHandler:")]
-	void LogInCompletionHandler(string appUserID, Action<RCCustomerInfo, bool, NSError> completionHandler);
+	void LogInCompletionHandler (string appUserID, Action<RCCustomerInfo, bool, NSError> completionHandler);
 
 	// -(void)logOutWithCompletion:(void (^ _Nullable)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion;
 	[Export ("logOutWithCompletion:")]
@@ -993,6 +1552,7 @@ interface RCPurchases
 	void SyncAttributesAndOfferingsIfNeededWithCompletion (Action<RCOfferings, NSError> completion);
 
 	// -(void)syncAttributesAndOfferingsIfNeededWithCompletionHandler:(void (^ _Nonnull)(RCOfferings * _Nullable, NSError * _Nullable))completionHandler __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=13.0))) __attribute__((availability(macos, introduced=10.15))) __attribute__((availability(ios, introduced=13.0)));
+	[Watch (6,2), TV (13,0), Mac (10,15), iOS (13,0)]
 	[Export ("syncAttributesAndOfferingsIfNeededWithCompletionHandler:")]
 	void SyncAttributesAndOfferingsIfNeededWithCompletionHandler (Action<RCOfferings, NSError> completionHandler);
 
@@ -1004,8 +1564,8 @@ interface RCPurchases
 	[Export ("getStorefrontWithCompletionHandler:")]
 	void GetStorefrontWithCompletionHandler (Action<RCStorefront> completionHandler);
 
-    // +(RCWebPurchaseRedemption * _Nullable)parseAsWebPurchaseRedemption:(NSURL * _Nonnull)url __attribute__((warn_unused_result("")));
-    [Static]
+	// +(RCWebPurchaseRedemption * _Nullable)parseAsWebPurchaseRedemption:(NSUrl * _Nonnull)url __attribute__((warn_unused_result("")));
+	[Static]
 	[Export ("parseAsWebPurchaseRedemption:")]
 	[return: NullAllowed]
 	RCWebPurchaseRedemption ParseAsWebPurchaseRedemption (NSUrl url);
@@ -1035,366 +1595,59 @@ interface RCPurchases
 	RCOfferings CachedOfferings { get; }
 
 	// -(void)collectDeviceIdentifiers __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'collectDeviceIdentifiers' has been renamed to 'attribution.collectDeviceIdentifiers()'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'collectDeviceIdentifiers' has been renamed to 'attribution.collectDeviceIdentifiers()'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'collectDeviceIdentifiers' has been renamed to 'attribution.collectDeviceIdentifiers()'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'collectDeviceIdentifiers' has been renamed to 'attribution.collectDeviceIdentifiers()'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'collectDeviceIdentifiers' has been renamed to 'attribution.collectDeviceIdentifiers()'")]
-	[Export ("collectDeviceIdentifiers")]
-	void CollectDeviceIdentifiers ();
-
 	// -(void)setAttributes:(NSDictionary<NSString *,NSString *> * _Nonnull)attributes __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setAttributes' has been renamed to 'attribution.setAttributes(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setAttributes' has been renamed to 'attribution.setAttributes(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setAttributes' has been renamed to 'attribution.setAttributes(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setAttributes' has been renamed to 'attribution.setAttributes(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setAttributes' has been renamed to 'attribution.setAttributes(_:)'")]
-	[Export ("setAttributes:")]
-	void SetAttributes (NSDictionary<NSString, NSString> attributes);
-
 	// -(void)setEmail:(NSString * _Nullable)email __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setEmail' has been renamed to 'attribution.setEmail(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setEmail' has been renamed to 'attribution.setEmail(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setEmail' has been renamed to 'attribution.setEmail(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setEmail' has been renamed to 'attribution.setEmail(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setEmail' has been renamed to 'attribution.setEmail(_:)'")]
-	[Export ("setEmail:")]
-	void SetEmail ([NullAllowed] string email);
-
 	// -(void)setPhoneNumber:(NSString * _Nullable)phoneNumber __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setPhoneNumber' has been renamed to 'attribution.setPhoneNumber(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setPhoneNumber' has been renamed to 'attribution.setPhoneNumber(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setPhoneNumber' has been renamed to 'attribution.setPhoneNumber(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setPhoneNumber' has been renamed to 'attribution.setPhoneNumber(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setPhoneNumber' has been renamed to 'attribution.setPhoneNumber(_:)'")]
-	[Export ("setPhoneNumber:")]
-	void SetPhoneNumber ([NullAllowed] string phoneNumber);
-
 	// -(void)setDisplayName:(NSString * _Nullable)displayName __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setDisplayName' has been renamed to 'attribution.setDisplayName(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setDisplayName' has been renamed to 'attribution.setDisplayName(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setDisplayName' has been renamed to 'attribution.setDisplayName(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setDisplayName' has been renamed to 'attribution.setDisplayName(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setDisplayName' has been renamed to 'attribution.setDisplayName(_:)'")]
-	[Export ("setDisplayName:")]
-	void SetDisplayName ([NullAllowed] string displayName);
-
 	// -(void)setPushToken:(NSData * _Nullable)pushToken __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setPushToken' has been renamed to 'attribution.setPushToken(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setPushToken' has been renamed to 'attribution.setPushToken(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setPushToken' has been renamed to 'attribution.setPushToken(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setPushToken' has been renamed to 'attribution.setPushToken(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setPushToken' has been renamed to 'attribution.setPushToken(_:)'")]
-	[Export ("setPushToken:")]
-	void SetPushToken ([NullAllowed] NSData pushToken);
-
 	// -(void)setPushTokenString:(NSString * _Nullable)pushToken __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setPushTokenString' has been renamed to 'attribution.setPushTokenString(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setPushTokenString' has been renamed to 'attribution.setPushTokenString(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setPushTokenString' has been renamed to 'attribution.setPushTokenString(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setPushTokenString' has been renamed to 'attribution.setPushTokenString(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setPushTokenString' has been renamed to 'attribution.setPushTokenString(_:)'")]
-	[Export ("setPushTokenString:")]
-	void SetPushTokenString ([NullAllowed] string pushToken);
-
 	// -(void)setAdjustID:(NSString * _Nullable)adjustID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setAdjustID' has been renamed to 'attribution.setAdjustID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setAdjustID' has been renamed to 'attribution.setAdjustID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setAdjustID' has been renamed to 'attribution.setAdjustID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setAdjustID' has been renamed to 'attribution.setAdjustID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setAdjustID' has been renamed to 'attribution.setAdjustID(_:)'")]
-	[Export ("setAdjustID:")]
-	void SetAdjustID ([NullAllowed] string adjustID);
-
 	// -(void)setAppsflyerID:(NSString * _Nullable)appsflyerID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setAppsflyerID' has been renamed to 'attribution.setAppsflyerID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setAppsflyerID' has been renamed to 'attribution.setAppsflyerID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setAppsflyerID' has been renamed to 'attribution.setAppsflyerID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setAppsflyerID' has been renamed to 'attribution.setAppsflyerID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setAppsflyerID' has been renamed to 'attribution.setAppsflyerID(_:)'")]
-	[Export ("setAppsflyerID:")]
-	void SetAppsflyerID ([NullAllowed] string appsflyerID);
-
 	// -(void)setFBAnonymousID:(NSString * _Nullable)fbAnonymousID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setFBAnonymousID' has been renamed to 'attribution.setFBAnonymousID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setFBAnonymousID' has been renamed to 'attribution.setFBAnonymousID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setFBAnonymousID' has been renamed to 'attribution.setFBAnonymousID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setFBAnonymousID' has been renamed to 'attribution.setFBAnonymousID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setFBAnonymousID' has been renamed to 'attribution.setFBAnonymousID(_:)'")]
-	[Export ("setFBAnonymousID:")]
-	void SetFBAnonymousID ([NullAllowed] string fbAnonymousID);
-
 	// -(void)setMparticleID:(NSString * _Nullable)mparticleID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setMparticleID' has been renamed to 'attribution.setMparticleID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setMparticleID' has been renamed to 'attribution.setMparticleID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setMparticleID' has been renamed to 'attribution.setMparticleID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setMparticleID' has been renamed to 'attribution.setMparticleID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setMparticleID' has been renamed to 'attribution.setMparticleID(_:)'")]
-	[Export ("setMparticleID:")]
-	void SetMparticleID ([NullAllowed] string mparticleID);
-
 	// -(void)setOnesignalID:(NSString * _Nullable)onesignalID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setOnesignalID' has been renamed to 'attribution.setOnesignalID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setOnesignalID' has been renamed to 'attribution.setOnesignalID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setOnesignalID' has been renamed to 'attribution.setOnesignalID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setOnesignalID' has been renamed to 'attribution.setOnesignalID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setOnesignalID' has been renamed to 'attribution.setOnesignalID(_:)'")]
-	[Export ("setOnesignalID:")]
-	void SetOnesignalID ([NullAllowed] string onesignalID);
-
 	// -(void)setAirshipChannelID:(NSString * _Nullable)airshipChannelID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setAirshipChannelID' has been renamed to 'attribution.setAirshipChannelID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setAirshipChannelID' has been renamed to 'attribution.setAirshipChannelID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setAirshipChannelID' has been renamed to 'attribution.setAirshipChannelID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setAirshipChannelID' has been renamed to 'attribution.setAirshipChannelID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setAirshipChannelID' has been renamed to 'attribution.setAirshipChannelID(_:)'")]
-	[Export ("setAirshipChannelID:")]
-	void SetAirshipChannelID ([NullAllowed] string airshipChannelID);
-
 	// -(void)setCleverTapID:(NSString * _Nullable)cleverTapID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setCleverTapID' has been renamed to 'attribution.setCleverTapID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setCleverTapID' has been renamed to 'attribution.setCleverTapID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setCleverTapID' has been renamed to 'attribution.setCleverTapID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setCleverTapID' has been renamed to 'attribution.setCleverTapID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setCleverTapID' has been renamed to 'attribution.setCleverTapID(_:)'")]
-	[Export ("setCleverTapID:")]
-	void SetCleverTapID ([NullAllowed] string cleverTapID);
-
 	// -(void)setMixpanelDistinctID:(NSString * _Nullable)mixpanelDistinctID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setMixpanelDistinctID' has been renamed to 'attribution.setMixpanelDistinctID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setMixpanelDistinctID' has been renamed to 'attribution.setMixpanelDistinctID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setMixpanelDistinctID' has been renamed to 'attribution.setMixpanelDistinctID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setMixpanelDistinctID' has been renamed to 'attribution.setMixpanelDistinctID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setMixpanelDistinctID' has been renamed to 'attribution.setMixpanelDistinctID(_:)'")]
-	[Export ("setMixpanelDistinctID:")]
-	void SetMixpanelDistinctID ([NullAllowed] string mixpanelDistinctID);
-
 	// -(void)setFirebaseAppInstanceID:(NSString * _Nullable)firebaseAppInstanceID __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setFirebaseAppInstanceID' has been renamed to 'attribution.setFirebaseAppInstanceID(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setFirebaseAppInstanceID' has been renamed to 'attribution.setFirebaseAppInstanceID(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setFirebaseAppInstanceID' has been renamed to 'attribution.setFirebaseAppInstanceID(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setFirebaseAppInstanceID' has been renamed to 'attribution.setFirebaseAppInstanceID(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setFirebaseAppInstanceID' has been renamed to 'attribution.setFirebaseAppInstanceID(_:)'")]
-	[Export ("setFirebaseAppInstanceID:")]
-	void SetFirebaseAppInstanceID ([NullAllowed] string firebaseAppInstanceID);
-
 	// -(void)setMediaSource:(NSString * _Nullable)mediaSource __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setMediaSource' has been renamed to 'attribution.setMediaSource(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setMediaSource' has been renamed to 'attribution.setMediaSource(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setMediaSource' has been renamed to 'attribution.setMediaSource(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setMediaSource' has been renamed to 'attribution.setMediaSource(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setMediaSource' has been renamed to 'attribution.setMediaSource(_:)'")]
-	[Export ("setMediaSource:")]
-	void SetMediaSource ([NullAllowed] string mediaSource);
-
 	// -(void)setCampaign:(NSString * _Nullable)campaign __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setCampaign' has been renamed to 'attribution.setCampaign(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setCampaign' has been renamed to 'attribution.setCampaign(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setCampaign' has been renamed to 'attribution.setCampaign(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setCampaign' has been renamed to 'attribution.setCampaign(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setCampaign' has been renamed to 'attribution.setCampaign(_:)'")]
-	[Export ("setCampaign:")]
-	void SetCampaign ([NullAllowed] string campaign);
-
 	// -(void)setAdGroup:(NSString * _Nullable)adGroup __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setAdGroup' has been renamed to 'attribution.setAdGroup(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setAdGroup' has been renamed to 'attribution.setAdGroup(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setAdGroup' has been renamed to 'attribution.setAdGroup(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setAdGroup' has been renamed to 'attribution.setAdGroup(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setAdGroup' has been renamed to 'attribution.setAdGroup(_:)'")]
-	[Export ("setAdGroup:")]
-	void SetAdGroup ([NullAllowed] string adGroup);
-
 	// -(void)setAd:(NSString * _Nullable)installAd __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setAd' has been renamed to 'attribution.setAd(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setAd' has been renamed to 'attribution.setAd(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setAd' has been renamed to 'attribution.setAd(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setAd' has been renamed to 'attribution.setAd(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setAd' has been renamed to 'attribution.setAd(_:)'")]
-	[Export ("setAd:")]
-	void SetAd ([NullAllowed] string installAd);
-
 	// -(void)setKeyword:(NSString * _Nullable)keyword __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setKeyword' has been renamed to 'attribution.setKeyword(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setKeyword' has been renamed to 'attribution.setKeyword(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setKeyword' has been renamed to 'attribution.setKeyword(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setKeyword' has been renamed to 'attribution.setKeyword(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setKeyword' has been renamed to 'attribution.setKeyword(_:)'")]
-	[Export ("setKeyword:")]
-	void SetKeyword ([NullAllowed] string keyword);
-
 	// -(void)setCreative:(NSString * _Nullable)creative __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'setCreative' has been renamed to 'attribution.setCreative(_:)'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'setCreative' has been renamed to 'attribution.setCreative(_:)'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'setCreative' has been renamed to 'attribution.setCreative(_:)'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'setCreative' has been renamed to 'attribution.setCreative(_:)'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'setCreative' has been renamed to 'attribution.setCreative(_:)'")]
-	[Export ("setCreative:")]
-	void SetCreative ([NullAllowed] string creative);
-
 	// -(void)params:(RCPurchaseParams * _Nonnull)params withCompletion:(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL))completion __attribute__((availability(maccatalyst, deprecated=0.0.1))) __attribute__((availability(macos, deprecated=0.0.1))) __attribute__((availability(watchos, deprecated=0.0.1))) __attribute__((availability(tvos, deprecated=0.0.1))) __attribute__((availability(ios, deprecated=0.0.1)));
-	[Deprecated (PlatformName.MacCatalyst, 0, 0, 1, message: "'purchaseWithParams' has been renamed to 'purchaseWithParams:completion:'")]
-	[Deprecated (PlatformName.MacOSX, 0, 0, 1, message: "'purchaseWithParams' has been renamed to 'purchaseWithParams:completion:'")]
-	[Deprecated (PlatformName.WatchOS, 0, 0, 1, message: "'purchaseWithParams' has been renamed to 'purchaseWithParams:completion:'")]
-	[Deprecated (PlatformName.TvOS, 0, 0, 1, message: "'purchaseWithParams' has been renamed to 'purchaseWithParams:completion:'")]
-	[Deprecated (PlatformName.iOS, 0, 0, 1, message: "'purchaseWithParams' has been renamed to 'purchaseWithParams:completion:'")]
-	[Export ("params:withCompletion:")]
-	void Params (RCPurchaseParams @params, Action<RCStoreTransaction, RCCustomerInfo, NSError, bool> completion);
 
 	// -(void)restoreTransactionsWithCompletionBlock:(void (^ _Nullable)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'restoreTransactions' has been renamed to 'restorePurchasesWithCompletion:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'restoreTransactions' has been renamed to 'restorePurchasesWithCompletion:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'restoreTransactions' has been renamed to 'restorePurchasesWithCompletion:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'restoreTransactions' has been renamed to 'restorePurchasesWithCompletion:'")]
-	[Export ("restoreTransactionsWithCompletionBlock:")]
-	void RestoreTransactionsWithCompletionBlock ([NullAllowed] Action<RCCustomerInfo, NSError> completion);
-
 	// -(void)customerInfoWithCompletion:(void (^ _Nonnull)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'customerInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'customerInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'customerInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'customerInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Export ("customerInfoWithCompletion:")]
-	void CustomerInfoWithCompletion (Action<RCCustomerInfo, NSError> completion);
-
 	// -(void)purchaserInfoWithCompletionBlock:(void (^ _Nonnull)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'purchaserInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'purchaserInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'purchaserInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'purchaserInfo' has been renamed to 'getCustomerInfoWithCompletion:'")]
-	[Export ("purchaserInfoWithCompletionBlock:")]
-	void PurchaserInfoWithCompletionBlock (Action<RCCustomerInfo, NSError> completion);
-
 	// -(void)productsWithIdentifiers:(NSArray<NSString *> * _Nonnull)productIdentifiers completionBlock:(void (^ _Nonnull)(NSArray<SKProduct *> * _Nonnull))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'products' has been renamed to 'getProductsWithIdentifiers:completion:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'products' has been renamed to 'getProductsWithIdentifiers:completion:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'products' has been renamed to 'getProductsWithIdentifiers:completion:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'products' has been renamed to 'getProductsWithIdentifiers:completion:'")]
-	[Export ("productsWithIdentifiers:completionBlock:")]
-	void ProductsWithIdentifiers (string[] productIdentifiers, Action<NSArray<SKProduct>> completion);
-
 	// -(void)offeringsWithCompletionBlock:(void (^ _Nonnull)(RCOfferings * _Nullable, NSError * _Nullable))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'offerings' has been renamed to 'getOfferingsWithCompletion:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'offerings' has been renamed to 'getOfferingsWithCompletion:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'offerings' has been renamed to 'getOfferingsWithCompletion:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'offerings' has been renamed to 'getOfferingsWithCompletion:'")]
-	[Export ("offeringsWithCompletionBlock:")]
-	void OfferingsWithCompletionBlock (Action<RCOfferings, NSError> completion);
+	// -(void)purchasePackage:(RCPackage * _Nonnull)package withCompletionBlock:(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
+	// -(void)purchasePackage:(RCPackage * _Nonnull)package withDiscount:(SKPaymentDiscount * _Nonnull)discount completionBlock:(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL))completion __attribute__((availability(maccatalyst, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
+	[Export ("purchasePackage:withDiscount:completionBlock:")]
+	void PurchasePackage (RCPackage package, SKPaymentDiscount discount, Action<RCStoreTransaction, RCCustomerInfo, NSError, bool> completion);
 
 	// -(void)purchaseProduct:(SKProduct * _Nonnull)product withCompletionBlock:(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'purchaseProduct' has been renamed to 'purchase(product:_:)'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'purchaseProduct' has been renamed to 'purchase(product:_:)'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'purchaseProduct' has been renamed to 'purchase(product:_:)'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'purchaseProduct' has been renamed to 'purchase(product:_:)'")]
-	[Export ("purchaseProduct:withCompletionBlock:")]
-	void PurchaseProduct (SKProduct product, Action<RCStoreTransaction, RCCustomerInfo, NSError, bool> completion);
-
 	// -(void)purchaseProduct:(SKProduct * _Nonnull)product withDiscount:(SKPaymentDiscount * _Nonnull)discount completionBlock:(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL))completion __attribute__((availability(maccatalyst, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
-	[Unavailable (PlatformName.MacCatalyst)]
-	[Unavailable (PlatformName.MacOSX)]
-	[Unavailable (PlatformName.WatchOS)]
-	[Unavailable (PlatformName.TvOS)]
-	[Unavailable (PlatformName.iOS)]
 	[Export ("purchaseProduct:withDiscount:completionBlock:")]
 	void PurchaseProduct (SKProduct product, SKPaymentDiscount discount, Action<RCStoreTransaction, RCCustomerInfo, NSError, bool> completion);
 
 	// -(void)invalidatePurchaserInfoCache __attribute__((availability(maccatalyst, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacCatalyst, 1, 0, message: "'invalidatePurchaserInfoCache' has been renamed to 'invalidateCustomerInfoCache'")]
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'invalidatePurchaserInfoCache' has been renamed to 'invalidateCustomerInfoCache'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'invalidatePurchaserInfoCache' has been renamed to 'invalidateCustomerInfoCache'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'invalidatePurchaserInfoCache' has been renamed to 'invalidateCustomerInfoCache'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'invalidatePurchaserInfoCache' has been renamed to 'invalidateCustomerInfoCache'")]
-	[Export ("invalidatePurchaserInfoCache")]
-	void InvalidatePurchaserInfoCache ();
-
 	// -(void)checkTrialOrIntroductoryPriceEligibility:(NSArray<NSString *> * _Nonnull)productIdentifiers completion:(void (^ _Nonnull)(NSDictionary<NSString *,RCIntroEligibility *> * _Nonnull))completion __attribute__((availability(maccatalyst, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacCatalyst, 1, 0, message: "'checkTrialOrIntroductoryPriceEligibility' has been renamed to 'checkTrialOrIntroDiscountEligibility(_:completion:)'")]
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'checkTrialOrIntroductoryPriceEligibility' has been renamed to 'checkTrialOrIntroDiscountEligibility(_:completion:)'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'checkTrialOrIntroductoryPriceEligibility' has been renamed to 'checkTrialOrIntroDiscountEligibility(_:completion:)'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'checkTrialOrIntroductoryPriceEligibility' has been renamed to 'checkTrialOrIntroDiscountEligibility(_:completion:)'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'checkTrialOrIntroductoryPriceEligibility' has been renamed to 'checkTrialOrIntroDiscountEligibility(_:completion:)'")]
-	[Export ("checkTrialOrIntroductoryPriceEligibility:completion:")]
-	void CheckTrialOrIntroductoryPriceEligibility (string[] productIdentifiers, Action<NSDictionary<NSString, RCIntroEligibility>> completion);
-
 	// -(void)paymentDiscountForProductDiscount:(SKProductDiscount * _Nonnull)discount product:(SKProduct * _Nonnull)product completion:(void (^ _Nonnull)(SKPaymentDiscount * _Nullable, NSError * _Nullable))completion __attribute__((availability(maccatalyst, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
-	[Unavailable (PlatformName.MacCatalyst)]
-	[Unavailable (PlatformName.MacOSX)]
-	[Unavailable (PlatformName.WatchOS)]
-	[Unavailable (PlatformName.TvOS)]
-	[Unavailable (PlatformName.iOS)]
 	[Export ("paymentDiscountForProductDiscount:product:completion:")]
 	void PaymentDiscountForProductDiscount (SKProductDiscount discount, SKProduct product, Action<SKPaymentDiscount, NSError> completion);
 
 	// -(void)shouldPurchasePromoProduct:(RCStoreProduct * _Nonnull)product defermentBlock:(void (^ _Nonnull)(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL)))defermentBlock __attribute__((availability(maccatalyst, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacCatalyst, 1, 0, message: "This was never meant to be public. Use `PurchasesDelegate.purchases(_:readyForPromotedProduct:purchase:)`")]
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "This was never meant to be public. Use `PurchasesDelegate.purchases(_:readyForPromotedProduct:purchase:)`")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "This was never meant to be public. Use `PurchasesDelegate.purchases(_:readyForPromotedProduct:purchase:)`")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "This was never meant to be public. Use `PurchasesDelegate.purchases(_:readyForPromotedProduct:purchase:)`")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "This was never meant to be public. Use `PurchasesDelegate.purchases(_:readyForPromotedProduct:purchase:)`")]
-	[Export ("shouldPurchasePromoProduct:defermentBlock:")]
-	void ShouldPurchasePromoProduct (RCStoreProduct product, StartPurchaseHandler defermentBlock);
-
 	// -(void)createAlias:(NSString * _Nonnull)alias completionBlock:(void (^ _Nullable)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'createAlias' has been renamed to 'logIn:completionHandler:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'createAlias' has been renamed to 'logIn:completionHandler:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'createAlias' has been renamed to 'logIn:completionHandler:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'createAlias' has been renamed to 'logIn:completionHandler:'")]
-	[Export ("createAlias:completionBlock:")]
-	void CreateAlias (string alias, [NullAllowed] Action<RCCustomerInfo, NSError> completion);
-
 	// -(void)identify:(NSString * _Nonnull)appUserID completionBlock:(void (^ _Nullable)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'identify' has been renamed to 'logIn:completionHandler:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'identify' has been renamed to 'logIn:completionHandler:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'identify' has been renamed to 'logIn:completionHandler:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'identify' has been renamed to 'logIn:completionHandler:'")]
-	[Export ("identify:completionBlock:")]
-	void Identify (string appUserID, [NullAllowed] Action<RCCustomerInfo, NSError> completion);
-
 	// -(void)resetWithCompletionBlock:(void (^ _Nullable)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'reset' has been renamed to 'logOutWithCompletionHandler:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'reset' has been renamed to 'logOutWithCompletionHandler:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'reset' has been renamed to 'logOutWithCompletionHandler:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'reset' has been renamed to 'logOutWithCompletionHandler:'")]
-	[Export ("resetWithCompletionBlock:")]
-	void ResetWithCompletionBlock ([NullAllowed] Action<RCCustomerInfo, NSError> completion);
-
 	// +(RCPurchases * _Nonnull)configureWithAPIKey:(NSString * _Nonnull)apiKey appUserID:(NSString * _Nullable)appUserID observerMode:(BOOL)observerMode __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy.")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy.")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy.")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy.")]
-	[Static]
-	[Export ("configureWithAPIKey:appUserID:observerMode:")]
-	RCPurchases ConfigureWithAPIKey (string apiKey, [NullAllowed] string appUserID, bool observerMode);
-
 	// +(RCPurchases * _Nonnull)configureWithAPIKey:(NSString * _Nonnull)apiKey appUserID:(NSString * _Nullable)appUserID observerMode:(BOOL)observerMode userDefaults:(NSUserDefaults * _Nullable)userDefaults __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy. Please use the Configuration.Builder class to configure the SDK with custom UserDefaults.")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy. Please use the Configuration.Builder class to configure the SDK with custom UserDefaults.")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy. Please use the Configuration.Builder class to configure the SDK with custom UserDefaults.")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'configure' has been renamed to 'configure(withAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:)':Explicitly setting the StoreKit version is now required when setting purchasesAreCompletedBy. Please use the Configuration.Builder class to configure the SDK with custom UserDefaults.")]
-	[Static]
-	[Export ("configureWithAPIKey:appUserID:observerMode:userDefaults:")]
-	RCPurchases ConfigureWithAPIKey (string apiKey, [NullAllowed] string appUserID, bool observerMode, [NullAllowed] NSUserDefaults userDefaults);
-
 	// +(RCPurchases * _Nonnull)configureWithAPIKey:(NSString * _Nonnull)apiKey appUserID:(NSString * _Nullable)appUserID observerMode:(BOOL)observerMode userDefaults:(NSUserDefaults * _Nullable)userDefaults useStoreKit2IfAvailable:(BOOL)useStoreKit2IfAvailable __attribute__((availability(maccatalyst, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacCatalyst, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Static]
-	[Export ("configureWithAPIKey:appUserID:observerMode:userDefaults:useStoreKit2IfAvailable:")]
-	RCPurchases ConfigureWithAPIKey (string apiKey, [NullAllowed] string appUserID, bool observerMode, [NullAllowed] NSUserDefaults userDefaults, bool useStoreKit2IfAvailable);
-
 	// +(RCPurchases * _Nonnull)configureWithAPIKey:(NSString * _Nonnull)apiKey appUserID:(NSString * _Nullable)appUserID observerMode:(BOOL)observerMode userDefaults:(NSUserDefaults * _Nullable)userDefaults useStoreKit2IfAvailable:(BOOL)useStoreKit2IfAvailable dangerousSettings:(RCDangerousSettings * _Nullable)dangerousSettings __attribute__((availability(maccatalyst, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacCatalyst, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'configure' has been renamed to 'configure(with:)'")]
-	[Static]
-	[Export ("configureWithAPIKey:appUserID:observerMode:userDefaults:useStoreKit2IfAvailable:dangerousSettings:")]
-	RCPurchases ConfigureWithAPIKey (string apiKey, [NullAllowed] string appUserID, bool observerMode, [NullAllowed] NSUserDefaults userDefaults, bool useStoreKit2IfAvailable, [NullAllowed] RCDangerousSettings dangerousSettings);
+	// @property (nonatomic, class) BOOL automaticAppleSearchAdsAttributionCollection __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
 
 	// -(void)getCustomerInfoWithCompletion:(void (^ _Nonnull)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion;
 	[Export ("getCustomerInfoWithCompletion:")]
@@ -1501,10 +1754,12 @@ interface RCPurchases
 	void CheckTrialOrIntroDiscountEligibilityWithProduct (RCStoreProduct product, Action<RCIntroEligibilityStatus> completionHandler);
 
 	// -(void)showPriceConsentIfNeeded __attribute__((availability(maccatalyst, introduced=13.4))) __attribute__((availability(ios, introduced=13.4)));
+	[MacCatalyst (13,4), iOS (13,4)]
 	[Export ("showPriceConsentIfNeeded")]
 	void ShowPriceConsentIfNeeded ();
 
 	// -(void)presentCodeRedemptionSheet __attribute__((availability(maccatalyst, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(ios, introduced=14.0)));
+	[NoWatch, NoTV, NoMacCatalyst, NoMac, iOS (14,0)]
 	[Export ("presentCodeRedemptionSheet")]
 	void PresentCodeRedemptionSheet ();
 
@@ -1521,29 +1776,78 @@ interface RCPurchases
 	void EligiblePromotionalOffersForProduct (RCStoreProduct product, Action<NSArray<RCPromotionalOffer>> completionHandler);
 
 	// -(void)showManageSubscriptionsWithCompletion:(void (^ _Nonnull)(NSError * _Nullable))completion __attribute__((availability(macos, introduced=10.15))) __attribute__((availability(ios, introduced=13.0))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable)));
+	[NoWatch, NoTV, Mac (10,15), iOS (13,0)]
 	[Export ("showManageSubscriptionsWithCompletion:")]
 	void ShowManageSubscriptionsWithCompletion (Action<NSError> completion);
 
 	// -(void)showManageSubscriptionsWithCompletionHandler:(void (^ _Nonnull)(NSError * _Nullable))completionHandler __attribute__((availability(macos, introduced=10.15))) __attribute__((availability(ios, introduced=13.0))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable)));
+	[NoWatch, NoTV, Mac (10,15), iOS (13,0)]
 	[Export ("showManageSubscriptionsWithCompletionHandler:")]
 	void ShowManageSubscriptionsWithCompletionHandler (Action<NSError> completionHandler);
 
 	// -(void)beginRefundRequestForProduct:(NSString * _Nonnull)productID completion:(void (^ _Nonnull)(enum RCRefundRequestStatus, NSError * _Nullable))completionHandler __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(ios, introduced=15.0)));
+	[NoWatch, NoTV, NoMac, iOS (15,0)]
 	[Export ("beginRefundRequestForProduct:completion:")]
 	void BeginRefundRequestForProduct (string productID, Action<RCRefundRequestStatus, NSError> completionHandler);
 
 	// -(void)beginRefundRequestForEntitlement:(NSString * _Nonnull)entitlementID completion:(void (^ _Nonnull)(enum RCRefundRequestStatus, NSError * _Nullable))completionHandler __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(ios, introduced=15.0)));
+	[NoWatch, NoTV, NoMac, iOS (15,0)]
 	[Export ("beginRefundRequestForEntitlement:completion:")]
 	void BeginRefundRequestForEntitlement (string entitlementID, Action<RCRefundRequestStatus, NSError> completionHandler);
 
 	// -(void)beginRefundRequestForActiveEntitlementWithCompletion:(void (^ _Nonnull)(enum RCRefundRequestStatus, NSError * _Nullable))completionHandler __attribute__((availability(tvos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(ios, introduced=15.0)));
+	[NoWatch, NoTV, NoMac, iOS (15,0)]
 	[Export ("beginRefundRequestForActiveEntitlementWithCompletion:")]
 	void BeginRefundRequestForActiveEntitlementWithCompletion (Action<RCRefundRequestStatus, NSError> completionHandler);
+
+	// -(void)recordPurchaseForProductID:(NSString * _Nonnull)productID completion:(void (^ _Nonnull)(RCStoreTransaction * _Nullable, NSError * _Nullable))completion __attribute__((availability(watchos, introduced=8.0))) __attribute__((availability(tvos, introduced=15.0))) __attribute__((availability(macos, introduced=12.0))) __attribute__((availability(ios, introduced=15.0)));
+	[Watch (8,0), TV (15,0), Mac (12,0), iOS (15,0)]
+	[Export ("recordPurchaseForProductID:completion:")]
+	void RecordPurchaseForProductID (string productID, Action<RCStoreTransaction, NSError> completion);
 
 	// -(void)redeemWebPurchaseWithWebPurchaseRedemption:(RCWebPurchaseRedemption * _Nonnull)webPurchaseRedemption completion:(void (^ _Nonnull)(RCCustomerInfo * _Nullable, NSError * _Nullable))completion;
 	[Export ("redeemWebPurchaseWithWebPurchaseRedemption:completion:")]
 	void RedeemWebPurchaseWithWebPurchaseRedemption (RCWebPurchaseRedemption webPurchaseRedemption, Action<RCCustomerInfo, NSError> completion);
 }
+
+
+// @interface RCPlatformInfo : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCPlatformInfo
+{
+	// -(instancetype _Nonnull)initWithFlavor:(NSString * _Nonnull)flavor version:(NSString * _Nonnull)version __attribute__((objc_designated_initializer));
+	[Export ("initWithFlavor:version:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (string flavor, string version);
+}
+
+// @protocol PurchasesOrchestratorDelegate
+[Protocol (Name = "_TtP10RevenueCat29PurchasesOrchestratorDelegate_"), Model]
+interface PurchasesOrchestratorDelegate
+{
+	// @required -(void)readyForPromotedProduct:(RCStoreProduct * _Nonnull)product purchase:(void (^ _Nonnull)(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL)))startPurchase;
+	[Abstract]
+	[Export ("readyForPromotedProduct:purchase:")]
+	void Purchase (RCStoreProduct product, StartPurchaseHandler startPurchase);
+
+	// @required @property (readonly, nonatomic) BOOL shouldShowPriceConsent __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(maccatalyst, introduced=13.4))) __attribute__((availability(ios, introduced=13.4)));
+	[NoWatch, NoTV, NoMac, MacCatalyst (13, 4), iOS (13, 4)]
+	[Abstract]
+	[Export ("shouldShowPriceConsent")]
+	bool ShouldShowPriceConsent { get; }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 // @protocol RCPurchasesDelegate <NSObject>
 [Protocol, Model]
@@ -1551,13 +1855,6 @@ interface RCPurchases
 interface RCPurchasesDelegate
 {
 	// @optional -(void)purchases:(RCPurchases * _Nonnull)purchases didReceiveUpdatedPurchaserInfo:(RCCustomerInfo * _Nonnull)purchaserInfo __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.WatchOS, 1, 0)]
-	[Obsoleted (PlatformName.TvOS, 1, 0)]
-	[Obsoleted (PlatformName.MacOSX, 1, 0)]
-	[Obsoleted (PlatformName.iOS, 1, 0)]
-	[Export ("purchases:didReceiveUpdatedPurchaserInfo:")]
-	void DidReceiveUpdatedPurchaserInfo (RCPurchases purchases, RCCustomerInfo purchaserInfo);
-
 	// @optional -(void)purchases:(RCPurchases * _Nonnull)purchases receivedUpdatedCustomerInfo:(RCCustomerInfo * _Nonnull)customerInfo;
 	[Export ("purchases:receivedUpdatedCustomerInfo:")]
 	void ReceivedUpdatedCustomerInfo (RCPurchases purchases, RCCustomerInfo customerInfo);
@@ -1567,15 +1864,8 @@ interface RCPurchasesDelegate
 	void ReadyForPromotedProduct (RCPurchases purchases, RCStoreProduct product, StartPurchaseHandler startPurchase);
 
 	// @optional -(void)purchases:(RCPurchases * _Nonnull)purchases shouldPurchasePromoProduct:(RCStoreProduct * _Nonnull)product defermentBlock:(void (^ _Nonnull)(void (^ _Nonnull)(RCStoreTransaction * _Nullable, RCCustomerInfo * _Nullable, NSError * _Nullable, BOOL)))makeDeferredPurchase __attribute__((availability(maccatalyst, obsoleted=1))) __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacCatalyst, 1, 0, message: "'purchases' has been renamed to 'purchases:readyForPromotedProduct:purchase:'")]
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'purchases' has been renamed to 'purchases:readyForPromotedProduct:purchase:'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'purchases' has been renamed to 'purchases:readyForPromotedProduct:purchase:'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'purchases' has been renamed to 'purchases:readyForPromotedProduct:purchase:'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'purchases' has been renamed to 'purchases:readyForPromotedProduct:purchase:'")]
-	[Export ("purchases:shouldPurchasePromoProduct:defermentBlock:")]
-	void ShouldPurchasePromoProduct (RCPurchases purchases, RCStoreProduct product, StartPurchaseHandler makeDeferredPurchase);
-
 	// @optional @property (readonly, nonatomic) BOOL shouldShowPriceConsent __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(macos, unavailable))) __attribute__((availability(maccatalyst, introduced=13.4))) __attribute__((availability(ios, introduced=13.4)));
+	[NoWatch, NoTV, NoMac, MacCatalyst (13, 4), iOS (13, 4)]
 	[Export ("shouldShowPriceConsent")]
 	bool ShouldShowPriceConsent { get; }
 }
@@ -1589,18 +1879,57 @@ interface RCPurchasesDiagnostics
 	[Static]
 	[Export ("default_", ArgumentSemantic.Strong)]
 	RCPurchasesDiagnostics Default_ { [Bind ("default")] get; }
-	// -(void)testSDKHealthWithCompletion:(void (^ _Nonnull)(NSError * _Nullable))completionHandler __attribute__((deprecated("
-    //Use the `PurchasesDiagnostics.shared.checkSDKHealth()` method instead.
-    //")));
+
+	// -(void)testSDKHealthWithCompletion:(void (^ _Nonnull)(NSError * _Nullable))completionHandler __attribute__((deprecated(" Use the `PurchasesDiagnostics.shared.checkSDKHealth()` method instead. ")));
 	[Export ("testSDKHealthWithCompletion:")]
 	void TestSDKHealthWithCompletion (Action<NSError> completionHandler);
 }
+
+
+
+
+
+
+// @interface RedirectLoggerSessionDelegate : NSObject <NSUrlSessionTaskDelegate>
+[BaseType (typeof(NSObject), Name = "_TtC10RevenueCat29RedirectLoggerSessionDelegate")]
+interface RedirectLoggerSessionDelegate : INSUrlSessionTaskDelegate
+{
+	// -(void)URLSession:(NSUrlSession * _Nonnull)session task:(NSUrlSessionTask * _Nonnull)task willPerformHTTPRedirection:(NSHttpUrlResponse * _Nonnull)response newRequest:(NSMutableUrlRequest * _Nonnull)request completionHandler:(void (^ _Nonnull)(NSMutableUrlRequest * _Nullable))completionHandler;
+	[Export ("URLSession:task:willPerformHTTPRedirection:newRequest:completionHandler:")]
+	void URLSession (NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSMutableUrlRequest request, Action<NSMutableUrlRequest> completionHandler);
+}
+
+
+
+
+
+// @interface StoreKit2PromotionalOfferPurchaseOptions : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface StoreKit2PromotionalOfferPurchaseOptions
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull offerID;
+	[Export ("offerID")]
+	string OfferID { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull compactJWS;
+	[Export ("compactJWS")]
+	string CompactJWS { get; }
+
+	// -(instancetype _Nonnull)initWithOfferID:(NSString * _Nonnull)offerID compactJWS:(NSString * _Nonnull)compactJWS __attribute__((objc_designated_initializer));
+	[Export ("initWithOfferID:compactJWS:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (string offerID, string compactJWS);
+}
+
+
 
 // @interface RCStoreProduct : NSObject
 [BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
 interface RCStoreProduct : INativeObject
 {
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
@@ -1634,6 +1963,7 @@ interface RCStoreProduct : INativeObject
 	string ProductIdentifier { get; }
 
 	// @property (readonly, nonatomic) BOOL isFamilyShareable __attribute__((availability(watchos, introduced=7.0))) __attribute__((availability(tvos, introduced=14.0))) __attribute__((availability(macos, introduced=11.0))) __attribute__((availability(ios, introduced=14.0)));
+	[Watch (7, 0), TV (14, 0), Mac (11, 0), iOS (14, 0)]
 	[Export ("isFamilyShareable")]
 	bool IsFamilyShareable { get; }
 
@@ -1658,18 +1988,10 @@ interface RCStoreProduct : INativeObject
 	RCStoreProductDiscount[] Discounts { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(macos,unavailable,message="'introductoryPrice' has been renamed to 'introductoryDiscount': Use StoreProductDiscount instead") SKProductDiscount * introductoryPrice __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
-	[Unavailable (PlatformName.MacOSX)]
-	[Unavailable (PlatformName.WatchOS)]
-	[Unavailable (PlatformName.TvOS)]
-	[Unavailable (PlatformName.iOS)]
 	[Export ("introductoryPrice", ArgumentSemantic.Strong)]
 	SKProductDiscount IntroductoryPrice { get; }
 
 	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(macos,unavailable,message="Use localizedPriceString instead") NSLocale * priceLocale __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
-	[Unavailable (PlatformName.MacOSX)]
-	[Unavailable (PlatformName.WatchOS)]
-	[Unavailable (PlatformName.TvOS)]
-	[Unavailable (PlatformName.iOS)]
 	[Export ("priceLocale", ArgumentSemantic.Copy)]
 	NSLocale PriceLocale { get; }
 
@@ -1686,18 +2008,22 @@ interface RCStoreProduct : INativeObject
 	NSDecimalNumber Price { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerDay __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerDay", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerDay { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerWeek __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerWeek", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerWeek { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerMonth __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerMonth", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerMonth { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerYear __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerYear", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerYear { get; }
 
@@ -1706,21 +2032,29 @@ interface RCStoreProduct : INativeObject
 	string LocalizedIntroductoryPriceString { get; }
 
 	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSString * localizedPricePerDay __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("localizedPricePerDay")]
 	string LocalizedPricePerDay { get; }
 
 	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSString * localizedPricePerWeek __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("localizedPricePerWeek")]
 	string LocalizedPricePerWeek { get; }
 
 	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSString * localizedPricePerMonth __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("localizedPricePerMonth")]
 	string LocalizedPricePerMonth { get; }
 
 	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSString * localizedPricePerYear __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("localizedPricePerYear")]
 	string LocalizedPricePerYear { get; }
 }
+
+
+
+
 
 // @interface RCStoreProductDiscount : NSObject
 [BaseType (typeof(NSObject))]
@@ -1755,9 +2089,12 @@ interface RCStoreProductDiscount
 	[Export ("type")]
 	RCDiscountType Type { get; }
 
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 
 	// @property (readonly, nonatomic, strong) NSDecimalNumber * _Nonnull price;
 	[Export ("price", ArgumentSemantic.Strong)]
@@ -1768,21 +2105,28 @@ interface RCStoreProductDiscount
 	SKProductDiscount Sk1Discount { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerDay __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerDay", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerDay { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerWeek __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerWeek", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerWeek { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerMonth __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerMonth", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerMonth { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(watchos,introduced=6.2) NSDecimalNumber * pricePerYear __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=11.2))) __attribute__((availability(macos, introduced=10.13.2))) __attribute__((availability(ios, introduced=11.2)));
+	[Watch (6, 2), TV (11, 2), Mac (10, 13, 2), iOS (11, 2)]
 	[Export ("pricePerYear", ArgumentSemantic.Strong)]
 	NSDecimalNumber PricePerYear { get; }
 }
+
+
+
 
 // @interface RCStoreTransaction : NSObject
 [BaseType (typeof(NSObject))]
@@ -1813,30 +2157,22 @@ interface RCStoreTransaction
 	[NullAllowed, Export ("jwsRepresentation")]
 	string JwsRepresentation { get; }
 
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
 
-	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(macos,obsoleted=1,message="'productId' has been renamed to 'productIdentifier'") NSString * productId __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'productId' has been renamed to 'productIdentifier'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'productId' has been renamed to 'productIdentifier'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'productId' has been renamed to 'productIdentifier'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'productId' has been renamed to 'productIdentifier'")]
-	[Export ("productId")]
-	string ProductId { get; }
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 
+	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(macos,obsoleted=1,message="'productId' has been renamed to 'productIdentifier'") NSString * productId __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
 	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(macos,obsoleted=1,message="'revenueCatId' has been renamed to 'transactionIdentifier'") NSString * revenueCatId __attribute__((availability(macos, obsoleted=1))) __attribute__((availability(watchos, obsoleted=1))) __attribute__((availability(tvos, obsoleted=1))) __attribute__((availability(ios, obsoleted=1)));
-	[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'revenueCatId' has been renamed to 'transactionIdentifier'")]
-	[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'revenueCatId' has been renamed to 'transactionIdentifier'")]
-	[Obsoleted (PlatformName.TvOS, 1, 0, message: "'revenueCatId' has been renamed to 'transactionIdentifier'")]
-	[Obsoleted (PlatformName.iOS, 1, 0, message: "'revenueCatId' has been renamed to 'transactionIdentifier'")]
-	[Export ("revenueCatId")]
-	string RevenueCatId { get; }
 
 	// @property (readonly, nonatomic, strong) SKPaymentTransaction * _Nullable sk1Transaction;
 	[NullAllowed, Export ("sk1Transaction", ArgumentSemantic.Strong)]
 	SKPaymentTransaction Sk1Transaction { get; }
 }
+
+
 
 // @interface RCStorefront : NSObject
 [BaseType (typeof(NSObject))]
@@ -1851,19 +2187,31 @@ interface RCStorefront
 	[Export ("identifier")]
 	string Identifier { get; }
 
+	// @property (readonly, copy, nonatomic) SWIFT_AVAILABILITY(watchos,introduced=9.0) NSLocale * locale __attribute__((availability(watchos, introduced=9.0))) __attribute__((availability(tvos, introduced=16.0))) __attribute__((availability(macos, introduced=13.0))) __attribute__((availability(ios, introduced=16.0)));
+	[Watch (9, 0), TV (16, 0), Mac (13, 0), iOS (16, 0)]
+	[Export ("locale", ArgumentSemantic.Copy)]
+	NSLocale Locale { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
+
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(maccatalyst,introduced=13.1) SKStorefront * sk1Storefront __attribute__((availability(maccatalyst, introduced=13.1))) __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=13.0))) __attribute__((availability(macos, introduced=10.15))) __attribute__((availability(ios, introduced=13.0)));
+	[Watch (6, 2), TV (13, 0), MacCatalyst (13, 1), Mac (10, 15), iOS (13, 0)]
 	[Export ("sk1Storefront", ArgumentSemantic.Strong)]
 	SKStorefront Sk1Storefront { get; }
 
 	// @property (readonly, nonatomic, strong, class) RCStorefront * _Nullable sk1CurrentStorefront __attribute__((availability(maccatalyst, introduced=13.1))) __attribute__((availability(watchos, introduced=6.2))) __attribute__((availability(tvos, introduced=13.0))) __attribute__((availability(macos, introduced=10.15))) __attribute__((availability(ios, introduced=13.0)));
+	[Watch (6, 2), TV (13, 0), MacCatalyst (13, 1), Mac (10, 15), iOS (13, 0)]
 	[Static]
 	[NullAllowed, Export ("sk1CurrentStorefront", ArgumentSemantic.Strong)]
 	RCStorefront Sk1CurrentStorefront { get; }
 }
+
+
 
 // @interface RCSubscriptionInfo : NSObject
 [BaseType (typeof(NSObject))]
@@ -1930,9 +2278,19 @@ interface RCSubscriptionInfo : INativeObject
 	[Export ("willRenew")]
 	bool WillRenew { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nullable displayName;
+	[NullAllowed, Export ("displayName")]
+	string DisplayName { get; }
+
 	// @property (readonly, nonatomic, strong) RCProductPaidPrice * _Nullable price;
 	[NullAllowed, Export ("price", ArgumentSemantic.Strong)]
 	RCProductPaidPrice Price { get; }
+
+	// @property (readonly, copy, nonatomic) NSUrl * _Nullable managementURL;
+	[NullAllowed, Export ("managementURL", ArgumentSemantic.Copy)]
+	NSUrl ManagementURL { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 }
 
 // @interface RCSubscriptionPeriod : NSObject
@@ -1948,28 +2306,21 @@ interface RCSubscriptionPeriod
 	[Export ("unit")]
 	RCSubscriptionPeriodUnit Unit { get; }
 
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
 
 	// @property (readonly, nonatomic) NSInteger numberOfUnits __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
-	[Unavailable (PlatformName.MacOSX)]
-	[Unavailable (PlatformName.WatchOS)]
-	[Unavailable (PlatformName.TvOS)]
-	[Unavailable (PlatformName.iOS)]
 	[Export ("numberOfUnits")]
 	nint NumberOfUnits { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull debugDescription;
 }
 
-// @interface RCTransaction : NSObject
-[Obsoleted (PlatformName.MacOSX, 1, 0, message: "'Transaction' has been renamed to 'RCStoreTransaction'")]
-[Obsoleted (PlatformName.WatchOS, 1, 0, message: "'Transaction' has been renamed to 'RCStoreTransaction'")]
-[Obsoleted (PlatformName.TvOS, 1, 0, message: "'Transaction' has been renamed to 'RCStoreTransaction'")]
-[Obsoleted (PlatformName.iOS, 1, 0, message: "'Transaction' has been renamed to 'RCStoreTransaction'")]
-[BaseType (typeof(NSObject))]
-interface RCTransaction
-{
-}
+
+
+
 
 // @interface RCVirtualCurrencies : NSObject
 [BaseType (typeof(NSObject))]
@@ -1984,7 +2335,10 @@ interface RCVirtualCurrencies
 	[Export ("objectForKeyedSubscript:")]
 	[return: NullAllowed]
 	RCVirtualCurrency ObjectForKeyedSubscript (string key);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 }
+
 
 // @interface RCVirtualCurrency : NSObject
 [BaseType (typeof(NSObject))]
@@ -2006,14 +2360,11 @@ interface RCVirtualCurrency : INativeObject
 	// @property (readonly, copy, nonatomic) NSString * _Nullable serverDescription;
 	[NullAllowed, Export ("serverDescription")]
 	string ServerDescription { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 }
 
-// @interface RCWebPurchaseRedemption : NSObject
-[BaseType(typeof(NSObject))]
-[DisableDefaultCtor]
-interface RCWebPurchaseRedemption
-{
-}
+
 
 // @interface RCWinBackOffer : NSObject
 [BaseType (typeof(NSObject))]
