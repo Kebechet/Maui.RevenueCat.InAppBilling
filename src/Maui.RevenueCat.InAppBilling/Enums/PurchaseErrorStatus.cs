@@ -82,6 +82,14 @@ public enum PurchaseErrorStatus
     FeatureNotAvailableInCustomEntitlementsComputationMode = 36,
     [EnumMember(Value = "SIGNATURE_VERIFICATION_FAILED")]
     SignatureVerificationFailed = 37,
+    [EnumMember(Value = "FEATURE_NOT_SUPPORTED_WITH_STOREKIT1")]
+    FeatureNotSupportedWithStoreKit1 = 38,
+    [EnumMember(Value = "INVALID_WEB_PURCHASE_TOKEN")]
+    InvalidWebPurchaseToken = 39,
+    [EnumMember(Value = "ALREADY_REDEEMED_WEB_PURCHASE_TOKEN")]
+    PurchaseBelongsToOtherUser = 40,
+    [EnumMember(Value = "EXPIRED_WEB_PURCHASE_TOKEN")]
+    ExpiredWebPurchaseToken = 41,
     [EnumMember(Value = "TEST_STORE_SIMULATED_PURCHASE_ERROR")]
     TestStoreSimulatedPurchaseError = 42,
 }
