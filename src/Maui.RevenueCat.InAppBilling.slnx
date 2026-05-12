@@ -2,8 +2,10 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
   </Folder>
-  <Project Path="../tests/BindingLinkerCheck/BindingLinkerCheck.csproj" />
-  <Project Path="../tests/Postprocess.Tests/Postprocess.Tests.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="../tests/BindingLinkerCheck/BindingLinkerCheck.csproj" />
+    <Project Path="../tests/Postprocess.Tests/Postprocess.Tests.csproj" />
+  </Folder>
   <Project Path="Maui.RevenueCat.Android/Maui.RevenueCat.Android.csproj" />
   <Project Path="Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj" />
   <Project Path="Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj" />
