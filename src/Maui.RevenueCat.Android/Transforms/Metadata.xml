@@ -3,8 +3,8 @@
         path="//field[@final='true' and @name='CREATOR' and @jni-signature='Landroid/os/Parcelable$Creator;' and @static='true' and @type='android.os.Parcelable.Creator']" />
 	<remove-node
         path="//implements[@name='android.os.Parcelable.Creator']" />
-	<remove-node
-        path="api/package[@name='com.revenuecat.purchases']/interface[@name='ProrationMode']/method[@name='getName']" />
+	<!--ProrationMode was renamed to LegacyProrationMode in SDK 10.x and no longer has getName()-->
+
 	<remove-node
         path="/api/package[@name='com.revenuecat.purchases.models']/class[@name='SubscriptionOptions']/implements[@name='java.util.List']" />
 	<remove-node

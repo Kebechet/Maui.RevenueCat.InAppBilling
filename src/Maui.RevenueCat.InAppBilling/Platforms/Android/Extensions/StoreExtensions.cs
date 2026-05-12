@@ -12,6 +12,11 @@ internal static class StoreExtensions
         if (store == Store.Amazon) return StoreType.Amazon;
         if (store == Store.Stripe) return StoreType.Stripe;
         if (store == Store.MacAppStore) return StoreType.MacAppStore;
+        if (store == Store.RcBilling) return StoreType.RcBilling;
+        if (store == Store.External) return StoreType.External;
+        if (store == Store.Paddle) return StoreType.Paddle;
+        if (store == Store.TestStore) return StoreType.TestStore;
+        if (store == Store.Galaxy) return StoreType.Galaxy;
         return StoreType.UnknownStore;
     }
 }
