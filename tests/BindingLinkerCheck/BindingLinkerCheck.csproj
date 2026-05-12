@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      Minimal net9.0-ios Exe whose only job is to force the native linker to
+      resolve every ObjC class symbol the iOS binding declares. Built (not
+      run) by CI against ios-arm64 — see .github/workflows/publish-ios.yml
+      and .github/workflows/generate-ios-bindings.yml.
+
+      If the binding declares a `[Register("X")]` whose underlying ObjC class
+      isn't exported by RevenueCat.framework, this build fails with
+      "Undefined symbols for architecture arm64: _OBJC_CLASS_$_X" — the same
+      failure consumers would otherwise hit at app-link time.
+    -->
+    <TargetFramework>net9.0-ios</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <SupportedOSPlatformVersion>14.2</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <RootNamespace>BindingLinkerCheck</RootNamespace>
+    <ApplicationId>com.kebechet.bindinglinkercheck</ApplicationId>
+    <ApplicationTitle>BindingLinkerCheck</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+
+    <IsPackable>false</IsPackable>
+    <!-- Never deployed; skip codesigning in CI. -->
+    <CodesignKey></CodesignKey>
+    <CodesignProvision></CodesignProvision>
+    <CreatePackage>false</CreatePackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Maui.RevenueCat.iOS\Maui.RevenueCat.iOS.csproj" />
+  </ItemGroup>
+
+</Project>

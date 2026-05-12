@@ -48,10 +48,28 @@ jobs:
         run: dotnet restore ${{ env.PROJECT_PATH }} --ignore-failed-sources 
 
       - name: Build MAUI iOS
-        run: > 
-          dotnet build ${{ env.PROJECT_PATH }} 
-          -c ${{ env.BUILD_CONFIGURATION }} 
+        run: >
+          dotnet build ${{ env.PROJECT_PATH }}
+          -c ${{ env.BUILD_CONFIGURATION }}
           --no-restore
+
+      - name: Validate native linker (registrar.o vs framework symbols)
+        # The binding build above only does C# compilation + bgen — the
+        # native linker never runs, so unexported ObjC class symbols slip
+        # through (this is how the broken 5.72.0 got onto NuGet).
+        #
+        # BindingLinkerCheck is a minimal ios-arm64 Exe that ProjectReferences
+        # the binding and `typeof()`s every declared type, forcing the iOS
+        # registrar to emit `_OBJC_CLASS_$_X` for each one. `dotnet publish`
+        # for a device RID drives the full registrar + native link pass; any
+        # symbol missing from RevenueCat.framework fails the step with the
+        # same "Undefined symbols for architecture arm64" error consumers
+        # would otherwise hit at app-link time.
+        run: >
+          dotnet publish tests/BindingLinkerCheck/BindingLinkerCheck.csproj
+          -c ${{ env.BUILD_CONFIGURATION }}
+          -f net9.0-ios
+          -r ios-arm64
 
       - name: Pack NuGet Package
         run: >

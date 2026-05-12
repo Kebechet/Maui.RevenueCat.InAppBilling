@@ -236,6 +236,31 @@ jobs:
             StructsAndEnums.cs \
             --report manual_review.md
 
+      - name: Validate native linker against fresh bindings
+        # Drop the cleaned bindings + xcframework into src/Maui.RevenueCat.iOS/
+        # and build BindingLinkerCheck for ios-arm64. This is the earliest
+        # point where unexported ObjC class symbols (e.g. RevenueCat's
+        # internal helpers that sharpie binds but the dylib doesn't export)
+        # surface as "Undefined symbols for architecture arm64" — the same
+        # failure that broke 5.72.0 in downstream consumers.
+        #
+        # Failing here means the post-processor's LinkerRiskSymbols list
+        # needs a new entry. Inspect the error and add the offending name.
+        run: |
+          set -euo pipefail
+          cd src/Maui.RevenueCat.iOS
+
+          cp RevenueCatBindingOutput/ApiDefinitions.cs ApiDefinitions.cs
+          cp RevenueCatBindingOutput/StructsAndEnums.cs StructsAndEnums.cs
+          rm -rf nativelib/RevenueCat.xcframework
+          cp -r RevenueCat.xcframework nativelib/RevenueCat.xcframework
+
+          cd "$GITHUB_WORKSPACE"
+          dotnet publish tests/BindingLinkerCheck/BindingLinkerCheck.csproj \
+            -c Release \
+            -f net9.0-ios \
+            -r ios-arm64
+
       - name: Display generated artifacts
         run: |
           set -euo pipefail
