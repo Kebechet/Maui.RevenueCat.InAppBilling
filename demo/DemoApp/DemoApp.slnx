@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../../src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj" />
+  <Project Path="DemoApp/DemoApp.csproj">
+    <Deploy />
+  </Project>
+</Solution>
