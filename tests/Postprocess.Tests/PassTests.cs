@@ -287,6 +287,36 @@ public class PassTests
 
     // ──────────────────────── Device-specific availability attrs ─────────
 
+    /// <summary>
+    /// Regression for the bug where sharpie emits multiple platform attributes
+    /// on a single line as `[Watch (...), TV (...), Mac (...), iOS (...)]` and
+    /// the strip pass only matched single-entry lines, leaving these intact.
+    /// bgen on recent .NET-for-iOS then errors out because
+    /// `MacAttribute`/`WatchAttribute` aren't in the net9.0-ios targeting pack.
+    /// </summary>
+    [Fact]
+    public void Regression_CombinedPlatformAttrsLine_IsStripped()
+    {
+        const string input = """
+            namespace T
+            {
+                [Watch (8,0), TV (15,0), Mac (12,0), iOS (15,0)]
+                [BaseType (typeof(NSObject))]
+                interface RCFoo
+                {
+                    [Export ("bar")]
+                    void Bar ();
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.DoesNotContain("Watch (", output);
+        Assert.DoesNotContain("Mac (",   output);
+        Assert.DoesNotContain("TV (",    output);
+        Assert.DoesNotContain("iOS (",   output);
+        Assert.Contains("interface RCFoo", output);
+    }
+
     [Fact]
     public void PlatformAvailabilityAttrs_AreStripped()
     {

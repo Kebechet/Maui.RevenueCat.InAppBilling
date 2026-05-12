@@ -439,15 +439,30 @@ static class Postprocess
     private static string StripPlatformAvailabilityAttributes(string text)
     {
         var nameAlt = string.Join("|", PlatformAttrNames.Select(Regex.Escape));
+        var platformEntry = $@"(?:{nameAlt})(?:[ \t]*\([^)]*\))?";
 
+        // Standalone single platform attribute on its own line.
         text = Regex.Replace(
             text,
-            $@"^[ \t]*\[(?:{nameAlt})(?:[ \t]*\([^)]*\))?\][ \t]*\n",
+            $@"^[ \t]*\[{platformEntry}\][ \t]*\n",
             "",
             RegexOptions.Multiline);
+
+        // Combined form: a single `[...]` whose entries are ALL platform
+        // attributes, comma-separated. Sharpie emits this shape — e.g.
+        // `[Watch (8,0), TV (15,0), Mac (12,0), iOS (15,0)]` — and bgen on
+        // recent .NET-for-iOS rejects it because `MacAttribute`/`WatchAttribute`
+        // aren't part of the net9.0-ios targeting pack.
         text = Regex.Replace(
             text,
-            $@"\[(?:{nameAlt})(?:[ \t]*\([^)]*\))?\][ \t]*",
+            $@"^[ \t]*\[(?:{platformEntry}[ \t]*,[ \t]*)+{platformEntry}\][ \t]*\n",
+            "",
+            RegexOptions.Multiline);
+
+        // Inline single platform attribute anywhere.
+        text = Regex.Replace(
+            text,
+            $@"\[{platformEntry}\][ \t]*",
             "");
 
         foreach (var attr in new[] { "Introduced", "Unavailable", "Deprecated" })
