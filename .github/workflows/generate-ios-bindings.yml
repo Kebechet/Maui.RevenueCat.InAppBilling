@@ -1,0 +1,353 @@
+name: generate-ios-bindings
+
+on:
+  workflow_dispatch:
+    inputs:
+      revenuecat_version:
+        description: 'RevenueCat purchases-ios version (e.g. 5.72.0). Leave empty to use the latest GitHub release.'
+        required: false
+        default: ''
+
+jobs:
+  generate-bindings:
+    name: Generate iOS Bindings
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Resolve RevenueCat version and download URL
+        id: rc_info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          INPUT_VERSION="${{ inputs.revenuecat_version }}"
+
+          if [ -z "$INPUT_VERSION" ]; then
+            echo "🔍 Fetching latest release tag from RevenueCat/purchases-ios..."
+            RC_VERSION=$(gh release view --repo RevenueCat/purchases-ios --json tagName --jq '.tagName')
+          else
+            RC_VERSION="$INPUT_VERSION"
+          fi
+
+          if [ -z "$RC_VERSION" ]; then
+            echo "❌ Error: Could not determine RevenueCat version"
+            exit 1
+          fi
+
+          DOWNLOAD_URL="https://github.com/RevenueCat/purchases-ios/releases/download/${RC_VERSION}/RevenueCat.xcframework.zip"
+
+          echo "✅ RevenueCat Version: $RC_VERSION"
+          echo "✅ Download URL: $DOWNLOAD_URL"
+
+          echo "RC_VERSION=$RC_VERSION" >> "$GITHUB_ENV"
+          echo "FRAMEWORK_URL=$DOWNLOAD_URL" >> "$GITHUB_ENV"
+          echo "version=$RC_VERSION" >> "$GITHUB_OUTPUT"
+          echo "url=$DOWNLOAD_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Install Objective Sharpie
+        run: |
+          set -euo pipefail
+          echo "📦 Installing Objective Sharpie..."
+          brew install --cask objectivesharpie || echo "⚠️  Objective Sharpie may already be installed"
+          sharpie -v
+
+      - name: Detect iOS SDK
+        run: |
+          set -euo pipefail
+          echo "🔍 Available iOS SDKs:"
+          sharpie xcode -sdks
+
+          IOS_SDK=$(sharpie xcode -sdks 2>&1 | grep -i iphoneos | grep -o 'iphoneos[0-9.]*' | tail -1)
+
+          if [ -z "$IOS_SDK" ]; then
+            echo "❌ Error: Could not detect iOS SDK"
+            sharpie xcode -sdks
+            exit 1
+          fi
+
+          echo "✅ Selected iOS SDK: $IOS_SDK"
+          echo "IOS_SDK=$IOS_SDK" >> "$GITHUB_ENV"
+
+      - name: Download RevenueCat framework
+        run: |
+          set -euo pipefail
+          echo "⬇️  Downloading RevenueCat v$RC_VERSION framework..."
+          cd src/Maui.RevenueCat.iOS
+
+          FRAMEWORK_ZIP="RevenueCat-${RC_VERSION}.xcframework.zip"
+
+          rm -f "$FRAMEWORK_ZIP"
+
+          echo "Downloading from: $FRAMEWORK_URL"
+          HTTP_CODE=$(curl -L -w "%{http_code}" -o "$FRAMEWORK_ZIP" "$FRAMEWORK_URL")
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Error: HTTP $HTTP_CODE returned from server"
+            echo "URL may be incorrect or the asset doesn't exist for version $RC_VERSION"
+            exit 1
+          fi
+
+          if [ ! -f "$FRAMEWORK_ZIP" ]; then
+            echo "❌ Error: Downloaded file not found"
+            exit 1
+          fi
+
+          FILE_SIZE=$(stat -f%z "$FRAMEWORK_ZIP" 2>/dev/null || stat -c%s "$FRAMEWORK_ZIP")
+          if [ "$FILE_SIZE" -lt 1000 ]; then
+            echo "❌ Error: Downloaded file is too small ($FILE_SIZE bytes), likely an error page"
+            cat "$FRAMEWORK_ZIP"
+            exit 1
+          fi
+
+          if ! unzip -t "$FRAMEWORK_ZIP" > /dev/null 2>&1; then
+            echo "❌ Error: Downloaded file is not a valid zip archive"
+            file "$FRAMEWORK_ZIP"
+            exit 1
+          fi
+
+          echo "✅ Download complete and verified"
+          ls -lh "$FRAMEWORK_ZIP"
+
+      - name: Extract and clean framework
+        run: |
+          set -euo pipefail
+          echo "📦 Extracting framework..."
+          cd src/Maui.RevenueCat.iOS
+
+          FRAMEWORK_ZIP="RevenueCat-${RC_VERSION}.xcframework.zip"
+          FRAMEWORK_DIR="RevenueCat.xcframework"
+
+          rm -rf "$FRAMEWORK_DIR"
+          unzip -q "$FRAMEWORK_ZIP"
+          echo "✅ Extraction complete"
+
+          echo "🧹 Removing .swiftmodule and .dSYM directories (required for Windows build)..."
+          find "$FRAMEWORK_DIR" -type d -name "*.swiftmodule" -exec rm -rf {} + 2>/dev/null || true
+          find "$FRAMEWORK_DIR" -type d -name "*.dSYM" -exec rm -rf {} + 2>/dev/null || true
+          echo "✅ .swiftmodule and .dSYM directories removed"
+
+          echo "📁 Framework structure:"
+          ls -la "$FRAMEWORK_DIR"
+
+      - name: Verify framework structure
+        run: |
+          set -euo pipefail
+          echo "🔍 Verifying framework structure..."
+          cd src/Maui.RevenueCat.iOS
+
+          FRAMEWORK_DIR="RevenueCat.xcframework"
+          FRAMEWORK_PATH="$FRAMEWORK_DIR/ios-arm64/RevenueCat.framework"
+          FRAMEWORK_HEADERS="$FRAMEWORK_PATH/Headers"
+
+          for h in "$FRAMEWORK_HEADERS/RevenueCat.h" "$FRAMEWORK_HEADERS/RevenueCat-Swift.h"; do
+            if [ ! -f "$h" ]; then
+              echo "❌ Error: required header not found at $h"
+              ls -la "$FRAMEWORK_HEADERS" || true
+              exit 1
+            fi
+          done
+
+          echo "✅ Framework structure verified"
+          echo "  Framework:    $FRAMEWORK_PATH"
+          echo "  Headers dir:  $FRAMEWORK_HEADERS"
+
+      - name: Generate bindings with Objective Sharpie
+        run: |
+          set -euo pipefail
+          echo "⚙️  Generating bindings with Objective Sharpie..."
+          cd src/Maui.RevenueCat.iOS
+
+          # Matches the invocation documented in src/Maui.RevenueCat.iOS/README.md:
+          #   sharpie bind -framework ios-arm64/RevenueCat.framework \
+          #     -sdk iphoneosXX.Y -scope ios-arm64/RevenueCat.framework/Headers
+          # Framework-mode goes through the umbrella header so both RevenueCat.h
+          # and RevenueCat-Swift.h are bound (vs. passing one header positionally,
+          # which would miss symbols from the other).
+          FRAMEWORK_DIR="RevenueCat.xcframework"
+          OUTPUT_DIR="RevenueCatBindingOutput"
+          NAMESPACE="Maui.RevenueCat.iOS"
+          FRAMEWORK_PATH="$FRAMEWORK_DIR/ios-arm64/RevenueCat.framework"
+          FRAMEWORK_HEADERS="$FRAMEWORK_PATH/Headers"
+
+          rm -rf "$OUTPUT_DIR"
+
+          echo "Running: sharpie bind -framework $FRAMEWORK_PATH -sdk $IOS_SDK -scope $FRAMEWORK_HEADERS --namespace=$NAMESPACE"
+
+          sharpie bind \
+            -framework "$FRAMEWORK_PATH" \
+            -sdk "$IOS_SDK" \
+            -scope "$FRAMEWORK_HEADERS" \
+            -output "$OUTPUT_DIR" \
+            -namespace "$NAMESPACE"
+
+          echo "✅ Bindings generated"
+
+      - name: Apply README-documented cleanups
+        run: |
+          set -euo pipefail
+          cd src/Maui.RevenueCat.iOS/RevenueCatBindingOutput
+
+          # Runs the .NET 10 file-based script that applies every deterministic
+          # cleanup documented in src/Maui.RevenueCat.iOS/README.md. See the
+          # script header for the full list of passes and the per-pass rules.
+          dotnet run "${GITHUB_WORKSPACE}/.github/scripts/postprocess_ios_bindings.cs" -- \
+            ApiDefinitions.cs \
+            StructsAndEnums.cs \
+            --report manual_review.md
+
+      - name: Display generated artifacts
+        run: |
+          set -euo pipefail
+          cd src/Maui.RevenueCat.iOS
+
+          OUTPUT_DIR="RevenueCatBindingOutput"
+          echo "📄 Generated Artifacts:"
+          echo "════════════════════════════════════════════════════════"
+
+          for f in ApiDefinitions.cs StructsAndEnums.cs; do
+            FILE_PATH="$OUTPUT_DIR/$f"
+            if [ -f "$FILE_PATH" ]; then
+              FILE_SIZE=$(ls -lh "$FILE_PATH" | awk '{print $5}')
+              LINE_COUNT=$(wc -l < "$FILE_PATH")
+              VERIFY_COUNT=$(grep -c "\[Verify" "$FILE_PATH" 2>/dev/null || echo "0")
+              echo "✅ $f"
+              echo "   Size: $FILE_SIZE"
+              echo "   Lines: $LINE_COUNT"
+              echo "   Remaining [Verify] attributes: $VERIFY_COUNT"
+              echo ""
+            else
+              echo "❌ $f not found"
+            fi
+          done
+
+          echo "════════════════════════════════════════════════════════"
+          echo "📋 ApiDefinitions.cs Preview (first 50 lines):"
+          echo "────────────────────────────────────────────────────────"
+          head -50 "$OUTPUT_DIR/ApiDefinitions.cs" || true
+          echo "────────────────────────────────────────────────────────"
+          echo ""
+          echo "📋 StructsAndEnums.cs Preview (first 50 lines):"
+          echo "────────────────────────────────────────────────────────"
+          head -50 "$OUTPUT_DIR/StructsAndEnums.cs" || true
+          echo "────────────────────────────────────────────────────────"
+
+      - name: Upload ApiDefinitions.cs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ApiDefinitions-${{ env.RC_VERSION }}
+          path: src/Maui.RevenueCat.iOS/RevenueCatBindingOutput/ApiDefinitions.cs
+          retention-days: 30
+
+      - name: Upload StructsAndEnums.cs
+        uses: actions/upload-artifact@v4
+        with:
+          name: StructsAndEnums-${{ env.RC_VERSION }}
+          path: src/Maui.RevenueCat.iOS/RevenueCatBindingOutput/StructsAndEnums.cs
+          retention-days: 30
+
+      - name: Upload post-processing report
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-review-${{ env.RC_VERSION }}
+          path: src/Maui.RevenueCat.iOS/RevenueCatBindingOutput/manual_review.md
+          retention-days: 30
+
+      - name: Prepare xcframework for upload
+        run: |
+          set -euo pipefail
+          cd src/Maui.RevenueCat.iOS
+          mkdir -p artifact-temp
+          cp -r RevenueCat.xcframework artifact-temp/
+
+      - name: Upload RevenueCat.xcframework (cleaned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: RevenueCat-xcframework-${{ env.RC_VERSION }}
+          path: src/Maui.RevenueCat.iOS/artifact-temp/
+          retention-days: 30
+
+      - name: Create summary
+        run: |
+          set -euo pipefail
+          cd src/Maui.RevenueCat.iOS
+          OUTPUT_DIR="RevenueCatBindingOutput"
+
+          {
+            echo "## 🎉 iOS Bindings Generated Successfully"
+            echo ""
+            echo "### 📦 RevenueCat Version: $RC_VERSION"
+            echo "### 🔗 Download URL: $FRAMEWORK_URL"
+            echo "### 📱 iOS SDK: $IOS_SDK"
+            echo ""
+            echo "### 📄 Generated Files:"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for f in ApiDefinitions.cs StructsAndEnums.cs; do
+            FILE_PATH="$OUTPUT_DIR/$f"
+            if [ -f "$FILE_PATH" ]; then
+              FILE_SIZE=$(ls -lh "$FILE_PATH" | awk '{print $5}')
+              LINE_COUNT=$(wc -l < "$FILE_PATH")
+              VERIFY_COUNT=$(grep -c "\[Verify" "$FILE_PATH" 2>/dev/null || echo "0")
+              echo "- ✅ **$f**: $FILE_SIZE, $LINE_COUNT lines, $VERIFY_COUNT remaining [Verify] attributes" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+          {
+            echo ""
+            echo "### 📥 Artifacts"
+            echo ""
+            echo "- **ApiDefinitions-$RC_VERSION** — C# API definitions"
+            echo "- **StructsAndEnums-$RC_VERSION** — C# structs and enums"
+            echo "- **manual-review-$RC_VERSION** — markdown report of pass-by-pass deltas and detected manual follow-ups"
+            echo "- **RevenueCat-xcframework-$RC_VERSION** — cleaned xcframework (no .swiftmodule / .dSYM)"
+            echo ""
+            echo "### ✅ Automated cleanups already applied"
+            echo ""
+            echo "Run by \`.github/scripts/postprocess_ios_bindings.cs\` — see the script header for per-pass rules."
+            echo ""
+            echo "- Stripped all \`[Verify(...)]\` attributes"
+            echo "- Commented out \`(AutoGeneratedName = true)\`"
+            echo "- Replaced \`NSUrlRequest\` with \`NSMutableUrlRequest\`"
+            echo "- Stripped literal \`\\\\n\` escape sequences from \`[Obsoleted(...)]\` strings"
+            echo "- Removed members marked \`[Obsoleted(...)]\` or \`[Deprecated(...)]\`"
+            echo "- Removed entire interfaces whose lead attributes carry \`[Obsoleted/Deprecated]\`"
+            echo "- Stripped device-specific availability attributes (\`[iOS (...)]\`, \`[NoiOS]\`, \`[Mac (...)]\`, \`[Introduced (PlatformName...)]\`, ...)"
+            echo "- Removed inherited NSObject methods (\`isEqual:\`, \`description\`, \`debugDescription\`)"
+            echo "- Merged \`_RevenueCat_Swift_NNNN\` suffix interfaces into their canonical counterparts"
+            echo "- Removed interfaces whose bodies became empty after the above"
+            echo "- Added \`INativeObject\` to interfaces used as \`NSDictionary<TKey, TValue>\` value types"
+            echo "- Dropped top-level \`delegate\` declarations with no references"
+            echo "- Set \`namespace Maui.RevenueCat.iOS\` via sharpie \`-namespace\`"
+            echo "- Removed \`*.swiftmodule\` and \`*.dSYM\` directories from the xcframework"
+            echo ""
+            echo "### 📝 Detection-only — review the **manual-review-$RC_VERSION** artifact"
+            echo ""
+            echo "The script flags but does NOT auto-edit these (judgement required):"
+            echo ""
+            echo "- Inline \`[BlockCallback] Action<...>\` / \`Func<...>\` parameters — extract to named delegates (otherwise \`Trampolines.g.cs\` fails to compile)"
+            echo "- Linker-risk symbols (\`FakeASIdManager\`, \`PaymentQueueWrapper\`, etc.) — drop if linker reports them as undefined"
+            echo "- Surviving \`[Verify(...)]\` attributes — should be zero; inspect if present"
+            echo "- \`Name = \"...\"\` attribute arguments — drop if Windows build emits symbol-not-found errors"
+            echo ""
+            echo "### 🚀 Wire-up"
+            echo ""
+            echo "1. Download the artifacts; review the \`manual-review-$RC_VERSION\` report"
+            echo "2. Diff \`ApiDefinitions.cs\` / \`StructsAndEnums.cs\` against the current files in \`src/Maui.RevenueCat.iOS/\` to spot any genuinely new API surface (or removed surface that the wrapper depends on)"
+            echo "3. Resolve the detection-only items above"
+            echo "4. Replace \`src/Maui.RevenueCat.iOS/nativelib/RevenueCat.xcframework\` with the cleaned xcframework artifact"
+            echo "5. Bump \`<Version>\` in \`Maui.RevenueCat.iOS.csproj\` (e.g. \`${RC_VERSION}.0\`) and update \`<PackageReleaseNotes>\`"
+            echo "6. Build \`src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj\` on macOS to validate"
+            echo "7. Open a PR with the updated bindings, xcframework and csproj"
+          } >> "$GITHUB_STEP_SUMMARY"
