@@ -55,8 +55,8 @@
     <PackageReference Include="Eddys.Amazon.AppStoreSdk.Binding" Version="3.0.3" />
 
 		<!--fixed build error "androidx.collection.ArrayMapKt is defined multiple times"-->
-	    <PackageReference Include="Xamarin.AndroidX.Fragment" Version="1.8.9.2" />
-	    <PackageReference Include="Xamarin.AndroidX.Fragment.Ktx" Version="1.8.9.2" />
+		<PackageReference Include="Xamarin.AndroidX.Fragment" Version="1.8.9.2" />
+		<PackageReference Include="Xamarin.AndroidX.Fragment.Ktx" Version="1.8.9.2" />
 
     <!--Fragment.Ktx 1.8.8 bug requires this: https://github.com/dotnet/android-libraries/issues/1186
     https://github.com/dotnet/android-libraries/issues/1181#issuecomment-3053297891-->
