@@ -3,6 +3,8 @@
 # Maui.RevenueCat.iOS
 [![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.RevenueCat.iOS)](https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.iOS/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.RevenueCat.iOS)](https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.iOS/)
+![Last updated (main)](https://img.shields.io/github/last-commit/Kebechet/Maui.RevenueCat.InAppBilling/main?label=last%20updated)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/samuel_sidor.svg?style=social&label=Follow%20samuel_sidor)](https://x.com/samuel_sidor)
 
 - this binding is based on: https://github.com/thisisthekap/Xamarin.RevenueCat.iOS 
 - it is created for .NET MAUI
