@@ -1,8 +1,15 @@
-﻿using Maui.RevenueCat.InAppBilling.Models;
+﻿using Maui.RevenueCat.InAppBilling.Enums;
+using Maui.RevenueCat.InAppBilling.Models;
 using System.Globalization;
 
 namespace Maui.RevenueCat.InAppBilling.Extensions;
 
+/// <summary>
+/// Display helpers for <see cref="PackageDto"/>: converts a package's base price into
+/// any per-period figure (<see cref="GetPriceFor"/>), formats it as a deterministic
+/// localized currency string (<see cref="GetPriceWithCurrencyFor"/>,
+/// <see cref="GetLocalizedPrice"/>), and rounds via <see cref="DecimalExtensions.RoundUp"/>.
+/// </summary>
 public static partial class PackageDtoExtensions
 {
     private static readonly decimal _daysInWeek = 7m;
@@ -12,62 +19,51 @@ public static partial class PackageDtoExtensions
     private static readonly decimal _monthsInHalfYear = 6m;
     private static readonly decimal _monthsInYear = 12m;
 
-    public static decimal GetMonthlyPrice(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
+    /// <summary>
+    /// Returns the package's price normalized to <paramref name="duration"/>. For a yearly
+    /// subscription with <paramref name="duration"/> = <see cref="PriceDuration.Monthly"/>
+    /// this returns one-twelfth of the package price. For a weekly subscription with
+    /// <paramref name="duration"/> = <see cref="PriceDuration.Yearly"/> it returns the
+    /// weekly price times the number of weeks in a year. Pass
+    /// <paramref name="decimalRoundUpTo"/> = <c>null</c> to skip rounding.
+    /// </summary>
+    public static decimal GetPriceFor(
+        this PackageDto packageDto,
+        PriceDuration duration,
+        bool ignoreExceptions = true,
+        int? decimalRoundUpTo = 2)
     {
-        decimal result;
+        var monthlyPrice = NormalizeToMonthly(packageDto, ignoreExceptions);
 
-        switch (packageDto.Identifier)
+        var result = duration switch
         {
-            case DefaultPackageIdentifier.Weekly:
-                result = packageDto.Product.Pricing.Price / _daysInWeek * _daysInMonth;
-                break;
-            case DefaultPackageIdentifier.Monthly:
-                result = packageDto.Product.Pricing.Price;
-                break;
-            case DefaultPackageIdentifier.BiMonthly:
-                result = packageDto.Product.Pricing.Price / _monthsInBiMonthly;
-                break;
-            case DefaultPackageIdentifier.Quarterly:
-                result = packageDto.Product.Pricing.Price / _monthsInQuartal;
-                break;
-            case DefaultPackageIdentifier.SemiAnnually:
-                result = packageDto.Product.Pricing.Price / _monthsInHalfYear;
-                break;
-            case DefaultPackageIdentifier.Annually:
-                result = packageDto.Product.Pricing.Price / _monthsInYear;
-                break;
-            default:
-                if (ignoreExceptions)
-                {
-                    result = 0m;
-                    break;
-                }
-                throw new NotImplementedException("Specified offering identifier is not supported.");
-        }
+            PriceDuration.Daily => monthlyPrice / _daysInMonth,
+            PriceDuration.Weekly => monthlyPrice / _daysInMonth * _daysInWeek,
+            PriceDuration.Monthly => monthlyPrice,
+            PriceDuration.Yearly => monthlyPrice * _monthsInYear,
+            _ => throw new ArgumentOutOfRangeException(nameof(duration), duration, "Unknown PriceDuration."),
+        };
 
         return decimalRoundUpTo is null
             ? result
             : result.RoundUp(decimalRoundUpTo.Value);
     }
-    public static decimal GetWeeklyPrice(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
-    {
-        var monthlyPrice = GetMonthlyPrice(packageDto, ignoreExceptions, null);
-        var weeklyPrice = monthlyPrice / _daysInMonth * _daysInWeek;
 
-        return decimalRoundUpTo is null
-            ? weeklyPrice
-            : weeklyPrice.RoundUp(decimalRoundUpTo.Value);
-    }
-
-    public static string GetMonthlyPriceWithCurrency(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
+    /// <summary>
+    /// Like <see cref="GetPriceFor"/> but returns a localized currency string (e.g. <c>199 Kč</c>)
+    /// via <see cref="GetLocalizedPrice"/>. Swallows any exception when
+    /// <paramref name="ignoreExceptions"/> is <c>true</c> and returns <c>"$0.00"</c>.
+    /// </summary>
+    public static string GetPriceWithCurrencyFor(
+        this PackageDto packageDto,
+        PriceDuration duration,
+        bool ignoreExceptions = true,
+        int? decimalRoundUpTo = 2)
     {
         try
         {
-            var monthlyPrice = packageDto.GetMonthlyPrice(ignoreExceptions, decimalRoundUpTo);
-
-            var localisedCurrency = GetLocalizedPrice(packageDto.Product.Pricing.CurrencyCode, monthlyPrice);
-
-            return localisedCurrency;
+            var price = packageDto.GetPriceFor(duration, ignoreExceptions, decimalRoundUpTo);
+            return GetLocalizedPrice(packageDto.Product.Pricing.CurrencyCode, price);
         }
         catch (Exception)
         {
@@ -79,25 +75,26 @@ public static partial class PackageDtoExtensions
             throw;
         }
     }
-    public static string GetWeeklyPriceWithCurrency(this PackageDto packageDto, bool ignoreExceptions = true, int? decimalRoundUpTo = 2)
+
+    // Maps each DefaultPackageIdentifier to its equivalent monthly figure. Single source
+    // of truth for all per-period conversions; GetPriceFor then scales monthly -> target
+    // duration with a simple ratio.
+    private static decimal NormalizeToMonthly(PackageDto packageDto, bool ignoreExceptions)
     {
-        try
+        var price = packageDto.Product.Pricing.Price;
+
+        return packageDto.Identifier switch
         {
-            var weeklyPrice = packageDto.GetWeeklyPrice(ignoreExceptions, decimalRoundUpTo);
-
-            var localisedCurrency = GetLocalizedPrice(packageDto.Product.Pricing.CurrencyCode, weeklyPrice);
-
-            return localisedCurrency;
-        }
-        catch (Exception)
-        {
-            if (ignoreExceptions)
-            {
-                return "$0.00";
-            }
-
-            throw;
-        }
+            DefaultPackageIdentifier.Weekly => price / _daysInWeek * _daysInMonth,
+            DefaultPackageIdentifier.Monthly => price,
+            DefaultPackageIdentifier.BiMonthly => price / _monthsInBiMonthly,
+            DefaultPackageIdentifier.Quarterly => price / _monthsInQuartal,
+            DefaultPackageIdentifier.SemiAnnually => price / _monthsInHalfYear,
+            DefaultPackageIdentifier.Annually => price / _monthsInYear,
+            _ => ignoreExceptions
+                ? 0m
+                : throw new NotImplementedException("Specified offering identifier is not supported."),
+        };
     }
 
     /// <summary>
