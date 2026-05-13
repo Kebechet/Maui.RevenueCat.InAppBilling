@@ -132,6 +132,12 @@ var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 return epoch.AddMilliseconds(storeTransaction.PurchaseTime);
 ```
 
+One file per source type — name it `{SourceTypeName}Extensions.cs` and put it under
+`Platforms/{Platform}/Extensions/`. A new mapping for a different native type goes in its
+own file; don't pile multiple unrelated converters into one file. Examples:
+`StoreExtensions.cs`, `PurchasesErrorCodeExtensions.cs`, `SubscriptionPeriodExtensions.cs`,
+`SubscriptionUnitExtensions.cs`.
+
 ### Shared Constants
 Extract repeated values to static readonly fields:
 ```csharp

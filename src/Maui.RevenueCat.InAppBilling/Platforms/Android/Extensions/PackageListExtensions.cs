@@ -29,7 +29,7 @@ internal static class PackageListExtensions
                         PriceLocalized = PackageDtoExtensions.GetLocalizedPrice(currencyCode, price)
                     },
                     Sku = package.Product.Sku,
-                    SubscriptionPeriod = package.Product.Period?.ToString() ?? string.Empty,
+                    SubscriptionPeriod = package.Product.Period.ToSubscriptionPeriodDto(),
                 }
             };
 
