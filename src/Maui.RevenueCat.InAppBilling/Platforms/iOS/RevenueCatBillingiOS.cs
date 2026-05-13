@@ -411,6 +411,14 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         Purchases.SharedPurchases.Attribution.SetAttributes(nsAttributes);
     }
 
+    public partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken)
+    {
+        // StoreFrontCountryCode is a sync property on RCPurchases populated when the
+        // user's storefront is first observed. May be null before the SDK has talked
+        // to StoreKit at least once — defaults to string.Empty in that window.
+        return Task.FromResult(_purchases.StoreFrontCountryCode ?? string.Empty);
+    }
+
     internal static partial void EnableDebugLogs(bool enable)
     {
         if (!enable)

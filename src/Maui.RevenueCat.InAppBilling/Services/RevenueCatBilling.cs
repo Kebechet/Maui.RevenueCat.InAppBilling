@@ -43,6 +43,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken);
+    public partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken);
 
     // Subscriber Attributes
     public partial void SetEmail(string email);

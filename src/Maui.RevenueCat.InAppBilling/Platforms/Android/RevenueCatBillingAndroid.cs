@@ -5,6 +5,7 @@ using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Extensions;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
+using Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Exceptions;
 using Microsoft.Extensions.Logging;
 using Maui.RevenueCat.InAppBilling.Enums;
@@ -418,6 +419,26 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial void SetAttributes(IDictionary<string, string> attributes)
     {
         Purchases.SharedInstance.SetAttributes(attributes);
+    }
+
+    public async partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var callback = new DelegatingGetStorefrontCountryCodeCallback(cancellationToken);
+            Purchases.SharedInstance.GetStorefrontCountryCode(callback);
+            return await callback.Task;
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, $"{nameof(GetStorefrontCountryCode)} was cancelled.");
+            return string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"{nameof(GetStorefrontCountryCode)} didn't succeed.");
+            return string.Empty;
+        }
     }
 
     internal static partial void EnableDebugLogs(bool enable)

@@ -71,8 +71,9 @@ public partial class MainPage : ContentPage, INotifyPropertyChanged
                 .SelectMany(x => x.AvailablePackages)
                 .First(x => x.Identifier == $"{_consumablePackageIdentifierPrefix}5");
 
+            var storefront = await _revenueCatBilling.GetStorefrontCountryCode();
             CurrentCultureText =
-                $"Culture: {CultureInfo.CurrentCulture.Name} | UI: {CultureInfo.CurrentUICulture.Name}";
+                $"Culture: {CultureInfo.CurrentCulture.Name} | UI: {CultureInfo.CurrentUICulture.Name} | Store: {(string.IsNullOrEmpty(storefront) ? "?" : storefront)}";
             Debug.WriteLine(CurrentCultureText);
 
             NotifyPropertyChanged(nameof(AreOfferingsLoaded));

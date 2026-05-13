@@ -117,6 +117,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial void SetAttributes(IDictionary<string, string> attributes)
     {
     }
+    public partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken)
+    {
+        return Task.FromResult(string.Empty);
+    }
 
     internal static partial void EnableDebugLogs(bool enable)
     {

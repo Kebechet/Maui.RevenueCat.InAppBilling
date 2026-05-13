@@ -23,6 +23,13 @@ public interface IRevenueCatBilling
     Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken = default);
     Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returns the ISO 3166-1 alpha-2 country code of the user's App Store / Play Store
+    /// storefront (e.g. <c>"US"</c>, <c>"CZ"</c>), or an empty string if it can't be
+    /// resolved. Independent of the device's <see cref="System.Globalization.CultureInfo.CurrentCulture"/>.
+    /// </summary>
+    Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken = default);
+
     // Subscriber Attributes
     void SetEmail(string email);
     void SetDisplayName(string name);
