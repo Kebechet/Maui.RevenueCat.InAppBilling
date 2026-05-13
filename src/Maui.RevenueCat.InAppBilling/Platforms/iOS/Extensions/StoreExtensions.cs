@@ -26,6 +26,10 @@ internal static class StoreExtensions
                 return StoreType.External;
             case RCStore.Paddle:
                 return StoreType.Paddle;
+            case RCStore.TestStore:
+                return StoreType.TestStore;
+            case RCStore.Galaxy:
+                return StoreType.Galaxy;
             default:
                 return StoreType.UnknownStore;
         }
