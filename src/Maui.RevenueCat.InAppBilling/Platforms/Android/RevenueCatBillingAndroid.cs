@@ -171,7 +171,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (PurchasesErrorException ex)
         {
-            var purchaseError = (PurchaseErrorStatus)(ex?.PurchasesError?.Code.Code ?? 0);
+            var purchaseError = (ex?.PurchasesError?.Code ?? PurchasesErrorCode.UnknownError).ToPurchaseErrorStatus();
 
             if (purchaseError != PurchaseErrorStatus.PurchaseCancelledError)
             {
