@@ -86,10 +86,17 @@ jobs:
             throw "No Version element found in ${{ env.PROJECT_PATH }}"
           }
           $version = $versionGroup.Version.Trim()
-          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
           $releaseNotesGroup = $csproj.Project.PropertyGroup | Where-Object { $_.PackageReleaseNotes } | Select-Object -First 1
-          $releaseNotes = if ($releaseNotesGroup) { $releaseNotesGroup.PackageReleaseNotes } else { "" }
-          echo "RELEASE_NOTES=$releaseNotes" >> $env:GITHUB_OUTPUT
+          $releaseNotes = if ($releaseNotesGroup) { $releaseNotesGroup.PackageReleaseNotes.Trim() } else { "" }
+          # Multiline values in $GITHUB_OUTPUT need heredoc-style framing — a single
+          # `KEY=value` line breaks at the first newline and the action runner aborts
+          # with "Invalid format". A random delimiter avoids collisions with the body.
+          $eof = "RELEASE_NOTES_EOF_" + [Guid]::NewGuid().ToString("N")
+          "RELEASE_NOTES<<$eof"           | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          $releaseNotes                   | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          $eof                            | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
