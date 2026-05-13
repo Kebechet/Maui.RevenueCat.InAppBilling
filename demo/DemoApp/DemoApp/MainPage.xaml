@@ -35,6 +35,11 @@
                 Style="{StaticResource SubHeadline2}"
                 IsVisible="{Binding AreOfferingsLoaded}"/>
 
+            <Label
+                Text="{Binding CurrentCultureText}"
+                Style="{StaticResource SubHeadline2}"
+                IsVisible="{Binding AreOfferingsLoaded}"/>
+
             <Button
                 x:Name="BtnPurchase"
                 Text="Load RevenueCat offerings"
