@@ -36,6 +36,19 @@ The project requires MAUI workloads for multi-platform targeting:
 dotnet workload install maui-android maui-ios maui-maccatalyst maui-windows
 ```
 
+### Solution layout
+Solutions are `.slnx` (XML format), not `.sln`:
+- `src/Maui.RevenueCat.InAppBilling.slnx` — main solution; the `/tests/` folder groups `BindingLinkerCheck` and `Postprocess.Tests`
+- `demo/DemoApp/DemoApp.slnx` — demo solution
+
+### Local NuGet feed for binding development
+`nuget.config` at repo root defines a `local` source mapped to `./local-nuget` for the `Kebechet.Maui.RevenueCat.*` family (via `packageSourceMapping`). To test the wrapper against a locally-built binding without publishing to nuget.org:
+```bash
+dotnet pack src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj -c Release -o local-nuget
+rm -rf "$HOME/.nuget/packages/kebechet.maui.revenuecat.ios/<version>"  # force re-extract
+```
+`local-nuget/` is `.gitignored`.
+
 ## Architecture
 
 ### Three-Layer Structure
@@ -78,6 +91,20 @@ The iOS implementation supports both StoreKit1 and StoreKit2 transactions:
 - Checks if `Sk1Transaction` exists (StoreKit1)
 - Falls back to `TransactionIdentifier` check (StoreKit2)
 - See `Platforms/iOS/RevenueCatBillingiOS.cs` `PurchaseProduct` method
+
+### iOS Binding Regeneration Pipeline
+
+The iOS binding's `ApiDefinitions.cs` / `StructsAndEnums.cs` are generated automatically rather than hand-maintained. Three pieces work together:
+
+1. **Workflow** — `.github/workflows/generate-ios-bindings.yml` (manual dispatch). Runs on `macos-latest`: installs Objective Sharpie, downloads `RevenueCat.xcframework.zip` from the RevenueCat/purchases-ios release, runs `sharpie bind -framework ...`, then post-processes.
+
+2. **Post-processor** — `.github/scripts/postprocess_ios_bindings.cs` (.NET 10 file-based script). A pipeline of deterministic passes applies every cleanup the iOS binding README documents (strip `[Verify]`, collapse multi-line `//` comments, normalize Cocoa acronym casing `NSURL`→`NSUrl`, drop device-specific availability attrs including combined `[Watch (...), TV (...), Mac (...), iOS (...)]` lines, drop `[Protocol]`-only types, drop linker-risk symbols, merge `_RevenueCat_Swift_NNNN` suffix interfaces into their canonical counterparts, add `INativeObject` to `NSDictionary`/`NSArray`/`NSSet` type parameters, dedupe overloaded methods, convert block namespace to file-scoped, etc.). The detection-only `LinkerRiskSymbols` array is the authoritative list of native symbols sharpie binds but the RevenueCat dylib doesn't export — extend it when a new SDK version surfaces `Undefined symbols for architecture arm64` errors at link time.
+
+3. **Tests + validation**:
+   - `tests/Postprocess.Tests/` (xUnit, .NET 10) — each pass has a fixture test plus regression tests for previously caught bugs (multi-suffix merge corruption, indent drop, empty-obsolete-interface eating the next interface, multi-line doc comments, combined platform attrs, etc.). Runs as the first step of `generate-ios-bindings.yml` and `publish-ios.yml`.
+   - `tests/BindingLinkerCheck/` — a minimal `net9.0-ios` Exe that ProjectReferences the binding and `typeof()`s every interface, forcing the iOS registrar to emit `_OBJC_CLASS_$_X` for each. Both `generate-ios-bindings.yml` (after post-processing) and `publish-ios.yml` (before pack) build it for `ios-arm64`. Catches missing `LinkerRiskSymbols` entries before they reach NuGet — a standalone binding `dotnet build` does NOT run the native linker, so `Undefined symbols` only surfaces in a consuming app build.
+
+When bumping the binding to a new RevenueCat version: dispatch `generate-ios-bindings`, download the artifacts, drop `ApiDefinitions.cs` / `StructsAndEnums.cs` / `nativelib/RevenueCat.xcframework` into `src/Maui.RevenueCat.iOS/`, bump `<Version>` in the csproj. The version scheme is `<upstream>.<binding-fix>` (e.g. `5.72.0.0` = first binding for RevenueCat 5.72.0; `5.72.0.1` = first fix to that binding).
 
 ## Code Style Guidelines
 
@@ -137,3 +164,6 @@ Must be called in `App.xaml.cs` `OnStart()` method (not in constructor) with pla
 
 ### Stub Implementations
 Windows, MacCatalyst, and PlatformsStandard have dummy implementations that return empty collections and default values to avoid platform-specific code in consuming applications.
+
+### Price Localization
+`PricingDto.PriceLocalized` is set by the wrapper's `PackageDtoExtensions.GetLocalizedPrice(currencyCode, price)`, NOT by the platform's `StoreProduct.LocalizedPriceString` (iOS) / `Price.Formatted` (Android). The wrapper version drops `,00` for whole-number prices (`199 Kč`, not `199,00 Kč`) and is deterministic across runs via a stable ordinal scan over `CultureInfo.GetCultures()`. Per-period prices (monthly / weekly) are derived in `GetMonthlyPriceWithCurrency` / `GetWeeklyPriceWithCurrency` from the package's base `Price` divided by the period count — no platform per-period property is exposed on `PricingDto` (the platform's per-period strings would re-introduce the `,00` regression and only matter for trial/intro pricing that the wrapper doesn't surface anyway). If you ever want byte-for-byte parity with the App Store / Play Store payment confirmation, swap `PriceLocalized` back to the platform string in `PackageArrayExtensions.cs` (iOS) / `PackageListExtensions.cs` (Android).
