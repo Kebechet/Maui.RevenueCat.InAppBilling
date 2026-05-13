@@ -1,5 +1,4 @@
 ﻿using Maui.RevenueCat.InAppBilling.Models;
-using System.Diagnostics;
 using System.Globalization;
 
 namespace Maui.RevenueCat.InAppBilling.Extensions;
@@ -101,31 +100,45 @@ public static partial class PackageDtoExtensions
         }
     }
 
+    /// <summary>
+    /// Formats <paramref name="price"/> as a localized currency string with deterministic output:
+    /// the same input always produces the same string on any device. Number conventions
+    /// (separators, grouping) come from <see cref="CultureInfo.CurrentCulture"/>; the currency
+    /// symbol and decimal-digit count come from the first specific culture whose
+    /// <see cref="RegionInfo.ISOCurrencySymbol"/> matches <paramref name="priceIsoCurrencyCode"/>,
+    /// picked by ordinal name ordering. Falls back to using the ISO code as the symbol if no
+    /// culture matches. Whole-number prices drop the fractional part (<c>199 Kč</c>, not
+    /// <c>199,00 Kč</c>).
+    /// </summary>
     public static string GetLocalizedPrice(string priceIsoCurrencyCode, decimal price)
     {
-        var currencyCulture = GetCulture(priceIsoCurrencyCode);
+        var format = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
 
-        if (price == Math.Floor(price))
-        {
-            return price.ToString("C0", currencyCulture);
-        }
-
-        return price.ToString("C", currencyCulture);
-    }
-
-    private static CultureInfo GetCulture(string isoCurrencySymbol)
-    {
-        foreach (CultureInfo ci in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
-        {
-            var regionalInfo = new RegionInfo(ci.Name);
-            if (regionalInfo.ISOCurrencySymbol == isoCurrencySymbol)
+        // Ordinal sort = deterministic across runs/devices. The same ISO code always picks
+        // the same culture, so the symbol and decimal-digit count never drift.
+        var currencyCulture = CultureInfo
+            .GetCultures(CultureTypes.SpecificCultures)
+            .OrderBy(static c => c.Name, StringComparer.Ordinal)
+            .FirstOrDefault(c =>
             {
-                return ci;
-            }
+                try { return new RegionInfo(c.Name).ISOCurrencySymbol == priceIsoCurrencyCode; }
+                catch { return false; }
+            });
+
+        if (currencyCulture is not null)
+        {
+            format.CurrencyDecimalDigits = currencyCulture.NumberFormat.CurrencyDecimalDigits;
+            format.CurrencySymbol = currencyCulture.NumberFormat.CurrencySymbol;
+        }
+        else
+        {
+            // No matched culture — keep the ISO code as the symbol so the output is at
+            // least readable. Decimal digits stay at CurrentCulture's default.
+            format.CurrencySymbol = priceIsoCurrencyCode;
         }
 
-        Debug.WriteLine("Culture not found for " + isoCurrencySymbol);
-
-        return CultureInfo.CurrentCulture;
+        return price == Math.Floor(price)
+            ? price.ToString("C0", format)
+            : price.ToString("C", format);
     }
 }
