@@ -1,4 +1,5 @@
-﻿using Maui.RevenueCat.InAppBilling.Models;
+using Maui.RevenueCat.InAppBilling.Extensions;
+using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.iOS;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
@@ -16,7 +17,7 @@ internal static class RCOfferingsExtensions
                 Identifier = offer.Identifier,
                 AvailablePackages = offer.AvailablePackages.ToPackageDtoList(),
                 IsCurrent = offer.Identifier == offerings.Current?.Identifier,
-                Metadata = offer.Metadata.ToJson()
+                Metadata = offer.Metadata.ToJson().ToMetadataDictionary()
             };
             offeringDtos.Add(offeringDto);
         }

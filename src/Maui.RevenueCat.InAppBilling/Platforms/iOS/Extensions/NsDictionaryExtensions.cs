@@ -1,4 +1,4 @@
-﻿using Foundation;
+using Foundation;
 
 namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
