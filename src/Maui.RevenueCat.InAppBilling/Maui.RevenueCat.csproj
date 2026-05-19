@@ -33,26 +33,16 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>6.0.0</Version>
+    <Version>7.0.0</Version>
     <PackageReleaseNotes>
-Major release: combines the Android 10.1.2 + iOS 5.72.0 SDK updates with cross-platform consistency fixes.
+Major release: typed OfferingDto.Metadata and dead-field cleanup on PricingDto.
 
 NEW
-- GetStorefrontCountryCode() — exposes the user's App Store / Play Store ISO 3166-1 country (e.g. "US", "CZ"), independent of CultureInfo.CurrentCulture.
-- Unified GetPriceFor(PriceDuration) / GetPriceWithCurrencyFor(PriceDuration) — supports Daily / Weekly / Monthly / Yearly; replaces the separate Monthly/Weekly helpers.
-- StoreType: RcBilling / External / Paddle / TestStore / Galaxy members are now mapped on both iOS and Android.
-
-FIXED
-- #103 PriceLocalized formatting is now deterministic across runs (was: same currency formatted three different ways on the same device). Whole-number prices drop the trailing ",00".
-- #106 PurchaseErrorStatus mapping now uses explicit per-platform tables — Android codes were silently mis-cast to wrong wrapper members (e.g. CustomerInfoError, SignatureVerificationFailed). Raised matching upstream issues at RevenueCat/purchases-android#3469 and RevenueCat/purchases-ios#6777.
-- #81 / #37 ProductDto.SubscriptionPeriod is now a proper SubscriptionPeriodDto { Value, Unit } — was a meaningless NSObject hex string on iOS.
+- OfferingDto.Metadata is now IReadOnlyDictionary&lt;string, JsonElement&gt;, giving callers type-safe access to RevenueCat dashboard metadata via System.Text.Json. Nested objects, arrays, numbers, and booleans round-trip without flattening.
 
 BREAKING
-- Android: minimum API raised from 21 to 23.
-- ProductDto.SubscriptionPeriod: string → SubscriptionPeriodDto?
-- PricingDto: removed PriceLocalizedPerMonth / PriceLocalizedPerWeek. Use GetPriceWithCurrencyFor(PriceDuration.Monthly/Weekly) instead.
-- Removed GetMonthlyPrice / GetWeeklyPrice / GetMonthlyPriceWithCurrency / GetWeeklyPriceWithCurrency — use GetPriceFor / GetPriceWithCurrencyFor with the PriceDuration enum.
-- IRevenueCatBilling has a new method GetStorefrontCountryCode (binary-breaking for implementers; transparent for callers).
+- OfferingDto.Metadata type changed from string? (JSON-serialized) to IReadOnlyDictionary&lt;string, JsonElement&gt;. Callers that previously parsed the JSON string with JsonSerializer.Deserialize can now index the dictionary directly and use JsonElement helpers such as GetString(), GetInt32(), GetProperty(...). Empty metadata is now ImmutableDictionary&lt;string, JsonElement&gt;.Empty instead of null.
+- PricingDto: removed OriginalPrice, OriginalPriceMicros, OriginalPriceLocalized — these were never populated by iOS or Android SDK mappers and always returned default values, so no real data is lost. Callers reading them should drop the references.
     </PackageReleaseNotes>
   </PropertyGroup>
 
