@@ -42,12 +42,19 @@ Solutions are `.slnx` (XML format), not `.sln`:
 - `demo/DemoApp/DemoApp.slnx` — demo solution
 
 ### Local NuGet feed for binding development
-`nuget.config` at repo root defines a `local` source mapped to `./local-nuget` for the `Kebechet.Maui.RevenueCat.*` family (via `packageSourceMapping`). To test the wrapper against a locally-built binding without publishing to nuget.org:
-```bash
-dotnet pack src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj -c Release -o local-nuget
-rm -rf "$HOME/.nuget/packages/kebechet.maui.revenuecat.ios/<version>"  # force re-extract
-```
-`local-nuget/` is `.gitignored`.
+`nuget.config` at repo root defines a `local` source mapped to `./local-nuget`. The `Kebechet.Maui.RevenueCat.*` family is mapped (via `packageSourceMapping`) to BOTH `local` and `nuget.org`, so a locally-packed version resolves from `local-nuget/` while everything else (and CI, which has no local packages) still restores from nuget.org. `local-nuget/` is `.gitignored`.
+
+To verify a binding change end-to-end before publishing — i.e. consumed as a real NuGet package through the wrapper and exercised in the demo, NOT a `ProjectReference` (which skips package restore and native jar/aar embedding):
+
+1. **Bump the binding `<Version>`** (e.g. `10.1.2.0` → `10.1.2.1`, the `<upstream>.<binding-fix>` scheme). A new version sidesteps the global package cache, so no `rm -rf ~/.nuget/packages/...` is needed.
+2. **Pack into the local feed:**
+   ```bash
+   dotnet pack src/Maui.RevenueCat.Android/Maui.RevenueCat.Android.csproj -c Release -o local-nuget
+   ```
+3. **Point the wrapper's `PackageReference` at the new version** (`src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj`, in the per-TFM `ItemGroup`).
+4. **Rebuild + run the demo** (`demo/DemoApp`) on the target platform. The repo-root `nuget.config` is an ancestor of `demo/`, so the local feed is picked up automatically; the demo references the wrapper via `ProjectReference`. Inspect the packed `.nuspec` to confirm the intended dependency change (`unzip -p local-nuget/<pkg>.nupkg '*.nuspec'`).
+
+(Same-version re-pack is still possible by clearing `~/.nuget/packages/<lowercased.id>/<version>` to force re-extract, but bumping is cleaner.)
 
 ## Architecture
 

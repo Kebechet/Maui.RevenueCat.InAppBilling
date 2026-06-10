@@ -24,8 +24,8 @@
 		<DebugType>embedded</DebugType>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<EmbedAllSources>true</EmbedAllSources>
-		<Version>10.1.2.0</Version>
-		<PackageReleaseNotes>Updated to RevenueCat Android SDK 10.1.2 with Test Store support</PackageReleaseNotes>
+		<Version>10.1.2.1</Version>
+		<PackageReleaseNotes>Removed the Dev.Drewhamilton.Poko.PokoAnnotations dependency (compile-time annotation not referenced by the RevenueCat AAR bytecode), which drops the transitive Dependencies.Gradle/SharpCompress chain (GHSA-6c8g-7p36-r338) and the build-time Gradle invocation that failed on Windows SDK paths with spaces. See #114 and #83.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -45,7 +45,7 @@
 		<PackageReference Include="Xamarin.AndroidX.Lifecycle.Process" Version="2.10.0.2" />
 		<PackageReference Include="Xamarin.GooglePlayServices.Ads.Identifier" Version="118.1.0.3" />
 		<PackageReference Include="Xamarin.Google.Crypto.Tink.Android" Version="1.15.0.1" />
-		<PackageReference Include="Dev.Drewhamilton.Poko.PokoAnnotations" Version="0.17.2.3" />
+		<!--Dev.Drewhamilton.Poko.PokoAnnotations is intentionally NOT referenced: RevenueCat uses Poko only as a compile-time Gradle plugin and @Poko is source-retention, so it leaves no trace in the purchases AAR bytecode. Referencing it only pulled in Dependencies.Gradle/SharpCompress (#114) and broke Windows builds (#83).-->
 		<PackageReference Include="Xamarin.Kotlin.Parcelize.Runtime" Version="2.0.21.4" />
     <PackageReference Include="Xamarin.KotlinX.Serialization.Json" Version="1.7.3.5" />
     <PackageReference Include="Xamarin.KotlinX.Coroutines.Core" Version="1.10.2.3" />

@@ -33,16 +33,11 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>7.0.0</Version>
+    <Version>7.0.1</Version>
     <PackageReleaseNotes>
-Major release: typed OfferingDto.Metadata and dead-field cleanup on PricingDto.
-
-NEW
-- OfferingDto.Metadata is now IReadOnlyDictionary&lt;string, JsonElement&gt;, giving callers type-safe access to RevenueCat dashboard metadata via System.Text.Json. Nested objects, arrays, numbers, and booleans round-trip without flattening.
-
-BREAKING
-- OfferingDto.Metadata type changed from string? (JSON-serialized) to IReadOnlyDictionary&lt;string, JsonElement&gt;. Callers that previously parsed the JSON string with JsonSerializer.Deserialize can now index the dictionary directly and use JsonElement helpers such as GetString(), GetInt32(), GetProperty(...). Empty metadata is now ImmutableDictionary&lt;string, JsonElement&gt;.Empty instead of null.
-- PricingDto: removed OriginalPrice, OriginalPriceMicros, OriginalPriceLocalized — these were never populated by iOS or Android SDK mappers and always returned default values, so no real data is lost. Callers reading them should drop the references.
+FIXED (Android)
+- Removed a transitive dependency that triggered a security vulnerability warning (SharpCompress, GHSA-6c8g-7p36-r338) in consuming projects. #114
+- Fixed Android build failures on Windows when the Android SDK is installed in a path containing spaces (e.g. "C:\Program Files (x86)\Android\android-sdk"). #83
     </PackageReleaseNotes>
   </PropertyGroup>
 
@@ -64,7 +59,7 @@ BREAKING
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.1.2.0" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.1.2.1" />
   </ItemGroup>
 
   <!--Android warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.LiveData 2.8.5.1 requires Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx (>= 2.8.5.1 && < 2.8.6) but version Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx 2.8.7.1 was resolved.-->
