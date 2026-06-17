@@ -33,11 +33,10 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>7.0.1</Version>
+    <Version>7.1.0</Version>
     <PackageReleaseNotes>
-FIXED (Android)
-- Removed a transitive dependency that triggered a security vulnerability warning (SharpCompress, GHSA-6c8g-7p36-r338) in consuming projects. #114
-- Fixed Android build failures on Windows when the Android SDK is installed in a path containing spaces (e.g. "C:\Program Files (x86)\Android\android-sdk"). #83
+ADDED
+- New `PeriodType.Prepaid` value and mapping for prepaid subscriptions on Android and iOS. #115
     </PackageReleaseNotes>
   </PropertyGroup>
 
