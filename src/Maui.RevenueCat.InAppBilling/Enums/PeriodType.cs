@@ -4,5 +4,6 @@ public enum PeriodType
 {
     Intro,
     Normal,
-    Trial
+    Trial,
+    Prepaid
 }
