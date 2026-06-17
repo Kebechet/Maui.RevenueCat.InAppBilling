@@ -9,6 +9,7 @@ internal static class PeriodTypeExtensions
         if (periodType == PeriodTypeNative.Intro) return PeriodType.Intro;
         if (periodType == PeriodTypeNative.Trial) return PeriodType.Trial;
         if (periodType == PeriodTypeNative.Normal) return PeriodType.Normal;
+        if (periodType == PeriodTypeNative.Prepaid) return PeriodType.Prepaid;
         throw new ArgumentException();
     }
 }

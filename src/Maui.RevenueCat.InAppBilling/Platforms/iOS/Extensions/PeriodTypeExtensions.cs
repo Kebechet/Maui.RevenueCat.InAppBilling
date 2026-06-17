@@ -14,6 +14,8 @@ internal static class PeriodTypeExtensions
                 return PeriodType.Trial;
             case RCPeriodType.Normal:
                 return PeriodType.Normal;
+            case RCPeriodType.Prepaid:
+                return PeriodType.Prepaid;
             default:
                 throw new ArgumentException();
         }
