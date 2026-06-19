@@ -20,8 +20,8 @@
       <PackageIcon>icon.png</PackageIcon>
       <SymbolPackageFormat>snupkg</SymbolPackageFormat>
       <EmbedAllSources>true</EmbedAllSources>
-      <Version>5.72.0.1</Version>
-      <PackageReleaseNotes>Fix for 5.72.0: link-time crash from unexported native classes (StoreKit2PromotionalOfferPurchaseOptions, RedirectLoggerSessionDelegate) and bgen failure from combined platform-availability attributes ([Watch, TV, Mac, iOS]). Bindings regenerated via .github/workflows/generate-ios-bindings.yml.</PackageReleaseNotes>
+      <Version>5.72.0.2</Version>
+      <PackageReleaseNotes>Fix for 5.72.0: RevenueCat Test Store API keys (test_…) no longer force-close consumer apps in Release builds (issue #116). The xcframework is now built from source via .github/workflows/generate-ios-bindings.yml with the BYPASS_SIMULATED_STORE_RELEASE_CHECK Swift compilation flag, mirroring RevenueCat/purchases-kmp. Previous fix (5.72.0.1) covered link-time crash from unexported native classes (StoreKit2PromotionalOfferPurchaseOptions, RedirectLoggerSessionDelegate) and bgen failure from combined platform-availability attributes ([Watch, TV, Mac, iOS]).</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

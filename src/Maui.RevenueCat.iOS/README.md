@@ -38,7 +38,7 @@ Because of a problem with bitcode I have decided to create completely new bindin
 ### Generating binding files
 - On my MAC I have downloaded and installed [Objective Sharpie](https://learn.microsoft.com/en-us/xamarin/cross-platform/macios/binding/objective-sharpie/)
 - I have downloaded [RevenueCat.xcframework.zip](https://github.com/RevenueCat/purchases-ios/releases/tag/4.19.0) of `purchases-ios v4.19.0`
-- Extract inner `RevenueCat.xcframework/ios-arm64` folder on MAC desktop. 
+- Extract inner `RevenueCat.xcframework/ios-arm64` folder on MAC desktop.
 - started terminal, then `cd ~/Desktop`
 - firstly check what versions of xcode SDKs you have installed by `sharpie xcode -sdks` and use the `iphoneosXX.Y` version you have
 - I used command `sharpie bind -framework ios-arm64/RevenueCat.framework -sdk iphoneos18.4 -scope ios-arm64/RevenueCat.framework/Headers`
@@ -53,6 +53,16 @@ Because of a problem with bitcode I have decided to create completely new bindin
 	  - restart Xcode
 	  - to verify you did everything correctly run in terminal: `sharpie xcode -sdks` and the new SDK you copied should be now there as well
 	  - then run the `sharpie` command to generate  `ApiDefinitions.cs` and `StructsAndEnums.cs` files again
+
+### Test Store API key support (`BYPASS_SIMULATED_STORE_RELEASE_CHECK`)
+- The pre-built `RevenueCat.xcframework.zip` release asset published by `RevenueCat/purchases-ios` is always **Release-configured**. Its `Sources/Purchasing/Configuration.swift` contains the guard `#if !DEBUG && !BYPASS_SIMULATED_STORE_RELEASE_CHECK` which calls `checkForSimulatedStoreAPIKeyInRelease(...)` and force-closes any consumer app initialised with a Test Store API key (`test_…`) — even in DEBUG, because the *framework* itself was built Release.
+- To make Test Store keys usable for development without an App Store setup, the bundled `nativelib/RevenueCat.xcframework` is built **from source** by `.github/workflows/generate-ios-bindings.yml` with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` Swift compilation flag set via `Local.xcconfig`:
+  ```
+  SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) BYPASS_SIMULATED_STORE_RELEASE_CHECK
+  ```
+- This mirrors the approach used by `RevenueCat/purchases-kmp` in its `kn-core/build.gradle.kts` (`swiftSettings { define("BYPASS_SIMULATED_STORE_RELEASE_CHECK") }`).
+- The workflow verifies the bypass was honoured by `nm -gU`-grepping the device-slice binary for the `checkForSimulatedStoreAPIKeyInRelease` symbol — when the flag is defined, the symbol must be absent (the Swift compiler elides the call).
+- See issue [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116) for context.
 
 ### Adjusting generated files
 - then I placed new framework file into repo
