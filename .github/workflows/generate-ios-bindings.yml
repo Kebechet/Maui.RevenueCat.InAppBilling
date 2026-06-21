@@ -115,6 +115,41 @@ jobs:
           echo "✅ Wrote Local.xcconfig:"
           cat purchases-ios-src/Local.xcconfig
 
+      - name: Verify BYPASS_SIMULATED_STORE_RELEASE_CHECK is active
+        # Positively confirm that Global.xcconfig's `#include? "Local.xcconfig"`
+        # actually pulled our flag into the RevenueCat target's *resolved*
+        # build settings. This is far more reliable than grepping the built
+        # binary for an absent symbol: `checkForSimulatedStoreAPIKeyInRelease`
+        # is an internal Swift method that need not appear in the external
+        # symbol table at all, so an absence-based `nm` check can pass for the
+        # wrong reason whether or not the flag took effect. Resolving the build
+        # setting is a direct, positive signal. Run before the (~15 min)
+        # archive so a mis-wired flag fails fast.
+        run: |
+          set -euo pipefail
+          cd purchases-ios-src
+
+          # `|| true`: grep exiting non-zero (no match) or head closing the
+          # pipe early (SIGPIPE) must not trip `set -e` here — we want the
+          # explicit check below to produce the diagnostic, not an opaque abort.
+          SETTINGS=$(xcodebuild -project RevenueCat.xcodeproj \
+            -scheme RevenueCat \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -showBuildSettings 2>/dev/null) || true
+          RESOLVED=$(echo "$SETTINGS" | grep -E '^[[:space:]]*SWIFT_ACTIVE_COMPILATION_CONDITIONS' | head -1 || true)
+
+          echo "Resolved: $RESOLVED"
+
+          if ! echo "$RESOLVED" | grep -q 'BYPASS_SIMULATED_STORE_RELEASE_CHECK'; then
+            echo "❌ Error: BYPASS_SIMULATED_STORE_RELEASE_CHECK is absent from the"
+            echo "   resolved SWIFT_ACTIVE_COMPILATION_CONDITIONS. Global.xcconfig's"
+            echo "   '#include? \"Local.xcconfig\"' did not pick up our Local.xcconfig."
+            exit 1
+          fi
+
+          echo "✅ BYPASS_SIMULATED_STORE_RELEASE_CHECK active in resolved build settings."
+
       - name: Build RevenueCat.xcframework from source
         # xcodebuild archive + -create-xcframework, the same recipe Apple
         # documents for producing distributable binary frameworks. We build
@@ -163,29 +198,6 @@ jobs:
 
           echo "✅ RevenueCat.xcframework built from source with BYPASS_SIMULATED_STORE_RELEASE_CHECK"
           ls -la "$OUT_DIR/RevenueCat.xcframework"
-
-      - name: Verify BYPASS_SIMULATED_STORE_RELEASE_CHECK is baked in
-        # The bypass guard is `#if !DEBUG && !BYPASS_SIMULATED_STORE_RELEASE_CHECK`
-        # — when the flag is defined, the call to `checkForSimulatedStoreAPIKeyInRelease`
-        # is removed by the Swift compiler. Verify by symbol-grepping the
-        # device-slice binary: with the flag set, the symbol must be absent.
-        run: |
-          set -euo pipefail
-          OUT_DIR="${GITHUB_WORKSPACE}/src/Maui.RevenueCat.iOS"
-          BIN="$OUT_DIR/RevenueCat.xcframework/ios-arm64/RevenueCat.framework/RevenueCat"
-
-          if [ ! -f "$BIN" ]; then
-            echo "❌ Error: framework binary not found at $BIN"
-            exit 1
-          fi
-
-          if nm -gU "$BIN" 2>/dev/null | grep -i 'checkForSimulatedStoreAPIKeyInRelease' > /dev/null; then
-            echo "❌ Error: checkForSimulatedStoreAPIKeyInRelease symbol present"
-            echo "   This means BYPASS_SIMULATED_STORE_RELEASE_CHECK was NOT honoured."
-            exit 1
-          fi
-
-          echo "✅ checkForSimulatedStoreAPIKeyInRelease symbol absent — bypass applied."
 
       - name: Clean xcframework (strip swiftmodule/dSYM)
         # The same cleanups the old download-based flow applied — required

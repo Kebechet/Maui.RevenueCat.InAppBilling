@@ -61,7 +61,8 @@ Because of a problem with bitcode I have decided to create completely new bindin
   SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) BYPASS_SIMULATED_STORE_RELEASE_CHECK
   ```
 - This mirrors the approach used by `RevenueCat/purchases-kmp` in its `kn-core/build.gradle.kts` (`swiftSettings { define("BYPASS_SIMULATED_STORE_RELEASE_CHECK") }`).
-- The workflow verifies the bypass was honoured by `nm -gU`-grepping the device-slice binary for the `checkForSimulatedStoreAPIKeyInRelease` symbol — when the flag is defined, the symbol must be absent (the Swift compiler elides the call).
+- `Global.xcconfig` at the `purchases-ios` repo root does `#include? "Local.xcconfig"` and is read by `RevenueCat.xcodeproj`, so writing `Local.xcconfig` is enough for the flag to reach the build.
+- The workflow verifies the bypass is active by asserting `BYPASS_SIMULATED_STORE_RELEASE_CHECK` is present in the RevenueCat target's *resolved* `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (`xcodebuild -showBuildSettings`) before building — a direct, positive check rather than relying on the absence of an internal symbol that may never be externally visible regardless of the flag.
 - See issue [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116) for context.
 
 ### Adjusting generated files
