@@ -395,6 +395,49 @@ public class PassTests
         Assert.Contains("double RevenueCatVersionNumber { get; }", output);
     }
 
+    // ──────────────────────── Nested block-callback extraction ───────────
+
+    /// <summary>
+    /// Sharpie emits a block-that-receives-a-block as an inline
+    /// <c>Action&lt;Action&lt;...&gt;&gt;</c> parameter, which bgen's
+    /// Trampolines generator cannot emit (nested System.Action`N mangling).
+    /// The pass extracts it to a named outer delegate (with a
+    /// <c>[BlockCallback]</c> inner delegate) and rewrites the parameter.
+    /// Single-level <c>Action&lt;...&gt;</c> params are left untouched.
+    /// </summary>
+    [Fact]
+    public void NestedBlockCallback_IsExtractedToNamedDelegate()
+    {
+        const string input = """
+            using System;
+
+            namespace Maui.RevenueCat.iOS;
+
+            [BaseType (typeof(NSObject))]
+            interface RCThing
+            {
+                [Export ("readyForPromotedProduct:startPurchase:")]
+                void ReadyForPromotedProduct (RCStoreProduct product, Action<Action<RCStoreTransaction, RCCustomerInfo, NSError, bool>> startPurchase);
+
+                [Export ("getOfferingsWithCompletion:")]
+                void GetOfferings (Action<RCOfferings, NSError> completion);
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+
+        // Nested block callback is gone, replaced by a named delegate.
+        Assert.DoesNotContain("Action<Action<", output);
+        Assert.Contains("delegate void StartPurchaseHandler ([BlockCallback]", output);
+        Assert.Contains("StartPurchaseHandler startPurchase", output);
+        // Inner delegate carries the four callback args.
+        Assert.Matches(@"delegate void StartPurchaseCallbackHandler \([^)]*RCStoreTransaction[^)]*RCCustomerInfo[^)]*NSError[^)]*bool[^)]*\);", output);
+        // Single-level Action is untouched.
+        Assert.Contains("Action<RCOfferings, NSError> completion", output);
+        // Delegates declared after the namespace, before the interface.
+        Assert.True(output.IndexOf("delegate void StartPurchaseHandler", StringComparison.Ordinal)
+                    < output.IndexOf("interface RCThing", StringComparison.Ordinal));
+    }
+
     // ──────────────────────── Device-specific availability attrs ─────────
 
     /// <summary>
