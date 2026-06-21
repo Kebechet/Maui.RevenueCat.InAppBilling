@@ -285,6 +285,82 @@ public class PassTests
         Assert.Contains("string AlsoAlive { get; }", output);
     }
 
+    // ──────────────────────── Linker-risk symbol removal ─────────────────
+
+    [Fact]
+    public void LinkerRiskInterface_IsRemovedEntirely()
+    {
+        const string input = """
+            namespace T
+            {
+                // @interface PaymentQueueWrapper : NSObject
+                [BaseType (typeof(NSObject))]
+                interface PaymentQueueWrapper
+                {
+                    [Export ("foo")]
+                    void Foo ();
+                }
+
+                [BaseType (typeof(NSObject))]
+                interface RCKept
+                {
+                    [Export ("bar")]
+                    void Bar ();
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.DoesNotContain("PaymentQueueWrapper", output);
+        Assert.Contains("interface RCKept", output);
+        Assert.Contains("void Bar ();", output);
+    }
+
+    /// <summary>
+    /// Regression: sharpie binds Swift extensions of the internal linker-risk
+    /// types as <c>[Category] [BaseType (typeof(X))]</c> interfaces. Dropping
+    /// the X interface but leaving the category produces a dangling
+    /// <c>typeof(X)</c> (CS0246) — and the category body can itself reference X
+    /// (e.g. a static <c>default</c> accessor). The whole dependent category
+    /// must be removed alongside its base.
+    /// </summary>
+    [Fact]
+    public void Regression_LinkerRiskCategory_DependentExtensionIsRemoved()
+    {
+        const string input = """
+            namespace T
+            {
+                // @interface PurchasesReceiptParser : NSObject
+                [BaseType (typeof(NSObject))]
+                interface PurchasesReceiptParser
+                {
+                    [Export ("receiptHasTransactionsWithReceiptData:")]
+                    bool ReceiptHasTransactions (NSData receiptData);
+                }
+
+                // @interface RevenueCat_Swift_3922 (PurchasesReceiptParser)
+                [Category]
+                [BaseType (typeof(PurchasesReceiptParser))]
+                interface PurchasesReceiptParser_RevenueCat_Swift_3922
+                {
+                    [Static]
+                    [Export ("default_", ArgumentSemantic.Strong)]
+                    PurchasesReceiptParser Default_ { [Bind ("default")] get; }
+                }
+
+                [BaseType (typeof(NSObject))]
+                interface RCKept
+                {
+                    [Export ("foo")]
+                    void Foo ();
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.DoesNotContain("PurchasesReceiptParser", output);
+        Assert.Contains("interface RCKept", output);
+        Assert.Contains("void Foo ();", output);
+    }
+
     // ──────────────────────── Device-specific availability attrs ─────────
 
     /// <summary>

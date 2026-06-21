@@ -270,10 +270,33 @@ static class Postprocess
     private static string RemoveLinkerRiskInterfaces(string text)
     {
         var names = new HashSet<string>(LinkerRiskSymbols);
+
+        // Sharpie binds Swift extensions of these internal types as
+        // `[Category] [BaseType (typeof(X))]` interfaces (e.g.
+        // `PaymentQueueWrapper_RevenueCat_Swift_2020`). Once the `X` interface
+        // is dropped below, those categories would dangle (CS0246) — and a
+        // category body can itself reference `X` (e.g. a static `default`
+        // accessor returning `X`). So drop any interface whose base type is a
+        // linker-risk symbol too, alongside the symbol's own interface.
+        var baseTypeRe = new Regex(
+            @"\[BaseType[ \t]*\([ \t]*typeof[ \t]*\([ \t]*(?<t>[A-Za-z_]\w*)[ \t]*\)");
+
         var edits = new List<(int Start, int End)>();
         foreach (Match m in InterfaceBlockRe.Matches(text))
         {
-            if (names.Contains(m.Groups["name"].Value))
+            var dropByName = names.Contains(m.Groups["name"].Value);
+
+            var dropByBase = false;
+            foreach (Match b in baseTypeRe.Matches(m.Groups["lead"].Value))
+            {
+                if (names.Contains(b.Groups["t"].Value))
+                {
+                    dropByBase = true;
+                    break;
+                }
+            }
+
+            if (dropByName || dropByBase)
             {
                 edits.Add((m.Index, m.Index + m.Length));
             }
