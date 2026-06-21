@@ -24,6 +24,9 @@ The versioning scheme of `Maui.RevenueCat.iOS` is derived from the versioning of
 
 # Binding creation
 
+> [!IMPORTANT]
+> **The canonical way to regenerate this binding is the `.github/workflows/generate-ios-bindings.yml` workflow** (manual dispatch), not the manual steps below. The workflow builds `RevenueCat.xcframework` **from source with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` flag** so Test Store (`test_…`) keys work on iOS — see [Test Store API key support](#test-store-api-key-support-bypass_simulated_store_release_check) and [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116). The manual steps in this section download the **pre-built** `RevenueCat.xcframework.zip` instead, which is always Release-configured and does **NOT** include that bypass — following them would reintroduce the force-close on Test Store keys. They are kept for historical context and to explain the cleanups the workflow's post-processor automates.
+
 ## Porting old xamarin library ios to .NET MAUI
 First version of our Maui binding was just changed `Xamarin.RevenueCat.iOS` binding working for .NET MAUI. It was binding around `RevenueCat ios 4.9.0`, but this native library contained bitcode which is no longer accepted by AppStore.
 Porting of binding from Xamarin to Maui required several changes:
@@ -38,7 +41,7 @@ Because of a problem with bitcode I have decided to create completely new bindin
 ### Generating binding files
 - On my MAC I have downloaded and installed [Objective Sharpie](https://learn.microsoft.com/en-us/xamarin/cross-platform/macios/binding/objective-sharpie/)
 - I have downloaded [RevenueCat.xcframework.zip](https://github.com/RevenueCat/purchases-ios/releases/tag/4.19.0) of `purchases-ios v4.19.0`
-- Extract inner `RevenueCat.xcframework/ios-arm64` folder on MAC desktop. 
+- Extract inner `RevenueCat.xcframework/ios-arm64` folder on MAC desktop.
 - started terminal, then `cd ~/Desktop`
 - firstly check what versions of xcode SDKs you have installed by `sharpie xcode -sdks` and use the `iphoneosXX.Y` version you have
 - I used command `sharpie bind -framework ios-arm64/RevenueCat.framework -sdk iphoneos18.4 -scope ios-arm64/RevenueCat.framework/Headers`
@@ -53,6 +56,17 @@ Because of a problem with bitcode I have decided to create completely new bindin
 	  - restart Xcode
 	  - to verify you did everything correctly run in terminal: `sharpie xcode -sdks` and the new SDK you copied should be now there as well
 	  - then run the `sharpie` command to generate  `ApiDefinitions.cs` and `StructsAndEnums.cs` files again
+
+### Test Store API key support (`BYPASS_SIMULATED_STORE_RELEASE_CHECK`)
+- The pre-built `RevenueCat.xcframework.zip` release asset published by `RevenueCat/purchases-ios` is always **Release-configured**. Its `Sources/Purchasing/Configuration.swift` contains the guard `#if !DEBUG && !BYPASS_SIMULATED_STORE_RELEASE_CHECK` which calls `checkForSimulatedStoreAPIKeyInRelease(...)` and force-closes any consumer app initialised with a Test Store API key (`test_…`) — even in DEBUG, because the *framework* itself was built Release.
+- To make Test Store keys usable for development without an App Store setup, the bundled `nativelib/RevenueCat.xcframework` is built **from source** by `.github/workflows/generate-ios-bindings.yml` with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` Swift compilation flag set via `Local.xcconfig`:
+  ```
+  SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) BYPASS_SIMULATED_STORE_RELEASE_CHECK
+  ```
+- This mirrors the approach used by `RevenueCat/purchases-kmp` in its `kn-core/build.gradle.kts` (`swiftSettings { define("BYPASS_SIMULATED_STORE_RELEASE_CHECK") }`).
+- `Global.xcconfig` at the `purchases-ios` repo root does `#include? "Local.xcconfig"` and is read by `RevenueCat.xcodeproj`, so writing `Local.xcconfig` is enough for the flag to reach the build.
+- The workflow verifies the bypass is active by asserting `BYPASS_SIMULATED_STORE_RELEASE_CHECK` is present in the RevenueCat target's *resolved* `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (`xcodebuild -showBuildSettings`) before building — a direct, positive check rather than relying on the absence of an internal symbol that may never be externally visible regardless of the flag.
+- See issue [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116) for context.
 
 ### Adjusting generated files
 - then I placed new framework file into repo

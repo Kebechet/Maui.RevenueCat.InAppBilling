@@ -285,6 +285,159 @@ public class PassTests
         Assert.Contains("string AlsoAlive { get; }", output);
     }
 
+    // ──────────────────────── Linker-risk symbol removal ─────────────────
+
+    [Fact]
+    public void LinkerRiskInterface_IsRemovedEntirely()
+    {
+        const string input = """
+            namespace T
+            {
+                // @interface PaymentQueueWrapper : NSObject
+                [BaseType (typeof(NSObject))]
+                interface PaymentQueueWrapper
+                {
+                    [Export ("foo")]
+                    void Foo ();
+                }
+
+                [BaseType (typeof(NSObject))]
+                interface RCKept
+                {
+                    [Export ("bar")]
+                    void Bar ();
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.DoesNotContain("PaymentQueueWrapper", output);
+        Assert.Contains("interface RCKept", output);
+        Assert.Contains("void Bar ();", output);
+    }
+
+    /// <summary>
+    /// Regression: sharpie binds Swift extensions of the internal linker-risk
+    /// types as <c>[Category] [BaseType (typeof(X))]</c> interfaces. Dropping
+    /// the X interface but leaving the category produces a dangling
+    /// <c>typeof(X)</c> (CS0246) — and the category body can itself reference X
+    /// (e.g. a static <c>default</c> accessor). The whole dependent category
+    /// must be removed alongside its base.
+    /// </summary>
+    [Fact]
+    public void Regression_LinkerRiskCategory_DependentExtensionIsRemoved()
+    {
+        const string input = """
+            namespace T
+            {
+                // @interface PurchasesReceiptParser : NSObject
+                [BaseType (typeof(NSObject))]
+                interface PurchasesReceiptParser
+                {
+                    [Export ("receiptHasTransactionsWithReceiptData:")]
+                    bool ReceiptHasTransactions (NSData receiptData);
+                }
+
+                // @interface RevenueCat_Swift_3922 (PurchasesReceiptParser)
+                [Category]
+                [BaseType (typeof(PurchasesReceiptParser))]
+                interface PurchasesReceiptParser_RevenueCat_Swift_3922
+                {
+                    [Static]
+                    [Export ("default_", ArgumentSemantic.Strong)]
+                    PurchasesReceiptParser Default_ { [Bind ("default")] get; }
+                }
+
+                [BaseType (typeof(NSObject))]
+                interface RCKept
+                {
+                    [Export ("foo")]
+                    void Foo ();
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.DoesNotContain("PurchasesReceiptParser", output);
+        Assert.Contains("interface RCKept", output);
+        Assert.Contains("void Foo ();", output);
+    }
+
+    // ──────────────────────── Unsupported [Field] types ──────────────────
+
+    /// <summary>
+    /// Sharpie binds a C <c>const unsigned char[]</c> (e.g.
+    /// <c>RevenueCatVersionString</c>) as a <c>byte[]</c> <c>[Field]</c>
+    /// property, which bgen rejects with BI1014 "Unsupported type for Fields:
+    /// byte[]". The member (and its leading comment) must be dropped, leaving
+    /// sibling fields intact.
+    /// </summary>
+    [Fact]
+    public void ByteArrayField_IsRemoved_AsBgenUnsupported()
+    {
+        const string input = """
+            namespace T
+            {
+                [Static]
+                partial interface Constants
+                {
+                    // extern double RevenueCatVersionNumber;
+                    [Field ("RevenueCatVersionNumber", "__Internal")]
+                    double RevenueCatVersionNumber { get; }
+
+                    // extern const unsigned char[] RevenueCatVersionString;
+                    [Field ("RevenueCatVersionString", "__Internal")]
+                    byte[] RevenueCatVersionString { get; }
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.DoesNotContain("RevenueCatVersionString", output);
+        Assert.DoesNotContain("byte[]", output);
+        Assert.Contains("double RevenueCatVersionNumber { get; }", output);
+    }
+
+    // ──────────────────────── Nested block-callback extraction ───────────
+
+    /// <summary>
+    /// Sharpie emits a block-that-receives-a-block as an inline
+    /// <c>Action&lt;Action&lt;...&gt;&gt;</c> parameter, which bgen's
+    /// Trampolines generator cannot emit (nested System.Action`N mangling).
+    /// The pass extracts it to a named outer delegate (with a
+    /// <c>[BlockCallback]</c> inner delegate) and rewrites the parameter.
+    /// Single-level <c>Action&lt;...&gt;</c> params are left untouched.
+    /// </summary>
+    [Fact]
+    public void NestedBlockCallback_IsExtractedToNamedDelegate()
+    {
+        const string input = """
+            using System;
+
+            namespace Maui.RevenueCat.iOS;
+
+            [BaseType (typeof(NSObject))]
+            interface RCThing
+            {
+                [Export ("readyForPromotedProduct:startPurchase:")]
+                void ReadyForPromotedProduct (RCStoreProduct product, Action<Action<RCStoreTransaction, RCCustomerInfo, NSError, bool>> startPurchase);
+
+                [Export ("getOfferingsWithCompletion:")]
+                void GetOfferings (Action<RCOfferings, NSError> completion);
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+
+        // Nested block callback is gone, replaced by a named delegate.
+        Assert.DoesNotContain("Action<Action<", output);
+        Assert.Contains("delegate void StartPurchaseHandler ([BlockCallback]", output);
+        Assert.Contains("StartPurchaseHandler startPurchase", output);
+        // Inner delegate carries the four callback args.
+        Assert.Matches(@"delegate void StartPurchaseCallbackHandler \([^)]*RCStoreTransaction[^)]*RCCustomerInfo[^)]*NSError[^)]*bool[^)]*\);", output);
+        // Single-level Action is untouched.
+        Assert.Contains("Action<RCOfferings, NSError> completion", output);
+        // Delegates declared after the namespace, before the interface.
+        Assert.True(output.IndexOf("delegate void StartPurchaseHandler", StringComparison.Ordinal)
+                    < output.IndexOf("interface RCThing", StringComparison.Ordinal));
+    }
+
     // ──────────────────────── Device-specific availability attrs ─────────
 
     /// <summary>

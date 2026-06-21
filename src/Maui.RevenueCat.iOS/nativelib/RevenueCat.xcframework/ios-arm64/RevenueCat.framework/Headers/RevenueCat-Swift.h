@@ -5,7 +5,6 @@
 #define REVENUECAT_SWIFT_H
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgcc-compat"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #if !defined(__has_include)
 # define __has_include(x) 0

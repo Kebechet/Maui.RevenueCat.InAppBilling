@@ -25,9 +25,14 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 
     <IsPackable>false</IsPackable>
-    <!-- Never deployed; skip codesigning in CI. -->
-    <CodesignKey></CodesignKey>
-    <CodesignProvision></CodesignProvision>
+    <!-- This project is only ever BUILT to drive the native linker (compile ->
+         native link), never deployed. Code signing runs AFTER the link and
+         needs a keychain identity the CI runners don't have, so it fails with
+         "No valid iOS code signing keys" even though the link (the thing we
+         validate) already succeeded. Disable it: device builds default
+         EnableCodeSigning=true, and an empty CodesignKey alone does not skip
+         the signing step. -->
+    <EnableCodeSigning>false</EnableCodeSigning>
     <CreatePackage>false</CreatePackage>
   </PropertyGroup>
 
