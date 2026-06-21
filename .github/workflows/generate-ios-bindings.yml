@@ -332,11 +332,13 @@ jobs:
       - name: Install iOS workload (for native linker validation)
         # The validation step below builds BindingLinkerCheck (and the binding
         # project) for net9.0-ios, which needs the `ios` workload — the macos
-        # image no longer ships it preinstalled. Runs under the pinned .NET
-        # 9.0.101 (global.json) to match publish-ios.yml and Xcode 16.4. Placed
-        # here (not at the top) so the cheap fast-fail steps run before this
-        # ~minutes-long install.
-        run: dotnet workload install ios maui-ios --ignore-failed-sources
+        # image no longer ships it preinstalled. `--version 9.0.101` pins the
+        # workload MANIFEST to the 9.0.1xx (Xcode-16.4-era) band — without it,
+        # the install resolves the latest manifest (net9.0_26.5, which needs
+        # Xcode 26.5) even under the 9.0.101 SDK. Matches publish-ios.yml
+        # exactly. Placed here (not at the top) so the cheap fast-fail steps
+        # run before this ~minutes-long install.
+        run: dotnet workload install ios maui-ios --version 9.0.101 --ignore-failed-sources
 
       - name: Validate native linker against fresh bindings
         # Drop the cleaned bindings + xcframework into src/Maui.RevenueCat.iOS/
