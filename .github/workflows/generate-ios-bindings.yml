@@ -376,7 +376,13 @@ jobs:
           head -50 "$OUTPUT_DIR/StructsAndEnums.cs" || true
           echo "────────────────────────────────────────────────────────"
 
+      # The artifact steps below run with `if: ${{ !cancelled() }}` so a failure
+      # in the binding-focused "Validate native linker" step (e.g. fresh sharpie
+      # output with dangling references to dropped linker-risk symbols, which
+      # always needs manual cleanup) does not discard the successfully-built
+      # xcframework or the bindings/report needed for that manual review.
       - name: Upload ApiDefinitions.cs
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ApiDefinitions-${{ env.RC_VERSION }}
@@ -384,6 +390,7 @@ jobs:
           retention-days: 30
 
       - name: Upload StructsAndEnums.cs
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: StructsAndEnums-${{ env.RC_VERSION }}
@@ -391,6 +398,7 @@ jobs:
           retention-days: 30
 
       - name: Upload post-processing report
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: manual-review-${{ env.RC_VERSION }}
@@ -398,6 +406,7 @@ jobs:
           retention-days: 30
 
       - name: Prepare xcframework for upload
+        if: ${{ !cancelled() }}
         run: |
           set -euo pipefail
           cd src/Maui.RevenueCat.iOS
@@ -405,6 +414,7 @@ jobs:
           cp -r RevenueCat.xcframework artifact-temp/
 
       - name: Upload RevenueCat.xcframework (cleaned)
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: RevenueCat-xcframework-${{ env.RC_VERSION }}
