@@ -74,7 +74,7 @@ RevenueCat's [Test Store](https://www.revenuecat.com/docs/test-and-launch/sandbo
 
 This wrapper ships an iOS xcframework built **from source** with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` Swift compilation flag, so a `test_…` key works on iOS Release builds too — it does **not** force-close the app. No code changes are required on your side; just pass the `test_…` key to `Initialize(...)`.
 
-The Android side has no equivalent guard; Test Store keys work on Android out of the box.
+On Android no such rebuild is needed: the RevenueCat SDK ships as a normal AAR (Kotlin bytecode), so its test-key check runs against the consuming app's build at runtime rather than being compiled into the library — a prebuilt AAR doesn't carry the always-on guard the prebuilt iOS framework did. Test Store support does require RevenueCat Android SDK **9.9.0+**; this binding ships **10.1.2**, so `test_…` keys work out of the box (see issue [#95](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/95), resolved by that SDK bump). The same "don't ship a `test_` key to production" guidance applies on both platforms.
 
 See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-store-api-key-support-bypass_simulated_store_release_check) for the build-time details and issue [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116) for context.
 
