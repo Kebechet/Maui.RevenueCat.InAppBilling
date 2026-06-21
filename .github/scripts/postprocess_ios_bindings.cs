@@ -456,6 +456,24 @@ static class Postprocess
         return text;
     }
 
+    // Drop `[Field (...)]` properties typed `byte[]`.
+    //
+    // Sharpie binds a C `const unsigned char[]` (e.g. RevenueCat's
+    // `RevenueCatVersionString`) as a `byte[]` `[Field]` property, but bgen
+    // rejects it: "error BI1014: Unsupported type for Fields: byte[]". The
+    // last working binding removed the member by hand; do it automatically,
+    // keeping sibling fields (e.g. the `double RevenueCatVersionNumber`).
+    private static string RemoveUnsupportedByteArrayFields(string text) =>
+        Regex.Replace(
+            text,
+            @"(?:^[ \t]*//[^\n]*\n)*" +                 // leading // comment(s)
+            @"(?:^[ \t]*\[[^\]]*\][ \t]*\n)*?" +        // any preceding attrs
+            @"^[ \t]*\[Field[ \t]*\([^\n]*\)\][ \t]*\n" + // the [Field(...)] attr
+            @"(?:^[ \t]*\[[^\]]*\][ \t]*\n)*" +         // attrs between Field and decl
+            @"^[ \t]*byte\[\][ \t]+\w+[ \t]*\{[^}]*\}[ \t]*\n", // byte[] property
+            "",
+            RegexOptions.Multiline);
+
     // Drop device-specific availability attributes (README).
     //
     // Targets:
@@ -992,6 +1010,7 @@ static class Postprocess
         ("strip \\n in [Obsoleted(...)]",             StripObsoletedNewlines),
         ("remove [Obsoleted/Deprecated] members",     RemoveObsoleteMembers),
         ("remove [Obsoleted/Deprecated] interfaces",  RemoveObsoleteInterfaces),
+        ("remove bgen-unsupported byte[] fields",      RemoveUnsupportedByteArrayFields),
         ("strip device-specific availability attrs",  StripPlatformAvailabilityAttributes),
         ("remove inherited NSObject methods",         RemoveInheritedNsObjectMethods),
         ("merge _RevenueCat_Swift_NNNN interfaces",   MergeSwiftSuffixInterfaces),

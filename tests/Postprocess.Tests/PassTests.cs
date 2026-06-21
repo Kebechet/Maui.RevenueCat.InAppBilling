@@ -361,6 +361,40 @@ public class PassTests
         Assert.Contains("void Foo ();", output);
     }
 
+    // ──────────────────────── Unsupported [Field] types ──────────────────
+
+    /// <summary>
+    /// Sharpie binds a C <c>const unsigned char[]</c> (e.g.
+    /// <c>RevenueCatVersionString</c>) as a <c>byte[]</c> <c>[Field]</c>
+    /// property, which bgen rejects with BI1014 "Unsupported type for Fields:
+    /// byte[]". The member (and its leading comment) must be dropped, leaving
+    /// sibling fields intact.
+    /// </summary>
+    [Fact]
+    public void ByteArrayField_IsRemoved_AsBgenUnsupported()
+    {
+        const string input = """
+            namespace T
+            {
+                [Static]
+                partial interface Constants
+                {
+                    // extern double RevenueCatVersionNumber;
+                    [Field ("RevenueCatVersionNumber", "__Internal")]
+                    double RevenueCatVersionNumber { get; }
+
+                    // extern const unsigned char[] RevenueCatVersionString;
+                    [Field ("RevenueCatVersionString", "__Internal")]
+                    byte[] RevenueCatVersionString { get; }
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.DoesNotContain("RevenueCatVersionString", output);
+        Assert.DoesNotContain("byte[]", output);
+        Assert.Contains("double RevenueCatVersionNumber { get; }", output);
+    }
+
     // ──────────────────────── Device-specific availability attrs ─────────
 
     /// <summary>
