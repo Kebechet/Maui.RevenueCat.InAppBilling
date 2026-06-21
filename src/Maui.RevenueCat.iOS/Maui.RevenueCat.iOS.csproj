@@ -5,6 +5,13 @@
       <ImplicitUsings>true</ImplicitUsings>
       <IsBindingProject>true</IsBindingProject>
       <SupportedOSPlatformVersion>14.2</SupportedOSPlatformVersion>
+      <!-- generate-ios-bindings.yml drops fresh sharpie output in
+           RevenueCatBindingOutput/ (copies of ApiDefinitions.cs /
+           StructsAndEnums.cs) inside the project before validating. Keep the
+           default **/*.cs glob from compiling those a second time alongside
+           the root binding definitions (CS0101/CS0261). No-op in normal repo
+           state where the directory doesn't exist. -->
+      <DefaultItemExcludes>$(DefaultItemExcludes);RevenueCatBindingOutput/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <PropertyGroup Label="NugetProperties">
