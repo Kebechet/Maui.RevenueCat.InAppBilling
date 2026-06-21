@@ -307,6 +307,24 @@ jobs:
             StructsAndEnums.cs \
             --report manual_review.md
 
+      - name: Select newest Xcode for iOS validation
+        # The .NET-for-iOS workload installed below tracks the latest Xcode
+        # (.NET 10's `ios` workload requires Xcode 26.5), but the runner
+        # defaults to an older Xcode (16.4), which fails the binding build's
+        # Xcode-requirement check. Point at the newest Xcode on the image.
+        run: |
+          set -euo pipefail
+          echo "Available Xcodes:"
+          ls -d /Applications/Xcode_*.app 2>/dev/null || true
+          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$LATEST" ]; then
+            echo "❌ No /Applications/Xcode_*.app found"
+            exit 1
+          fi
+          echo "Selecting $LATEST"
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+
       - name: Install iOS workload (for native linker validation)
         # The validation step below builds BindingLinkerCheck (and the binding
         # project) for net9.0-ios, which needs the `ios` workload — the
