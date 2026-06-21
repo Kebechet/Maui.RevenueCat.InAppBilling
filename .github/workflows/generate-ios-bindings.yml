@@ -307,6 +307,14 @@ jobs:
             StructsAndEnums.cs \
             --report manual_review.md
 
+      - name: Install iOS workload (for native linker validation)
+        # The validation step below builds BindingLinkerCheck (and the binding
+        # project) for net9.0-ios, which needs the `ios` workload — the
+        # macos-latest image no longer ships it preinstalled. Mirrors the
+        # workload install in publish-ios.yml. Placed here (not at the top) so
+        # the cheap fast-fail steps run before this ~minutes-long install.
+        run: dotnet workload install ios --ignore-failed-sources
+
       - name: Validate native linker against fresh bindings
         # Drop the cleaned bindings + xcframework into src/Maui.RevenueCat.iOS/
         # and build BindingLinkerCheck for ios-arm64. This is the earliest
