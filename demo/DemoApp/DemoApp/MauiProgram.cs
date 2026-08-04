@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 
 namespace DemoApp;
+
 public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
@@ -17,6 +18,9 @@ public static class MauiProgram
 
 #if DEBUG
 		builder.Logging.AddDebug();
+#endif
+#if __ANDROID__
+        builder.Logging.AddProvider(new LogcatLoggerProvider());
 #endif
 
         builder.Services.AddRevenueCatBilling();

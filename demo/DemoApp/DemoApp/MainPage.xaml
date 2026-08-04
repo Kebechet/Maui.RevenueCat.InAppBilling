@@ -1,92 +1,88 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:Converters="clr-namespace:DemoApp.Converter"
-             x:Class="DemoApp.MainPage">
+             xmlns:local="clr-namespace:DemoApp"
+             xmlns:harness="clr-namespace:DemoApp.Harness;assembly=DemoApp.Harness"
+             xmlns:models="clr-namespace:Maui.RevenueCat.InAppBilling.Models;assembly=Maui.RevenueCat"
+             x:Class="DemoApp.MainPage"
+             x:DataType="local:MainPage"
+             Title="RevenueCat Harness">
+
+    <ContentPage.Resources>
+        <Converters:HarnessCheckStatusToGlyphConverter x:Key="StatusToGlyphConverter" />
+        <Converters:PackageToButtonTextConverter x:Key="PackageToButtonTextConverter" />
+    </ContentPage.Resources>
 
     <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
+        <VerticalStackLayout Padding="20" Spacing="16">
 
-            <Grid Padding="0,20,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Image
-                    Source="icon.png"
-                    HeightRequest="100"
-                    Aspect="AspectFit"
-                    SemanticProperties.Description="dot net bot in a race car number eight"
-                    Grid.Column="0" />
-
-                <Label
-                    Text="Hello, from RevenueCat wrapper!"
-                    Style="{StaticResource Headline}"
-                    SemanticProperties.HeadingLevel="Level1"
-                    LineBreakMode="WordWrap"
-                    Grid.Column="1" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Label Text="Store (restart to apply)" FontSize="13" VerticalOptions="Center" />
+                <Picker x:Name="StorePicker" Grid.Column="1" SelectedIndexChanged="StoreChanged">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Test Store</x:String>
+                            <x:String>Production</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
             </Grid>
 
-            <Label
-                Text="⚠️ iOS payments in sandbox are slow. But in production they work correctly"
-                Style="{StaticResource SubHeadline2}"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
+            <Border StrokeThickness="1" Padding="12">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Status" FontAttributes="Bold" FontSize="16" />
+                    <Label x:Name="StoreLabel" FontSize="13" />
+                    <Label x:Name="InitializedLabel" FontSize="13" />
+                    <Label x:Name="AnonymousLabel" FontSize="13" />
+                    <Label x:Name="AppUserIdLabel" FontSize="13" LineBreakMode="CharacterWrap" />
+                    <Label x:Name="StorefrontLabel" FontSize="13" />
+                    <Label x:Name="CultureLabel" FontSize="13" />
+                </VerticalStackLayout>
+            </Border>
 
-            <Label
-                Text="{Binding CurrentCultureText}"
-                Style="{StaticResource SubHeadline2}"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
+            <Button x:Name="RunAllChecksButton" Text="Run all checks" Clicked="RunAllChecks" />
 
-            <Button
-                x:Name="BtnPurchase"
-                Text="Load RevenueCat offerings"
-                SemanticProperties.Hint="Counts the number of times you click"
-                Clicked="LoadOfferings"
-                HorizontalOptions="Fill"
-                IsVisible="{Binding AreOfferingsLoaded, Converter={Converters:InverseBoolConverter}}"/>
+            <VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding HarnessCheckResults}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="harness:HarnessCheckResult">
+                        <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                            <Label Text="{Binding Status, Converter={StaticResource StatusToGlyphConverter}}" FontSize="14" />
+                            <VerticalStackLayout Grid.Column="1">
+                                <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="13" />
+                                <Label Text="{Binding Summary}" FontSize="12" LineBreakMode="WordWrap" />
+                                <Label Text="{Binding Error}" FontSize="12" TextColor="Red" LineBreakMode="WordWrap" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
 
-            <Label
-                Text="Subscriptions:"
-                Style="{StaticResource SubHeadline}"
-                SemanticProperties.HeadingLevel="Level2"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
+            <Label Text="Manual flows" FontAttributes="Bold" FontSize="16" />
+            <Label Text="⚠️ iOS payments in sandbox are slow. But in production they work correctly"
+                   FontSize="12" />
+            <Label x:Name="NoPackagesHintLabel" Text="Run all checks first to load the purchase buttons." FontSize="12" />
+            <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding LoadedPackages}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="models:PackageDto">
+                        <Button Text="{Binding ., Converter={StaticResource PackageToButtonTextConverter}}" Clicked="PurchasePackage" />
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+            <Button Text="Restore transactions" Clicked="RestoreTransactions" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Entry x:Name="LoginAppUserIdEntry" Placeholder="app user id" />
+                <Button Grid.Column="1" Text="Login" Clicked="Login" />
+            </Grid>
+            <Button Text="Logout" Clicked="Logout" />
+            <Button Text="Open management URL" Clicked="OpenManagementUrl" />
 
-            <Button
-                x:Name="BtnMonthly"
-                Text="{Binding MonthlyButtonText}"
-                HorizontalOptions="Fill"
-                Clicked="BuyItem"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Text="Log" FontAttributes="Bold" FontSize="16" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="Copy" Clicked="CopyLog" FontSize="12" HeightRequest="34" />
+            </Grid>
+            <Editor x:Name="LogEditor" IsReadOnly="True" HeightRequest="220" FontFamily="monospace" FontSize="11" />
 
-            <Button
-                x:Name="BtnYearly"
-                Text="{Binding YearlyButtonText}"
-                HorizontalOptions="Fill"
-                Clicked="BuyItem"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
-
-            <Label
-                Text="Consumable items:"
-                Style="{StaticResource SubHeadline}"
-                SemanticProperties.HeadingLevel="Level2"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
-
-            <Button
-                x:Name="BtnConsumable1"
-                Text="{Binding Consumable1ButtonText}"
-                HorizontalOptions="Fill"
-                Clicked="BuyItem"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
-
-            <Button
-                x:Name="BtnConsumable2"
-                Text="{Binding Consumable2ButtonText}"
-                HorizontalOptions="Fill"
-                Clicked="BuyItem"
-                IsVisible="{Binding AreOfferingsLoaded}"/>
         </VerticalStackLayout>
     </ScrollView>
 
