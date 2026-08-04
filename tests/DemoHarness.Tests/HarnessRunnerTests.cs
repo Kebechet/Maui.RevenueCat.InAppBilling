@@ -121,4 +121,36 @@ public class HarnessRunnerTests
         Assert.Contains(reportedResults, x => x.Status == HarnessCheckStatus.Running);
         Assert.Contains(reportedResults, x => x.Status == HarnessCheckStatus.Passed);
     }
+
+    [Fact]
+    public async Task RunAllChecks_MethodThrowsNotImplemented_ReportsSkipped()
+    {
+        var revenueCatBilling = CreateHappyBilling();
+        revenueCatBilling.CheckTrialOrIntroDiscountEligibility(Arg.Any<List<string>>(), Arg.Any<CancellationToken>())
+            .Returns<Task<Dictionary<string, IntroElegibilityStatus>>>(x => throw new NotImplementedException("This method is iOS Only"));
+        var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
+
+        var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
+
+        var skippedCheck = harnessCheckResults.First(x => x.Status == HarnessCheckStatus.Skipped);
+        Assert.Contains("iOS Only", skippedCheck.Summary);
+        Assert.DoesNotContain(harnessCheckResults, x => x.Status == HarnessCheckStatus.Failed);
+    }
+
+    [Fact]
+    public async Task RunAllChecks_CheckHonoringCancellation_TimesOutViaToken()
+    {
+        var revenueCatBilling = CreateHappyBilling();
+        revenueCatBilling.GetStorefrontCountryCode(Arg.Any<CancellationToken>())
+            .Returns(async x =>
+            {
+                await Task.Delay(System.Threading.Timeout.Infinite, x.Arg<CancellationToken>());
+                return "US";
+            });
+        var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog(), TimeSpan.FromMilliseconds(100));
+
+        var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
+
+        Assert.Contains(harnessCheckResults, x => x.Status == HarnessCheckStatus.TimedOut);
+    }
 }

@@ -17,4 +17,7 @@ public enum HarnessCheckStatus
     Passed,
     Failed,
     TimedOut,
+
+    /// <summary>The wrapper method is not supported on the current platform (throws <see cref="NotImplementedException"/>).</summary>
+    Skipped,
 }
