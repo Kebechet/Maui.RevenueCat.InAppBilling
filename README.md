@@ -94,7 +94,7 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | Method | Description |
 |--------|-------------|
 | `GetOfferings(bool forceRefresh = false)` | Fetch available offerings and packages |
-| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing |
+| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. iOS/Mac Catalyst only; throws `NotImplementedException` on Android |
 
 ### Purchases
 
