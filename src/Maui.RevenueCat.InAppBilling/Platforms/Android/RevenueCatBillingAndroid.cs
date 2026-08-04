@@ -181,7 +181,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return new PurchaseResultDto
             {
-                ErrorStatus = purchaseError
+                ErrorStatus = purchaseError,
+                ErrorMessage = purchaseError == PurchaseErrorStatus.PurchaseCancelledError
+                    ? null
+                    : ex?.Message
             };
         }
         catch (OperationCanceledException ex)
@@ -198,7 +201,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return new PurchaseResultDto
             {
-                ErrorStatus = PurchaseErrorStatus.UnknownError
+                ErrorStatus = PurchaseErrorStatus.UnknownError,
+                ErrorMessage = ex.Message
             };
         }
 
@@ -208,7 +212,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return new PurchaseResultDto
             {
-                ErrorStatus = PurchaseErrorStatus.UnknownError
+                ErrorStatus = PurchaseErrorStatus.UnknownError,
+                ErrorMessage = $"{nameof(purchaseSuccessInfo)} is null"
             };
         }
 
