@@ -74,7 +74,7 @@ RevenueCat's [Test Store](https://www.revenuecat.com/docs/test-and-launch/sandbo
 
 This wrapper ships an iOS xcframework built **from source** with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` Swift compilation flag, so a `test_…` key works on iOS Release builds too — it does **not** force-close the app. No code changes are required on your side; just pass the `test_…` key to `Initialize(...)`.
 
-On Android no such rebuild is needed: the RevenueCat SDK ships as a normal AAR (Kotlin bytecode), so its test-key check runs against the consuming app's build at runtime rather than being compiled into the library — a prebuilt AAR doesn't carry the always-on guard the prebuilt iOS framework did. Test Store support does require RevenueCat Android SDK **9.9.0+**; this binding ships **10.1.2**, so `test_…` keys work out of the box (see issue [#95](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/95), resolved by that SDK bump). The same "don't ship a `test_` key to production" guidance applies on both platforms.
+On Android no such rebuild is needed: the RevenueCat SDK ships as a normal AAR (Kotlin bytecode), so its test-key check runs against the consuming app's build at runtime rather than being compiled into the library — a prebuilt AAR doesn't carry the always-on guard the prebuilt iOS framework did. Test Store support does require RevenueCat Android SDK **9.9.0+**; this binding ships upstream SDK **10.1.2** (binding package `10.1.2.1`), so `test_…` keys work out of the box (see issue [#95](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/95), resolved by that SDK bump). The same "don't ship a `test_` key to production" guidance applies on both platforms.
 
 See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-store-api-key-support-bypass_simulated_store_release_check) for the build-time details and issue [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116) for context.
 
@@ -94,7 +94,7 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | Method | Description |
 |--------|-------------|
 | `GetOfferings(bool forceRefresh = false)` | Fetch available offerings and packages |
-| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. iOS/Mac Catalyst only; throws `NotImplementedException` on Android |
+| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. iOS only; throws `NotImplementedException` on Android, Mac Catalyst stub returns an empty dictionary |
 
 ### Purchases
 
