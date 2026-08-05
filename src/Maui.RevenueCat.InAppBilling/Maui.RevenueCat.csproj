@@ -33,10 +33,10 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>7.3.0</Version>
+    <Version>7.3.1</Version>
     <PackageReleaseNotes>
-ADDED
-- Mac Catalyst is now fully supported: the no-op stub was replaced by the real RevenueCat implementation shared with iOS (offerings, purchases, restore, customer info, trial eligibility, subscriber attributes). Requires `Kebechet.Maui.RevenueCat.iOS` 5.72.0.3, whose xcframework ships a Mac Catalyst slice built from source with `BYPASS_SIMULATED_STORE_RELEASE_CHECK`, so Test Store `test_` API keys work in Release builds on Catalyst too. Thanks @JoacimWall! #48 #113
+FIXED
+- `PriceLocalized` and `GetPriceWithCurrencyFor` place the currency symbol per the currency's home culture instead of the device culture: CZK renders as `1,999.99 Kč` on an English device (previously `Kč1,999.99`). Number separators still follow the device locale. #112
     </PackageReleaseNotes>
   </PropertyGroup>
 
