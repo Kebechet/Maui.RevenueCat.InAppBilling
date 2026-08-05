@@ -42,6 +42,7 @@ public partial class MainPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        await WaitForInitialization();
         await RefreshStatus();
         // HARNESS_AUTORUN=1 (e.g. via `simctl launch` child env) runs all checks without UI
         // interaction, so headless simulator/CI runs can capture a full checklist screenshot.
@@ -50,6 +51,23 @@ public partial class MainPage : ContentPage
             _hasAutoRunStarted = true;
             RunAllChecks(RunAllChecksButton, EventArgs.Empty);
         }
+    }
+
+    /// <summary>
+    /// App.OnStart calls Initialize after the page first appears on a cold start, so waiting
+    /// here keeps the first status refresh (and autorun) from hitting the uninitialized SDK.
+    /// </summary>
+    private async Task WaitForInitialization()
+    {
+        for (var attemptIndex = 0; attemptIndex < 50; attemptIndex++)
+        {
+            if (_revenueCatBilling.IsInitialized())
+            {
+                return;
+            }
+            await Task.Delay(100);
+        }
+        _harnessLog.Add("WARNING: SDK still not initialized after 5 s, continuing anyway");
     }
 
     private void OnHarnessLogChanged()
