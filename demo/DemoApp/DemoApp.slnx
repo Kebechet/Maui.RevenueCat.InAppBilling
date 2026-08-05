@@ -3,4 +3,5 @@
   <Project Path="DemoApp/DemoApp.csproj">
     <Deploy />
   </Project>
+  <Project Path="DemoApp.Harness/DemoApp.Harness.csproj" />
 </Solution>

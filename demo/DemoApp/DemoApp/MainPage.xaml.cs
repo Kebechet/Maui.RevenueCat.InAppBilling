@@ -1,130 +1,248 @@
-﻿using Maui.RevenueCat.InAppBilling.Models;
-using Maui.RevenueCat.InAppBilling.Services;
-using System.ComponentModel;
-using System.Diagnostics;
+using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Runtime.CompilerServices;
+using DemoApp.Harness;
+using Maui.RevenueCat.InAppBilling.Models;
+using Maui.RevenueCat.InAppBilling.Services;
 
 namespace DemoApp;
 
-public partial class MainPage : ContentPage, INotifyPropertyChanged
+public partial class MainPage : ContentPage
 {
     private readonly IRevenueCatBilling _revenueCatBilling;
+    private readonly HarnessLog _harnessLog = new();
+    private readonly HarnessRunner _harnessRunner;
+    private bool _hasAutoRunStarted;
 
-    //RC data
-    private List<OfferingDto> _loadedOfferings { get; set; } = new();
-    private PackageDto _monthlySubscription = new();
-    private PackageDto _yearlySubscription = new();
-    private PackageDto _consumable1 = new();
-    private PackageDto _consumable2 = new();
-
-    private string _consumableOfferingIdentifier = "TrainingPlan";
-    private string _consumablePackageIdentifierPrefix = "satisfit_trainingplan_";
-
-    //UI data
-    public event PropertyChangedEventHandler? PropertyChanged;
-    public bool AreOfferingsLoaded => _loadedOfferings.Any();
-    public string MonthlyButtonText => $"Monthly subscription for {_monthlySubscription.Product.Pricing.PriceLocalized}";
-    public string YearlyButtonText => $"Yearly subscription for {_yearlySubscription.Product.Pricing.PriceLocalized}";
-    public string Consumable1ButtonText => $"Item1 for {_consumable1.Product.Pricing.PriceLocalized}";
-    public string Consumable2ButtonText => $"Item2 for {_consumable2.Product.Pricing.PriceLocalized}";
-    public string CurrentCultureText { get; private set; } = string.Empty;
+    public ObservableCollection<HarnessCheckResult> HarnessCheckResults { get; } = [];
+    public ObservableCollection<PackageDto> LoadedPackages { get; } = [];
 
     public MainPage(IRevenueCatBilling revenueCatBilling)
     {
         InitializeComponent();
         _revenueCatBilling = revenueCatBilling;
+        _harnessRunner = new HarnessRunner(revenueCatBilling, _harnessLog);
         BindingContext = this;
+        _harnessLog.Changed += OnHarnessLogChanged;
+        StorePicker.SelectedIndex = (int)DemoStoreSelection.Current;
     }
 
-    private async void LoadOfferings(object sender, EventArgs e)
+    private async void StoreChanged(object sender, EventArgs e)
     {
-        // RevenueCat's GetOfferings hits the network; without it the native SDK throws and
-        // crashes the demo. Bail out early with a user-visible message instead.
-        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+        var selectedStore = (DemoStore)StorePicker.SelectedIndex;
+        if (selectedStore == DemoStoreSelection.Current)
         {
-            await DisplayAlert(
-                "No internet",
-                "Loading offerings requires an internet connection.",
-                "OK");
             return;
         }
 
-        //this is just to showcase functionality. For running async actions use Commands and for UI updating proper NotifyPropertyChanged flow
-        await Task.Run(async () =>
-        {
-            _loadedOfferings = await _revenueCatBilling.GetOfferings();
-
-            _monthlySubscription = _loadedOfferings
-                .SelectMany(x => x.AvailablePackages)
-                .First(x => x.Identifier == DefaultPackageIdentifier.Monthly);
-
-            _yearlySubscription = _loadedOfferings
-                .SelectMany(x => x.AvailablePackages)
-                .First(x => x.Identifier == DefaultPackageIdentifier.Annually);
-
-            _consumable1 = _loadedOfferings
-                .SelectMany(x => x.AvailablePackages)
-                .First(x => x.Identifier == $"{_consumablePackageIdentifierPrefix}3");
-
-            _consumable2 = _loadedOfferings
-                .SelectMany(x => x.AvailablePackages)
-                .First(x => x.Identifier == $"{_consumablePackageIdentifierPrefix}5");
-
-            var storefront = await _revenueCatBilling.GetStorefrontCountryCode();
-            CurrentCultureText =
-                $"Culture: {CultureInfo.CurrentCulture.Name} | UI: {CultureInfo.CurrentUICulture.Name} | Store: {(string.IsNullOrEmpty(storefront) ? "?" : storefront)}";
-            Debug.WriteLine(CurrentCultureText);
-
-            NotifyPropertyChanged(nameof(AreOfferingsLoaded));
-            NotifyPropertyChanged(nameof(MonthlyButtonText));
-            NotifyPropertyChanged(nameof(YearlyButtonText));
-            NotifyPropertyChanged(nameof(Consumable1ButtonText));
-            NotifyPropertyChanged(nameof(Consumable2ButtonText));
-            NotifyPropertyChanged(nameof(CurrentCultureText));
-        });
+        DemoStoreSelection.Current = selectedStore;
+        _harnessLog.Add($"Store changed to {selectedStore}");
+        await DisplayAlert("Store changed", "Restart the app to apply the selected store.", "OK");
     }
 
-    private void BuyItem(object sender, EventArgs e)
+    protected override async void OnAppearing()
     {
-        var button = (Button)sender;
-        var originalText = button.Text;
-        button.Text = "Purchasing...";
-        button.IsEnabled = false;
-
-        Task.Run(async () =>
+        base.OnAppearing();
+        await RefreshStatus();
+        // HARNESS_AUTORUN=1 (e.g. via `simctl launch` child env) runs all checks without UI
+        // interaction, so headless simulator/CI runs can capture a full checklist screenshot.
+        if (Environment.GetEnvironmentVariable("HARNESS_AUTORUN") == "1" && !_hasAutoRunStarted)
         {
-            if (button == BtnMonthly)
-            {
-                await _revenueCatBilling.PurchaseProduct(_monthlySubscription);
-            }
-            else if (button == BtnYearly)
-            {
-                await _revenueCatBilling.PurchaseProduct(_yearlySubscription);
-            }
-            else if (button == BtnConsumable1)
-            {
-                await _revenueCatBilling.PurchaseProduct(_consumable1);
-            }
-            else if (button == BtnConsumable2)
-            {
-                await _revenueCatBilling.PurchaseProduct(_consumable2);
-            }
-
-            button.Dispatcher.Dispatch(() =>
-            {
-                button.Text = originalText;
-                button.IsEnabled = true;
-            });
-        });
-    }
-
-    private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
-    {
-        if (PropertyChanged != null)
-        {
-            PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            _hasAutoRunStarted = true;
+            RunAllChecks(RunAllChecksButton, EventArgs.Empty);
         }
     }
-}
 
+    private void OnHarnessLogChanged()
+    {
+        Dispatcher.Dispatch(() => LogEditor.Text = _harnessLog.AsText());
+    }
+
+    private async void RunAllChecks(object sender, EventArgs e)
+    {
+        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+        {
+            _harnessLog.Add("WARNING: no internet connection, checks will likely fail");
+        }
+
+        RunAllChecksButton.IsEnabled = false;
+        HarnessCheckResults.Clear();
+        try
+        {
+            var progress = new Progress<HarnessCheckResult>(OnCheckProgress);
+            await Task.Run(() => _harnessRunner.RunAllChecksAsync(progress));
+            RefreshLoadedPackages();
+            await RefreshStatus();
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL {nameof(RunAllChecks)}: {exception.Message}");
+        }
+        finally
+        {
+            RunAllChecksButton.IsEnabled = true;
+        }
+    }
+
+    private void OnCheckProgress(HarnessCheckResult harnessCheckResult)
+    {
+        var existingResult = HarnessCheckResults.FirstOrDefault(x => x.Name == harnessCheckResult.Name);
+        if (existingResult is null)
+        {
+            HarnessCheckResults.Add(harnessCheckResult);
+            return;
+        }
+        HarnessCheckResults[HarnessCheckResults.IndexOf(existingResult)] = harnessCheckResult;
+    }
+
+    private void RefreshLoadedPackages()
+    {
+        LoadedPackages.Clear();
+        var loadedPackages = _harnessRunner.LastLoadedOfferings
+            .SelectMany(x => x.AvailablePackages)
+            .ToList();
+        foreach (var loadedPackage in loadedPackages)
+        {
+            LoadedPackages.Add(loadedPackage);
+        }
+        NoPackagesHintLabel.IsVisible = !LoadedPackages.Any();
+    }
+
+    private async Task RefreshStatus()
+    {
+        try
+        {
+            var isInitialized = _revenueCatBilling.IsInitialized();
+            var isAnonymous = _revenueCatBilling.IsAnonymous();
+            var appUserId = _revenueCatBilling.GetAppUserId();
+            var storefrontCountryCode = await _revenueCatBilling.GetStorefrontCountryCode();
+            var activeApiKey = DemoStoreSelection.ActiveApiKey;
+            var activeApiKeyPrefix = activeApiKey.Length > 5 ? activeApiKey[..5] : activeApiKey;
+            Dispatcher.Dispatch(() =>
+            {
+                StoreLabel.Text = $"Store: {DemoStoreSelection.Current} (key {activeApiKeyPrefix}...)";
+                InitializedLabel.Text = $"Initialized: {isInitialized}";
+                AnonymousLabel.Text = $"Anonymous: {isAnonymous}";
+                AppUserIdLabel.Text = $"App user id: {appUserId}";
+                StorefrontLabel.Text = $"Storefront: {(string.IsNullOrEmpty(storefrontCountryCode) ? "?" : storefrontCountryCode)}";
+                CultureLabel.Text = $"Culture: {CultureInfo.CurrentCulture.Name} | UI: {CultureInfo.CurrentUICulture.Name}";
+            });
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL {nameof(RefreshStatus)}: {exception.Message}");
+        }
+    }
+
+    private async void PurchasePackage(object sender, EventArgs e)
+    {
+        var purchaseButton = (Button)sender;
+        var packageToPurchase = (PackageDto)purchaseButton.BindingContext;
+        purchaseButton.IsEnabled = false;
+        _harnessLog.Add($"Purchasing {packageToPurchase.Identifier} ({packageToPurchase.Product.Sku})");
+        try
+        {
+            // Deliberately called from a background thread: the wrapper must marshal the purchase
+            // to the main thread itself (the Test Store dialog crashed here before that fix),
+            // so this doubles as a regression canary.
+            var purchaseResult = await Task.Run(() => _revenueCatBilling.PurchaseProduct(packageToPurchase));
+            _harnessLog.Add(purchaseResult.IsSuccess
+                ? $"PASS Purchase {packageToPurchase.Identifier}: transaction {purchaseResult.Transaction?.TransactionIdentifier ?? "?"}"
+                : $"FAIL Purchase {packageToPurchase.Identifier}: {purchaseResult.ErrorStatus} {purchaseResult.ErrorMessage}");
+            await RefreshStatus();
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL Purchase {packageToPurchase.Identifier}: {exception.Message}");
+        }
+        finally
+        {
+            purchaseButton.IsEnabled = true;
+        }
+    }
+
+    private async void RestoreTransactions(object sender, EventArgs e)
+    {
+        try
+        {
+            var customerInfo = await _revenueCatBilling.RestoreTransactions();
+            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.RestoreTransactions)}: {FormatCustomerInfo(customerInfo)}");
+            await RefreshStatus();
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.RestoreTransactions)}: {exception.Message}");
+        }
+    }
+
+    private async void Login(object sender, EventArgs e)
+    {
+        var appUserId = LoginAppUserIdEntry.Text;
+        if (string.IsNullOrWhiteSpace(appUserId))
+        {
+            _harnessLog.Add("Login skipped: enter an app user id first");
+            return;
+        }
+
+        try
+        {
+            var customerInfo = await _revenueCatBilling.Login(appUserId);
+            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Login)} as {appUserId}: {FormatCustomerInfo(customerInfo)}");
+            await RefreshStatus();
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.Login)}: {exception.Message}");
+        }
+    }
+
+    private async void Logout(object sender, EventArgs e)
+    {
+        try
+        {
+            var customerInfo = await _revenueCatBilling.Logout();
+            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Logout)}: {FormatCustomerInfo(customerInfo)}");
+            await RefreshStatus();
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.Logout)}: {exception.Message}");
+        }
+    }
+
+    private async void OpenManagementUrl(object sender, EventArgs e)
+    {
+        try
+        {
+            var managementUrl = await _revenueCatBilling.GetManagementSubscriptionUrl();
+            if (managementUrl is null)
+            {
+                _harnessLog.Add($"{nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: null (no active store subscription)");
+                return;
+            }
+            _harnessLog.Add($"Opening {managementUrl}");
+            await Launcher.OpenAsync(managementUrl);
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL {nameof(OpenManagementUrl)}: {exception.Message}");
+        }
+    }
+
+    private async void CopyLog(object sender, EventArgs e)
+    {
+        await Clipboard.SetTextAsync(_harnessLog.AsText());
+        _harnessLog.Add("Log copied to clipboard");
+    }
+
+    private static string FormatCustomerInfo(CustomerInfoDto? customerInfo)
+    {
+        if (customerInfo is null)
+        {
+            return "null";
+        }
+        var entitlementIdentifiers = customerInfo.Entitlements.Any()
+            ? string.Join(", ", customerInfo.Entitlements.Select(x => x.Identifier))
+            : "none";
+        return $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.AllPurchasedIdentifiers.Count} purchased, entitlements: {entitlementIdentifiers}";
+    }
+}

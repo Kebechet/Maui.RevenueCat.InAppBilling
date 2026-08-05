@@ -54,7 +54,22 @@ internal static class PurchasesExtensions
     {
         var listener = new DelegatingMakePurchaseListener(cancellationToken);
         var purchaseParams = new PurchaseParams(new PurchaseParams.Builder(activity, packageToPurchase));
-        purchases.Purchase(purchaseParams, listener);
+        // Purchases.Purchase must run on the main thread: Google requires launchBillingFlow on it,
+        // and the Test Store shows its purchase AlertDialog synchronously on the calling thread,
+        // which throws "Can't create handler... Looper.prepare()" from any background thread.
+        // A synchronous throw inside the posted lambda would otherwise be unhandled on the main
+        // looper (crash) while the listener task never completes, so route it into the task.
+        activity.RunOnUiThread(() =>
+        {
+            try
+            {
+                purchases.Purchase(purchaseParams, listener);
+            }
+            catch (Exception exception)
+            {
+                listener.ReportException(exception);
+            }
+        });
         return listener.Task;
     }
 

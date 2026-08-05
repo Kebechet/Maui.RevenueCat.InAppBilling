@@ -15,15 +15,7 @@ public partial class App : Application
 
     protected override void OnStart()
     {
-        var revenueCatApiKey = string.Empty;
-
-#if __ANDROID__
-    revenueCatApiKey = "goog_tHAVxtQQbsAWBRGLrEwezuavnmI";
-#elif __IOS__
-        revenueCatApiKey = "appl_IbYjYDwWLoqUZXxFXrCCyJKLPZc";
-#endif
-
-        _revenueCatBilling.Initialize(revenueCatApiKey);
+        _revenueCatBilling.Initialize(DemoStoreSelection.ActiveApiKey);
 
         base.OnStart();
     }

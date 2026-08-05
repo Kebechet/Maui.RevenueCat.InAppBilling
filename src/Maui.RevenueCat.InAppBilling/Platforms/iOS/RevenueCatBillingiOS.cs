@@ -159,7 +159,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return new PurchaseResultDto
             {
-                ErrorStatus = purchaseError
+                ErrorStatus = purchaseError,
+                ErrorMessage = purchaseError == PurchaseErrorStatus.PurchaseCancelledError
+                    ? null
+                    : ex?.Message
             };
         }
         catch (OperationCanceledException ex)
@@ -176,7 +179,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return new PurchaseResultDto
             {
-                ErrorStatus = PurchaseErrorStatus.UnknownError
+                ErrorStatus = PurchaseErrorStatus.UnknownError,
+                ErrorMessage = ex.Message
             };
         }
 
@@ -186,7 +190,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             return new PurchaseResultDto
             {
-                ErrorStatus = PurchaseErrorStatus.UnknownError
+                ErrorStatus = PurchaseErrorStatus.UnknownError,
+                ErrorMessage = $"{nameof(purchaseSuccessInfo)} is null"
             };
         }
 
@@ -416,7 +421,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         // StoreFrontCountryCode is a sync property on RCPurchases populated when the
         // user's storefront is first observed. May be null before the SDK has talked
         // to StoreKit at least once — defaults to string.Empty in that window.
-        return Task.FromResult(_purchases.StoreFrontCountryCode ?? string.Empty);
+        // StoreKit reports the storefront as ISO alpha-3 ("USA"); the interface contract
+        // (and the Android implementation) use alpha-2, so normalize it.
+        var storefrontCountryCode = _purchases.StoreFrontCountryCode ?? string.Empty;
+        return Task.FromResult(storefrontCountryCode.ToIsoAlpha2CountryCode());
     }
 
     internal static partial void EnableDebugLogs(bool enable)

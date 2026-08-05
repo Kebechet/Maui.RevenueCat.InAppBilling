@@ -17,7 +17,7 @@ internal abstract class DelegatingListenerBase<TResult> : Java.Lang.Object
         _taskCompletionSource.TrySetResult(result);
     }
 
-    protected void ReportException(Exception exception)
+    internal void ReportException(Exception exception)
     {
         _taskCompletionSource.TrySetException(exception);
     }

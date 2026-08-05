@@ -1,0 +1,40 @@
+name: unit-tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI workloads
+        # The wrapper multi-targets net9.0;-android;-ios;-maccatalyst (+ -windows on
+        # Windows hosts), and restore evaluates every TFM even though the tests only
+        # build the plain net9.0 target.
+        run: dotnet workload install maui
+
+      - name: Pack iOS binding into a local feed
+        # The wrapper references the iOS binding version from this branch, which may
+        # not be published to nuget.org yet; pack it from source so restore always
+        # resolves the in-repo version.
+        run: |
+          dotnet pack src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj -c Release -o local-nuget
+          dotnet nuget add source "${{ github.workspace }}\local-nuget" --name local
+
+      - name: Run DemoHarness.Tests
+        run: dotnet test tests/DemoHarness.Tests/DemoHarness.Tests.csproj -c Release
+
+      - name: Run Postprocess.Tests
+        run: dotnet test tests/Postprocess.Tests/Postprocess.Tests.csproj -c Release

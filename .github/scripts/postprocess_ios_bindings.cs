@@ -270,10 +270,33 @@ static class Postprocess
     private static string RemoveLinkerRiskInterfaces(string text)
     {
         var names = new HashSet<string>(LinkerRiskSymbols);
+
+        // Sharpie binds Swift extensions of these internal types as
+        // `[Category] [BaseType (typeof(X))]` interfaces (e.g.
+        // `PaymentQueueWrapper_RevenueCat_Swift_2020`). Once the `X` interface
+        // is dropped below, those categories would dangle (CS0246) — and a
+        // category body can itself reference `X` (e.g. a static `default`
+        // accessor returning `X`). So drop any interface whose base type is a
+        // linker-risk symbol too, alongside the symbol's own interface.
+        var baseTypeRe = new Regex(
+            @"\[BaseType[ \t]*\([ \t]*typeof[ \t]*\([ \t]*(?<t>[A-Za-z_]\w*)[ \t]*\)");
+
         var edits = new List<(int Start, int End)>();
         foreach (Match m in InterfaceBlockRe.Matches(text))
         {
-            if (names.Contains(m.Groups["name"].Value))
+            var dropByName = names.Contains(m.Groups["name"].Value);
+
+            var dropByBase = false;
+            foreach (Match b in baseTypeRe.Matches(m.Groups["lead"].Value))
+            {
+                if (names.Contains(b.Groups["t"].Value))
+                {
+                    dropByBase = true;
+                    break;
+                }
+            }
+
+            if (dropByName || dropByBase)
             {
                 edits.Add((m.Index, m.Index + m.Length));
             }
@@ -432,6 +455,24 @@ static class Postprocess
         }
         return text;
     }
+
+    // Drop `[Field (...)]` properties typed `byte[]`.
+    //
+    // Sharpie binds a C `const unsigned char[]` (e.g. RevenueCat's
+    // `RevenueCatVersionString`) as a `byte[]` `[Field]` property, but bgen
+    // rejects it: "error BI1014: Unsupported type for Fields: byte[]". The
+    // last working binding removed the member by hand; do it automatically,
+    // keeping sibling fields (e.g. the `double RevenueCatVersionNumber`).
+    private static string RemoveUnsupportedByteArrayFields(string text) =>
+        Regex.Replace(
+            text,
+            @"(?:^[ \t]*//[^\n]*\n)*" +                 // leading // comment(s)
+            @"(?:^[ \t]*\[[^\]]*\][ \t]*\n)*?" +        // any preceding attrs
+            @"^[ \t]*\[Field[ \t]*\([^\n]*\)\][ \t]*\n" + // the [Field(...)] attr
+            @"(?:^[ \t]*\[[^\]]*\][ \t]*\n)*" +         // attrs between Field and decl
+            @"^[ \t]*byte\[\][ \t]+\w+[ \t]*\{[^}]*\}[ \t]*\n", // byte[] property
+            "",
+            RegexOptions.Multiline);
 
     // Drop device-specific availability attributes (README).
     //
@@ -899,6 +940,97 @@ static class Postprocess
         return text;
     }
 
+    // Extract inline nested block-callbacks into named delegates.
+    //
+    // Sharpie binds an Obj-C block whose own parameter is another block as an
+    // inline `Action<Action<...>> param`. bgen's Trampolines generator can't
+    // emit that shape — the nested System.Action`N mangling breaks the
+    // generated trampoline (the iOS binding README's "created delegates for
+    // Purchases" workaround). Rewrite each occurrence to a named outer
+    // delegate that takes a `[BlockCallback]` inner delegate, declared at
+    // namespace scope. Single-level `Action<...>` / `Func<...>` params bind
+    // fine and are left alone. Deeper inner nesting (generic inner types)
+    // isn't produced by RevenueCat; the block-callback detector still flags
+    // anything this doesn't match.
+    //
+    // Names derive from the parameter: `startPurchase` -> `StartPurchaseHandler`
+    // (outer) + `StartPurchaseCallbackHandler` (inner). Identical inner
+    // signatures share one delegate pair; a name collision across differing
+    // signatures gets a numeric suffix.
+    private static string ExtractNestedBlockCallbacks(string text)
+    {
+        var re = new Regex(
+            @"(?:\[BlockCallback\][ \t]*)?Action<Action<(?<inner>[^<>]+)>>[ \t]+(?<param>[A-Za-z_]\w*)");
+
+        var order = new List<string>();
+        var bySig = new Dictionary<string, (string Outer, string Inner, string[] Types)>();
+        var usedNames = new HashSet<string>();
+
+        foreach (Match m in re.Matches(text))
+        {
+            var sig = Regex.Replace(m.Groups["inner"].Value.Trim(), @"[ \t]+", " ");
+            if (bySig.ContainsKey(sig)) continue;
+
+            var baseName = Capitalize(m.Groups["param"].Value);
+            var outer = baseName + "Handler";
+            var inner = baseName + "CallbackHandler";
+            var suffix = 2;
+            while (usedNames.Contains(outer) || usedNames.Contains(inner))
+            {
+                outer = baseName + "Handler" + suffix;
+                inner = baseName + "CallbackHandler" + suffix;
+                suffix++;
+            }
+            usedNames.Add(outer);
+            usedNames.Add(inner);
+
+            var types = sig.Split(',').Select(t => t.Trim()).ToArray();
+            bySig[sig] = (outer, inner, types);
+            order.Add(sig);
+        }
+
+        if (order.Count == 0) return text;
+
+        text = re.Replace(text, m =>
+        {
+            var sig = Regex.Replace(m.Groups["inner"].Value.Trim(), @"[ \t]+", " ");
+            return $"{bySig[sig].Outer} {m.Groups["param"].Value}";
+        });
+
+        var sb = new StringBuilder();
+        sb.Append('\n');
+        sb.Append("// Named delegates for callbacks that bgen's Trampolines generator can't\n");
+        sb.Append("// emit from an inline block-that-receives-a-block parameter (the nested\n");
+        sb.Append("// System.Action`N mangling breaks the generated trampoline). Extracted by\n");
+        sb.Append("// postprocess_ios_bindings.cs.\n");
+        foreach (var sig in order)
+        {
+            var (outer, inner, types) = bySig[sig];
+            var pars = string.Join(", ", types.Select((t, i) => $"{t} arg{i + 1}"));
+            sb.Append($"delegate void {inner} ({pars});\n");
+            sb.Append($"delegate void {outer} ([BlockCallback] {inner} callback);\n");
+        }
+
+        // Insert after the namespace declaration (file-scoped at this point in
+        // the pass order; fall back to a block-scoped opener, then to prepend).
+        var nsFile = Regex.Match(text, @"^namespace[^\n;{]+;[ \t]*\r?\n", RegexOptions.Multiline);
+        if (nsFile.Success)
+        {
+            var at = nsFile.Index + nsFile.Length;
+            return text[..at] + sb + text[at..];
+        }
+        var nsBlock = Regex.Match(text, @"^namespace[^\n{]+\{[ \t]*\r?\n", RegexOptions.Multiline);
+        if (nsBlock.Success)
+        {
+            var at = nsBlock.Index + nsBlock.Length;
+            return text[..at] + sb + text[at..];
+        }
+        return sb + text;
+    }
+
+    private static string Capitalize(string s) =>
+        string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
+
     // ---- detection-only passes ----
 
     private static List<string> DetectBlockCallbackActions(string text)
@@ -969,6 +1101,7 @@ static class Postprocess
         ("strip \\n in [Obsoleted(...)]",             StripObsoletedNewlines),
         ("remove [Obsoleted/Deprecated] members",     RemoveObsoleteMembers),
         ("remove [Obsoleted/Deprecated] interfaces",  RemoveObsoleteInterfaces),
+        ("remove bgen-unsupported byte[] fields",      RemoveUnsupportedByteArrayFields),
         ("strip device-specific availability attrs",  StripPlatformAvailabilityAttributes),
         ("remove inherited NSObject methods",         RemoveInheritedNsObjectMethods),
         ("merge _RevenueCat_Swift_NNNN interfaces",   MergeSwiftSuffixInterfaces),
@@ -977,6 +1110,7 @@ static class Postprocess
         ("rename duplicate method overloads",         DeduplicateOverloadedMethods),
         ("remove unused top-level delegates",         RemoveUnusedDelegates),
         ("convert block namespace to file-scoped",    UseFileScopedNamespace),
+        ("extract nested block-callback delegates",   ExtractNestedBlockCallbacks),
     };
 
     private static readonly (string Label, Func<string, List<string>> Fn)[] Detectors =

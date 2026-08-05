@@ -1,0 +1,5 @@
+# Committed iOS xcframework contents are binary framework payload (Mach-O
+# binaries, code-signature blobs, plists, generated headers). Never apply
+# line-ending normalization to them — a CRLF round-trip on a Windows
+# checkout would alter the bundled headers/plists/signature.
+src/Maui.RevenueCat.iOS/nativelib/RevenueCat.xcframework/** -text

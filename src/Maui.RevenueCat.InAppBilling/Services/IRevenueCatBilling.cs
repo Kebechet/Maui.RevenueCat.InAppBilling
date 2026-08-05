@@ -11,6 +11,13 @@ public interface IRevenueCatBilling
     Task<bool> CanMakePayments(CancellationToken cancellationToken = default);
 
     void Initialize(string apiKey);
+
+    /// <summary>
+    /// Checks trial or introductory discount eligibility for the given product identifiers.
+    /// iOS only: the underlying RevenueCat API has no Android equivalent, so the Android
+    /// implementation throws <see cref="NotImplementedException"/>, and the Mac Catalyst
+    /// implementation is a stub that always returns an empty dictionary.
+    /// </summary>
     Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken = default);
     Task<List<OfferingDto>> GetOfferings(bool forceRefresh = false, CancellationToken cancellationToken = default);
     Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken = default);
