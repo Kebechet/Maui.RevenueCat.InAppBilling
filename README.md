@@ -17,7 +17,7 @@ A .NET MAUI wrapper library for [RevenueCat](https://www.revenuecat.com/) in-app
 - Subscription status and entitlement checking
 - Trial/intro discount eligibility
 - Subscriber attributes management
-- Stub implementations for Windows and MacCatalyst (for development convenience)
+- Stub implementation for Windows (for development convenience)
 
 ## Installation
 
@@ -94,7 +94,7 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | Method | Description |
 |--------|-------------|
 | `GetOfferings(bool forceRefresh = false)` | Fetch available offerings and packages |
-| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. iOS only; throws `NotImplementedException` on Android, Mac Catalyst stub returns an empty dictionary |
+| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. Apple platforms only (iOS and Mac Catalyst); throws `NotImplementedException` on Android |
 
 ### Purchases
 
@@ -184,7 +184,7 @@ public class PurchaseService
 | Android | Full implementation |
 | iOS | Full implementation |
 | Windows | Stub (returns defaults) |
-| MacCatalyst | Stub (returns defaults) |
+| MacCatalyst | Full implementation (shares the iOS implementation) |
 
 Stub implementations return:
 - `true` for boolean methods
