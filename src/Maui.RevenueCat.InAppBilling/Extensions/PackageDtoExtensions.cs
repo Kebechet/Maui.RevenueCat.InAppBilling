@@ -126,6 +126,11 @@ public static partial class PackageDtoExtensions
         {
             format.CurrencyDecimalDigits = currencyCulture.NumberFormat.CurrencyDecimalDigits;
             format.CurrencySymbol = currencyCulture.NumberFormat.CurrencySymbol;
+            // Symbol placement follows the currency's home culture, not the device culture:
+            // CZK is "1 999,99 Kč" at home, so an English device shows "1,999.99 Kč" -
+            // never "Kč1,999.99". Number separators stay with CurrentCulture above.
+            format.CurrencyPositivePattern = currencyCulture.NumberFormat.CurrencyPositivePattern;
+            format.CurrencyNegativePattern = currencyCulture.NumberFormat.CurrencyNegativePattern;
         }
         else
         {
