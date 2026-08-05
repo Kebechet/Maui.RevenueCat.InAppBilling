@@ -8,6 +8,8 @@ namespace DemoApp;
 
 public partial class MainPage : ContentPage
 {
+    private const string HarnessLogFileName = "harness-log.txt";
+
     private readonly IRevenueCatBilling _revenueCatBilling;
     private readonly HarnessLog _harnessLog = new();
     private readonly HarnessRunner _harnessRunner;
@@ -73,6 +75,22 @@ public partial class MainPage : ContentPage
     private void OnHarnessLogChanged()
     {
         Dispatcher.Dispatch(() => LogEditor.Text = _harnessLog.AsText());
+        PersistLogForHeadlessCapture();
+    }
+
+    /// <summary>
+    /// Mirrors the harness log to a file in the app data directory so headless
+    /// runs (autorun driven over SSH or CI) can read results without UI access.
+    /// </summary>
+    private void PersistLogForHeadlessCapture()
+    {
+        try
+        {
+            File.WriteAllText(Path.Combine(FileSystem.AppDataDirectory, HarnessLogFileName), _harnessLog.AsText());
+        }
+        catch (IOException)
+        {
+        }
     }
 
     private async void RunAllChecks(object sender, EventArgs e)
