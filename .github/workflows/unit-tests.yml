@@ -11,6 +11,17 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Disable git symlinks
+        # The Mac Catalyst slice of RevenueCat.xcframework uses the macOS framework
+        # bundle layout (Versions/A + symlinks). The runner image checks out real
+        # symlinks, and Xamarin.Shared.targets refuses a native reference that
+        # "is or contains a symlink" on Windows. core.symlinks=false makes git
+        # materialize them as plain placeholder files - the Git-for-Windows default
+        # every Windows dev machine has - which the targets accept. The placeholders
+        # only matter for the local test feed; the published package is packed on
+        # macOS by publish-ios.yml where symlinks are preserved.
+        run: git config --global core.symlinks false
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -28,10 +39,12 @@ jobs:
       - name: Pack iOS binding into a local feed
         # The wrapper references the iOS binding version from this branch, which may
         # not be published to nuget.org yet; pack it from source so restore always
-        # resolves the in-repo version.
-        run: |
-          dotnet pack src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj -c Release -o local-nuget
-          dotnet nuget add source "${{ github.workspace }}\local-nuget" --name local
+        # resolves the in-repo version. Kept as its own step so a pack failure
+        # fails the job here instead of surfacing later as a confusing NU1301.
+        run: dotnet pack src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj -c Release -o local-nuget
+
+      - name: Register the local feed
+        run: dotnet nuget add source "${{ github.workspace }}\local-nuget" --name local
 
       - name: Run DemoHarness.Tests
         run: dotnet test tests/DemoHarness.Tests/DemoHarness.Tests.csproj -c Release
