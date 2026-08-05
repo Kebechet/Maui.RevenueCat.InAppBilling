@@ -41,8 +41,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Install MAUI iOS
-        run: dotnet workload install ios maui-ios --ignore-failed-sources --version ${{ env.DOTNET_SDK_VERSION }}
+      - name: Install MAUI iOS and Mac Catalyst
+        run: dotnet workload install ios maccatalyst maui-ios maui-maccatalyst --ignore-failed-sources --version ${{ env.DOTNET_SDK_VERSION }}
 
       - name: Restore NuGet packages
         run: dotnet restore ${{ env.PROJECT_PATH }} --ignore-failed-sources 
@@ -70,6 +70,16 @@ jobs:
           -c ${{ env.BUILD_CONFIGURATION }}
           -f net9.0-ios
           -r ios-arm64
+
+      - name: Validate native linker (Mac Catalyst slice)
+        # Same check for the maccatalyst slice — it is a separate compile of
+        # RevenueCat.framework, so its exported symbol set can diverge from
+        # the iOS one.
+        run: >
+          dotnet publish tests/BindingLinkerCheck/BindingLinkerCheck.csproj
+          -c ${{ env.BUILD_CONFIGURATION }}
+          -f net9.0-maccatalyst
+          -r maccatalyst-arm64
 
       - name: Pack NuGet Package
         run: >

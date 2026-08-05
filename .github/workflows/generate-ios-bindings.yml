@@ -160,8 +160,11 @@ jobs:
       - name: Build RevenueCat.xcframework from source
         # xcodebuild archive + -create-xcframework, the same recipe Apple
         # documents for producing distributable binary frameworks. We build
-        # device (iphoneos) and simulator (iphonesimulator) slices, then
-        # combine them. BUILD_LIBRARY_FOR_DISTRIBUTION=YES emits the stable
+        # device (iphoneos), simulator (iphonesimulator) and Mac Catalyst
+        # slices, then combine them. The Catalyst slice ships in the binding's
+        # net9.0-maccatalyst target and gets the same BYPASS flag as the iOS
+        # slices, so Test Store keys work in Release on Catalyst too.
+        # BUILD_LIBRARY_FOR_DISTRIBUTION=YES emits the stable
         # module interface (.swiftinterface) required for cross-Xcode-version
         # consumption, and SKIP_INSTALL=NO forces the framework into the
         # archive's Products dir where -create-xcframework can find it.
@@ -192,6 +195,16 @@ jobs:
             SKIP_INSTALL=NO \
             BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
+          echo "📦 Archiving RevenueCat for Mac Catalyst..."
+          xcodebuild archive \
+            -project RevenueCat.xcodeproj \
+            -scheme RevenueCat \
+            -configuration Release \
+            -destination "generic/platform=macOS,variant=Mac Catalyst" \
+            -archivePath "$ARCHIVES_DIR/RevenueCat-maccatalyst.xcarchive" \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
           echo "🧩 Combining slices into xcframework..."
           OUT_DIR="${GITHUB_WORKSPACE}/src/Maui.RevenueCat.iOS"
           rm -rf "$OUT_DIR/RevenueCat.xcframework"
@@ -201,6 +214,8 @@ jobs:
             -debug-symbols "$ARCHIVES_DIR/RevenueCat-iphoneos.xcarchive/dSYMs/RevenueCat.framework.dSYM" \
             -framework "$ARCHIVES_DIR/RevenueCat-iphonesimulator.xcarchive/Products/Library/Frameworks/RevenueCat.framework" \
             -debug-symbols "$ARCHIVES_DIR/RevenueCat-iphonesimulator.xcarchive/dSYMs/RevenueCat.framework.dSYM" \
+            -framework "$ARCHIVES_DIR/RevenueCat-maccatalyst.xcarchive/Products/Library/Frameworks/RevenueCat.framework" \
+            -debug-symbols "$ARCHIVES_DIR/RevenueCat-maccatalyst.xcarchive/dSYMs/RevenueCat.framework.dSYM" \
             -output "$OUT_DIR/RevenueCat.xcframework"
 
           echo "✅ RevenueCat.xcframework built from source with BYPASS_SIMULATED_STORE_RELEASE_CHECK"
@@ -266,7 +281,21 @@ jobs:
             fi
           done
 
-          echo "✅ Framework structure verified"
+          # The Catalyst slice uses the macOS framework-bundle layout
+          # (Versions/A + top-level symlinks), unlike the flat iOS slices.
+          CATALYST_BINARY="$FRAMEWORK_DIR/ios-arm64_x86_64-maccatalyst/RevenueCat.framework/Versions/A/RevenueCat"
+          if [ ! -f "$CATALYST_BINARY" ]; then
+            echo "❌ Error: Mac Catalyst slice binary not found at $CATALYST_BINARY"
+            ls -la "$FRAMEWORK_DIR" || true
+            exit 1
+          fi
+
+          if ! grep -q "ios-arm64_x86_64-maccatalyst" "$FRAMEWORK_DIR/Info.plist"; then
+            echo "❌ Error: xcframework Info.plist does not list the Mac Catalyst slice"
+            exit 1
+          fi
+
+          echo "✅ Framework structure verified (ios-arm64, simulator, maccatalyst)"
           echo "  Framework:    $FRAMEWORK_PATH"
           echo "  Headers dir:  $FRAMEWORK_HEADERS"
 
@@ -338,7 +367,7 @@ jobs:
         # Xcode 26.5) even under the 9.0.101 SDK. Matches publish-ios.yml
         # exactly. Placed here (not at the top) so the cheap fast-fail steps
         # run before this ~minutes-long install.
-        run: dotnet workload install ios maui-ios --version 9.0.101 --ignore-failed-sources
+        run: dotnet workload install ios maccatalyst maui-ios maui-maccatalyst --version 9.0.101 --ignore-failed-sources
 
       - name: Validate native linker against fresh bindings
         # Drop the cleaned bindings + xcframework into src/Maui.RevenueCat.iOS/
@@ -364,6 +393,11 @@ jobs:
             -c Release \
             -f net9.0-ios \
             -r ios-arm64
+
+          dotnet publish tests/BindingLinkerCheck/BindingLinkerCheck.csproj \
+            -c Release \
+            -f net9.0-maccatalyst \
+            -r maccatalyst-arm64
 
       - name: Display generated artifacts
         run: |

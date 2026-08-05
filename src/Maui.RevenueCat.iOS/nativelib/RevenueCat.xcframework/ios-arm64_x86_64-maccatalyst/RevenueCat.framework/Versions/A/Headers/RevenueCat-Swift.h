@@ -2011,7 +2011,6 @@ SWIFT_CLASS("_TtC10RevenueCat19PaymentQueueWrapper")
 @interface PaymentQueueWrapper : NSObject <PaymentQueueWrapperType>
 - (void)finishTransaction:(SKPaymentTransaction * _Nonnull)transaction completion:(void (^ _Nonnull)(void))completion;
 - (void)showPriceConsentIfNeeded SWIFT_AVAILABILITY(maccatalyst,introduced=13.4) SWIFT_AVAILABILITY(ios,introduced=13.4);
-- (void)presentCodeRedemptionSheet SWIFT_AVAILABILITY(ios,introduced=14.0);
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -3992,7 +3991,6 @@ SWIFT_CLASS("_TtC10RevenueCat16StoreKit1Wrapper")
 @interface StoreKit1Wrapper (SWIFT_EXTENSION(RevenueCat)) <PaymentQueueWrapperType>
 - (void)finishTransaction:(SKPaymentTransaction * _Nonnull)transaction completion:(void (^ _Nonnull)(void))completion;
 - (void)showPriceConsentIfNeeded SWIFT_AVAILABILITY(maccatalyst,introduced=13.4) SWIFT_AVAILABILITY(ios,introduced=13.4);
-- (void)presentCodeRedemptionSheet SWIFT_AVAILABILITY(ios,introduced=14.0);
 @end
 
 @interface StoreKit1Wrapper (SWIFT_EXTENSION(RevenueCat)) <SKPaymentTransactionObserver>
@@ -6647,7 +6645,6 @@ SWIFT_CLASS("_TtC10RevenueCat19PaymentQueueWrapper")
 @interface PaymentQueueWrapper : NSObject <PaymentQueueWrapperType>
 - (void)finishTransaction:(SKPaymentTransaction * _Nonnull)transaction completion:(void (^ _Nonnull)(void))completion;
 - (void)showPriceConsentIfNeeded SWIFT_AVAILABILITY(maccatalyst,introduced=13.4) SWIFT_AVAILABILITY(ios,introduced=13.4);
-- (void)presentCodeRedemptionSheet SWIFT_AVAILABILITY(ios,introduced=14.0);
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
@@ -8628,7 +8625,6 @@ SWIFT_CLASS("_TtC10RevenueCat16StoreKit1Wrapper")
 @interface StoreKit1Wrapper (SWIFT_EXTENSION(RevenueCat)) <PaymentQueueWrapperType>
 - (void)finishTransaction:(SKPaymentTransaction * _Nonnull)transaction completion:(void (^ _Nonnull)(void))completion;
 - (void)showPriceConsentIfNeeded SWIFT_AVAILABILITY(maccatalyst,introduced=13.4) SWIFT_AVAILABILITY(ios,introduced=13.4);
-- (void)presentCodeRedemptionSheet SWIFT_AVAILABILITY(ios,introduced=14.0);
 @end
 
 @interface StoreKit1Wrapper (SWIFT_EXTENSION(RevenueCat)) <SKPaymentTransactionObserver>
