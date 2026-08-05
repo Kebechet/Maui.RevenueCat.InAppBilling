@@ -33,10 +33,10 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>7.3.1</Version>
+    <Version>7.3.2</Version>
     <PackageReleaseNotes>
-FIXED
-- `PriceLocalized` and `GetPriceWithCurrencyFor` place the currency symbol per the currency's home culture instead of the device culture: CZK renders as `1,999.99 Kč` on an English device (previously `Kč1,999.99`). Number separators still follow the device locale. #112
+CHANGED
+- Android binding updated to `Kebechet.Maui.RevenueCat.Android` 10.1.2.2: the RevenueCat AAR is now consumed via `AndroidMavenLibrary` with POM-driven Java dependency verification instead of a committed binary. Shipped binaries are byte-identical, nothing changes for consumers. #88
     </PackageReleaseNotes>
   </PropertyGroup>
 
@@ -62,7 +62,7 @@ FIXED
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.1.2.1" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.1.2.2" />
   </ItemGroup>
 
   <!-- Mac Catalyst reuses the iOS RevenueCat implementation. RevenueCat's purchases-ios SDK
