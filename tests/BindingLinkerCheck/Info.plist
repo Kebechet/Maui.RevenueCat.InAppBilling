@@ -10,8 +10,6 @@
     <string>1</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
-    <key>MinimumOSVersion</key>
-    <string>14.2</string>
     <key>UIDeviceFamily</key>
     <array>
         <integer>1</integer>
