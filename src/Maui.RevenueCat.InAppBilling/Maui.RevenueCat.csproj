@@ -33,10 +33,18 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>7.1.0</Version>
+    <Version>7.2.0</Version>
     <PackageReleaseNotes>
 ADDED
-- New `PeriodType.Prepaid` value and mapping for prepaid subscriptions on Android and iOS. #115
+- Test Store `test_` API keys now work on iOS: the bundled RevenueCat xcframework is built from source with `BYPASS_SIMULATED_STORE_RELEASE_CHECK`, so Release builds no longer force-close. Requires `Kebechet.Maui.RevenueCat.iOS` 5.72.0.2. #116
+- `PurchaseResultDto.ErrorMessage` carries the underlying store error details on failed purchases (null on success and user cancellation); `ErrorStatus` stays the value to branch on.
+
+FIXED
+- Android purchase launch is marshalled to the main thread, so `PurchaseProduct` can be called from any thread; background callers previously crashed with a Looper error under the Test Store. Synchronous launch failures now surface through the result instead of crashing the app.
+- iOS `GetStorefrontCountryCode` returns ISO alpha-2 (`US`) instead of StoreKit's alpha-3 (`USA`), matching the documented contract and the Android implementation.
+
+CHANGED
+- `CheckTrialOrIntroDiscountEligibility` documented as iOS-only: Android throws `NotImplementedException`, the Mac Catalyst stub returns an empty dictionary.
     </PackageReleaseNotes>
   </PropertyGroup>
 
