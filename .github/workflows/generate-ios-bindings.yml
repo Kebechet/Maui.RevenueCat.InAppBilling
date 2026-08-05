@@ -367,7 +367,7 @@ jobs:
         # Xcode 26.5) even under the 9.0.101 SDK. Matches publish-ios.yml
         # exactly. Placed here (not at the top) so the cheap fast-fail steps
         # run before this ~minutes-long install.
-        run: dotnet workload install ios maui-ios --version 9.0.101 --ignore-failed-sources
+        run: dotnet workload install ios maccatalyst maui-ios maui-maccatalyst --version 9.0.101 --ignore-failed-sources
 
       - name: Validate native linker against fresh bindings
         # Drop the cleaned bindings + xcframework into src/Maui.RevenueCat.iOS/
@@ -393,6 +393,11 @@ jobs:
             -c Release \
             -f net9.0-ios \
             -r ios-arm64
+
+          dotnet publish tests/BindingLinkerCheck/BindingLinkerCheck.csproj \
+            -c Release \
+            -f net9.0-maccatalyst \
+            -r maccatalyst-arm64
 
       - name: Display generated artifacts
         run: |
