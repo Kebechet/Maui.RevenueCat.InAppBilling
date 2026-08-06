@@ -33,10 +33,10 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>7.3.2</Version>
+    <Version>7.4.0</Version>
     <PackageReleaseNotes>
 CHANGED
-- Android binding updated to `Kebechet.Maui.RevenueCat.Android` 10.1.2.2: the RevenueCat AAR is now consumed via `AndroidMavenLibrary` with POM-driven Java dependency verification instead of a committed binary. Shipped binaries are byte-identical, nothing changes for consumers. #88
+- Android binding updated to `Kebechet.Maui.RevenueCat.Android` 10.16.1 (RevenueCat Android SDK 10.1.2 -> 10.16.1). Notable upstream fixes: BillingClient connection moved off the main thread, showInAppMessages guarded against BillingClient runtime crashes, several OutOfMemory fixes around cached offerings responses. Full changelog: https://github.com/RevenueCat/purchases-android/releases
     </PackageReleaseNotes>
   </PropertyGroup>
 
@@ -62,7 +62,7 @@ CHANGED
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.1.2.2" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.16.1" />
   </ItemGroup>
 
   <!-- Mac Catalyst reuses the iOS RevenueCat implementation. RevenueCat's purchases-ios SDK
