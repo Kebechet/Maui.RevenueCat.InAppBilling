@@ -25,6 +25,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Java
+        # The Android binding pack below runs the Java binding generator over the AAR,
+        # so it needs the same JDK 17 publish-android.yml sets up.
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -42,6 +50,13 @@ jobs:
         # resolves the in-repo version. Kept as its own step so a pack failure
         # fails the job here instead of surfacing later as a confusing NU1301.
         run: dotnet pack src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj -c Release -o local-nuget
+
+      - name: Pack Android binding into a local feed
+        # Same reason as the iOS binding above: a RevenueCat version bump lands in the
+        # wrapper's PackageReference before the binding package is published, so restore
+        # has to resolve it from source. The AAR is fetched from Maven Central during
+        # this pack, so it also cross-checks the AndroidMavenLibrary/POM dependency list.
+        run: dotnet pack src/Maui.RevenueCat.Android/Maui.RevenueCat.Android.csproj -c Release -o local-nuget
 
       - name: Register the local feed
         run: dotnet nuget add source "${{ github.workspace }}\local-nuget" --name local
