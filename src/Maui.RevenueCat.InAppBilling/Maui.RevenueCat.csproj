@@ -37,7 +37,8 @@
     <PackageReleaseNotes>
 CHANGED
 - Android binding updated to `Kebechet.Maui.RevenueCat.Android` 10.16.1 (RevenueCat Android SDK 10.1.2 -> 10.16.1). Notable upstream fixes: BillingClient connection moved off the main thread, showInAppMessages guarded against BillingClient runtime crashes, several OutOfMemory fixes around cached offerings responses. Full changelog: https://github.com/RevenueCat/purchases-android/releases
-    </PackageReleaseNotes>
+- iOS binding updated to `Kebechet.Maui.RevenueCat.iOS` 5.83.1 (RevenueCat iOS SDK 5.72.0 -> 5.83.1). Notable upstream changes: Test Store free-trial support, Test Store no longer logs misleading App Store/StoreKit messages, and a T-SAN memory-alignment crash fix. Full changelog: https://github.com/RevenueCat/purchases-ios/releases
+</PackageReleaseNotes>
   </PropertyGroup>
 
   <!-- .NET -->
@@ -58,7 +59,7 @@ CHANGED
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-ios' Or '$(TargetFramework)' == 'net9.0-maccatalyst'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="5.72.0.3" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="5.83.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
