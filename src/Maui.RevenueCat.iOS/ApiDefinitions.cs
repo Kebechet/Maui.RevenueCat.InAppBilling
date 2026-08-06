@@ -6,10 +6,11 @@ using StoreKit;
 namespace Maui.RevenueCat.iOS;
 
 // Named delegates for callbacks that bgen's Trampolines generator can't
-// emit from inline `Action<Action<...>>` (System.Action`4 mangling breaks
-// the generated trampoline). See README "created delegates for Purchases".
-delegate void ReadyForPromotedProductCallbackHandler (RCStoreTransaction transaction, RCCustomerInfo customerInfo, NSError error, bool userCancelled);
-delegate void StartPurchaseHandler ([BlockCallback] ReadyForPromotedProductCallbackHandler defermentBlock);
+// emit from an inline block-that-receives-a-block parameter (the nested
+// System.Action`N mangling breaks the generated trampoline). Extracted by
+// postprocess_ios_bindings.cs.
+delegate void StartPurchaseCallbackHandler (RCStoreTransaction arg1, RCCustomerInfo arg2, NSError arg3, bool arg4);
+delegate void StartPurchaseHandler ([BlockCallback] StartPurchaseCallbackHandler callback);
 
 [Static]
 partial interface Constants
@@ -17,6 +18,7 @@ partial interface Constants
 	// extern double RevenueCatVersionNumber;
 	[Field ("RevenueCatVersionNumber", "__Internal")]
 	double RevenueCatVersionNumber { get; }
+
 }
 
 // @interface RCAdDisplayed : NSObject
@@ -518,6 +520,31 @@ interface RCAttribution
 
 
 
+// @interface RCBillingPlanType : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCBillingPlanType
+{
+	// @property (readonly, nonatomic, strong, class) RCBillingPlanType * _Nonnull RCUpFront;
+	[Static]
+	[Export ("RCUpFront", ArgumentSemantic.Strong)]
+	RCBillingPlanType RCUpFront { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCBillingPlanType * _Nonnull RCMonthly;
+	[Static]
+	[Export ("RCMonthly", ArgumentSemantic.Strong)]
+	RCBillingPlanType RCMonthly { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull rawValue;
+	[Export ("rawValue")]
+	string RawValue { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
 // @interface RCConfigurationBuilder : NSObject
 [BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
@@ -580,9 +607,17 @@ interface RCConfigurationBuilder
 	[Export ("withAutomaticDeviceIdentifierCollectionEnabled:")]
 	RCConfigurationBuilder WithAutomaticDeviceIdentifierCollectionEnabled (bool automaticDeviceIdentifierCollectionEnabled);
 
+	// -(RCConfigurationBuilder * _Nonnull)withIAMEnabled:(BOOL)iamEnabled __attribute__((warn_unused_result("")));
+	[Export ("withIAMEnabled:")]
+	RCConfigurationBuilder WithIAMEnabled (bool iamEnabled);
+
 	// -(RCConfiguration * _Nonnull)build __attribute__((warn_unused_result("")));
 	[Export ("build")]
 	RCConfiguration Build { get; }
+
+	// -(RCConfigurationBuilder * _Nonnull)withPreferredUILocaleOverride:(NSString * _Nullable)preferredUILocaleOverride __attribute__((warn_unused_result("")));
+	[Export ("withPreferredUILocaleOverride:")]
+	RCConfigurationBuilder WithPreferredUILocaleOverride ([NullAllowed] string preferredUILocaleOverride);
 
 	// -(RCConfigurationBuilder * _Nonnull)withUsesStoreKit2IfAvailable:(BOOL)usesStoreKit2IfAvailable __attribute__((warn_unused_result(""))) __attribute__((deprecated("Use .with(storeKitVersion:) to enable StoreKit 2")));
 	[Export ("withUsesStoreKit2IfAvailable:")]
@@ -600,6 +635,11 @@ interface RCConfigurationBuilder
 [DisableDefaultCtor]
 interface RCConfiguration
 {
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+
 	// +(RCConfigurationBuilder * _Nonnull)builderWithAPIKey:(NSString * _Nonnull)apiKey __attribute__((warn_unused_result("")));
 	[Static]
 	[Export ("builderWithAPIKey:")]
@@ -620,14 +660,17 @@ interface RCCustomPaywallImpressionParams
 	[NullAllowed, Export ("offeringId")]
 	string OfferingId { get; }
 
-	// -(instancetype _Nonnull)initWithPaywallId:(NSString * _Nullable)paywallId offeringId:(NSString * _Nullable)offeringId __attribute__((objc_designated_initializer));
-	[Export ("initWithPaywallId:offeringId:")]
-	[DesignatedInitializer]
-	NativeHandle Constructor ([NullAllowed] string paywallId, [NullAllowed] string offeringId);
-
 	// -(instancetype _Nonnull)initWithPaywallId:(NSString * _Nullable)paywallId;
 	[Export ("initWithPaywallId:")]
 	NativeHandle Constructor ([NullAllowed] string paywallId);
+
+	// -(instancetype _Nonnull)initWithPaywallId:(NSString * _Nullable)paywallId offeringId:(NSString * _Nullable)offeringId __attribute__((deprecated("Pass an Offering object instead. Using an offering identifier string prevents the SDK from deriving placement and targeting context automatically.", "initWithPaywallId:offering:")));
+	[Export ("initWithPaywallId:offeringId:")]
+	NativeHandle Constructor ([NullAllowed] string paywallId, [NullAllowed] string offeringId);
+
+	// -(instancetype _Nonnull)initWithPaywallId:(NSString * _Nullable)paywallId offering:(RCOffering * _Nonnull)offering;
+	[Export ("initWithPaywallId:offering:")]
+	NativeHandle Constructor ([NullAllowed] string paywallId, RCOffering offering);
 }
 
 // @interface RCCustomerInfo : NSObject
@@ -744,6 +787,11 @@ interface RCDangerousSettings
 	// -(instancetype _Nonnull)initWithAutoSyncPurchases:(BOOL)autoSyncPurchases customEntitlementComputation:(BOOL)customEntitlementComputation;
 	[Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
 	NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
 }
 
 
@@ -879,6 +927,55 @@ interface RCEntitlementInfos
 
 
 
+
+
+// @interface RCInstallmentsInfo : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCInstallmentsInfo
+{
+	// @property (readonly, nonatomic) NSInteger commitmentInstallmentsCount;
+	[Export ("commitmentInstallmentsCount")]
+	nint CommitmentInstallmentsCount { get; }
+
+	// @property (readonly, nonatomic, strong) RCSubscriptionPeriod * _Nonnull commitmentInstallmentPeriod;
+	[Export ("commitmentInstallmentPeriod", ArgumentSemantic.Strong)]
+	RCSubscriptionPeriod CommitmentInstallmentPeriod { get; }
+
+	// @property (readonly, nonatomic) NSDecimal installmentBillingPrice;
+	[Export ("installmentBillingPrice")]
+	NSDecimal InstallmentBillingPrice { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull installmentBillingDisplayPrice;
+	[Export ("installmentBillingDisplayPrice")]
+	string InstallmentBillingDisplayPrice { get; }
+
+	// @property (readonly, nonatomic, strong) RCSubscriptionPeriod * _Nonnull commitmentTotalPeriod;
+	[Export ("commitmentTotalPeriod", ArgumentSemantic.Strong)]
+	RCSubscriptionPeriod CommitmentTotalPeriod { get; }
+
+	// @property (readonly, nonatomic) NSDecimal commitmentTotalPrice;
+	[Export ("commitmentTotalPrice")]
+	NSDecimal CommitmentTotalPrice { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull commitmentTotalDisplayPrice;
+	[Export ("commitmentTotalDisplayPrice")]
+	string CommitmentTotalDisplayPrice { get; }
+
+	// @property (readonly, nonatomic, strong) RCBillingPlanType * _Nonnull billingPlanType;
+	[Export ("billingPlanType", ArgumentSemantic.Strong)]
+	RCBillingPlanType BillingPlanType { get; }
+
+	// -(instancetype _Nonnull)initWithCommitmentInstallmentsCount:(NSInteger)commitmentInstallmentsCount commitmentInstallmentPeriod:(RCSubscriptionPeriod * _Nonnull)commitmentInstallmentPeriod installmentBillingPrice:(NSDecimal)installmentBillingPrice installmentBillingDisplayPrice:(NSString * _Nonnull)installmentBillingDisplayPrice commitmentTotalPeriod:(RCSubscriptionPeriod * _Nonnull)commitmentTotalPeriod commitmentTotalPrice:(NSDecimal)commitmentTotalPrice commitmentTotalDisplayPrice:(NSString * _Nonnull)commitmentTotalDisplayPrice billingPlanType:(RCBillingPlanType * _Nonnull)billingPlanType __attribute__((objc_designated_initializer));
+	[Export ("initWithCommitmentInstallmentsCount:commitmentInstallmentPeriod:installmentBillingPrice:installmentBillingDisplayPrice:commitmentTotalPeriod:commitmentTotalPrice:commitmentTotalDisplayPrice:billingPlanType:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (nint commitmentInstallmentsCount, RCSubscriptionPeriod commitmentInstallmentPeriod, NSDecimal installmentBillingPrice, string installmentBillingDisplayPrice, RCSubscriptionPeriod commitmentTotalPeriod, NSDecimal commitmentTotalPrice, string commitmentTotalDisplayPrice, RCBillingPlanType billingPlanType);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
 
 // @interface RCIntroEligibility : NSObject
 [BaseType (typeof(NSObject))]
@@ -1272,6 +1369,12 @@ interface RCPromotionalOfferSignedData
 }
 
 
+// @interface RCPurchaseParams : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCPurchaseParams
+{
+}
 
 // @interface RCPurchaseParamsBuilder : NSObject
 [BaseType (typeof(NSObject))]
@@ -1308,18 +1411,6 @@ interface RCPurchaseParamsBuilder
 	[Export ("build")]
 	RCPurchaseParams Build { get; }
 }
-
-// Forward declarations for sharpie-emitted opaque types used only as
-// parameter / return types. The script's keep-if-referenced rule will
-// preserve these on regen; this manual block bridges the gap when the
-// post-processor was first run before that rule existed.
-[BaseType (typeof(NSObject))]
-[DisableDefaultCtor]
-interface RCPurchaseParams { }
-
-[BaseType (typeof(NSObject))]
-[DisableDefaultCtor]
-interface RCWebPurchaseRedemption { }
 
 
 // @protocol RCPurchasesType
@@ -1421,6 +1512,10 @@ interface RCPurchases
 	[Export ("adTracker", ArgumentSemantic.Strong)]
 	RCAdTracker AdTracker { get; }
 
+	// -(void)overridePreferredUILocale:(NSString * _Nullable)locale;
+	[Export ("overridePreferredUILocale:")]
+	void OverridePreferredUILocale ([NullAllowed] string locale);
+
 	// -(void)trackCustomPaywallImpression:(RCCustomPaywallImpressionParams * _Nonnull)params __attribute__((availability(watchos, introduced=8.0))) __attribute__((availability(tvos, introduced=15.0))) __attribute__((availability(macos, introduced=12.0))) __attribute__((availability(ios, introduced=15.0)));
 	[Export ("trackCustomPaywallImpression:")]
 	void TrackCustomPaywallImpression (RCCustomPaywallImpressionParams @params);
@@ -1470,29 +1565,6 @@ interface RCPurchases
 	[Export ("showStoreMessagesForTypes:completion:")]
 	void ShowStoreMessagesForTypes (NSSet types, Action completion);
 
-	// @property (nonatomic, class) BOOL debugLogsEnabled __attribute__((deprecated("use Purchases.logLevel instead")));
-	[Static]
-	[Export ("debugLogsEnabled")]
-	bool DebugLogsEnabled { get; set; }
-
-	// @property (nonatomic) BOOL allowSharingAppStoreAccount __attribute__((deprecated(" Configure behavior through the RevenueCat dashboard instead. If you have configured the "Legacy" restore behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep this setting active. ")));
-	[Export ("allowSharingAppStoreAccount")]
-	bool AllowSharingAppStoreAccount { get; set; }
-
-	// @property (nonatomic) BOOL finishTransactions __attribute__((deprecated("Use ``purchasesAreCompletedBy`` instead.")));
-	[Export ("finishTransactions")]
-	bool FinishTransactions { get; set; }
-
-	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network __attribute__((deprecated("Use the set<NetworkId> functions instead")));
-	[Static]
-	[Export ("addAttributionData:fromNetwork:")]
-	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network);
-
-	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network forNetworkUserId:(NSString * _Nullable)networkUserId __attribute__((deprecated("Use the set<NetworkId> functions instead")));
-	[Static]
-	[Export ("addAttributionData:fromNetwork:forNetworkUserId:")]
-	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network, [NullAllowed] string networkUserId);
-
 	// +(RCPurchases * _Nonnull)configureWithConfiguration:(RCConfiguration * _Nonnull)configuration;
 	[Static]
 	[Export ("configureWithConfiguration:")]
@@ -1517,6 +1589,29 @@ interface RCPurchases
 	[Static]
 	[Export ("configureWithAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:")]
 	RCPurchases ConfigureWithAPIKey (string apiKey, [NullAllowed] string appUserID, RCPurchasesAreCompletedBy purchasesAreCompletedBy, RCStoreKitVersion storeKitVersion);
+
+	// @property (nonatomic, class) BOOL debugLogsEnabled __attribute__((deprecated("use Purchases.logLevel instead")));
+	[Static]
+	[Export ("debugLogsEnabled")]
+	bool DebugLogsEnabled { get; set; }
+
+	// @property (nonatomic) BOOL allowSharingAppStoreAccount __attribute__((deprecated(" Configure behavior through the RevenueCat dashboard instead. If you have configured the "Legacy" restore behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep this setting active. ")));
+	[Export ("allowSharingAppStoreAccount")]
+	bool AllowSharingAppStoreAccount { get; set; }
+
+	// @property (nonatomic) BOOL finishTransactions __attribute__((deprecated("Use ``purchasesAreCompletedBy`` instead.")));
+	[Export ("finishTransactions")]
+	bool FinishTransactions { get; set; }
+
+	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network __attribute__((deprecated("Use the set<NetworkId> functions instead")));
+	[Static]
+	[Export ("addAttributionData:fromNetwork:")]
+	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network);
+
+	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network forNetworkUserId:(NSString * _Nullable)networkUserId __attribute__((deprecated("Use the set<NetworkId> functions instead")));
+	[Static]
+	[Export ("addAttributionData:fromNetwork:forNetworkUserId:")]
+	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network, [NullAllowed] string networkUserId);
 
 	// -(void)logIn:(NSString * _Nonnull)appUserID completion:(void (^ _Nonnull)(RCCustomerInfo * _Nullable, BOOL, NSError * _Nullable))completion;
 	[Export ("logIn:completion:")]
@@ -1789,6 +1884,7 @@ interface RCPurchases
 }
 
 
+
 // @interface RCPlatformInfo : NSObject
 [BaseType (typeof(NSObject))]
 [DisableDefaultCtor]
@@ -1798,6 +1894,11 @@ interface RCPlatformInfo
 	[Export ("initWithFlavor:version:")]
 	[DesignatedInitializer]
 	NativeHandle Constructor (string flavor, string version);
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
 }
 
 // @protocol PurchasesOrchestratorDelegate
@@ -1867,6 +1968,36 @@ interface RCPurchasesDiagnostics
 
 
 
+// @interface RCRevocationReason : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCRevocationReason
+{
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull rawValue;
+	[Export ("rawValue")]
+	string RawValue { get; }
+
+	// -(instancetype _Nonnull)initWithRawValue:(NSString * _Nonnull)rawValue __attribute__((objc_designated_initializer));
+	[Export ("initWithRawValue:")]
+	[DesignatedInitializer]
+	NativeHandle Constructor (string rawValue);
+
+	// @property (readonly, nonatomic, strong, class) RCRevocationReason * _Nonnull RCDeveloperIssue;
+	[Static]
+	[Export ("RCDeveloperIssue", ArgumentSemantic.Strong)]
+	RCRevocationReason RCDeveloperIssue { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCRevocationReason * _Nonnull RCOther;
+	[Static]
+	[Export ("RCOther", ArgumentSemantic.Strong)]
+	RCRevocationReason RCOther { get; }
+
+	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
+	// @property (readonly, nonatomic) NSUInteger hash;
+	[Export ("hash")]
+	nuint Hash { get; }
+}
+
 
 
 
@@ -1935,6 +2066,14 @@ interface RCStoreProduct : INativeObject
 	// @property (readonly, copy, nonatomic) NSArray<RCStoreProductDiscount *> * _Nonnull discounts;
 	[Export ("discounts", ArgumentSemantic.Copy)]
 	RCStoreProductDiscount[] Discounts { get; }
+
+	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(visionos,introduced=26.4) RCInstallmentsInfo * installmentsInfo __attribute__((availability(visionos, introduced=26.4))) __attribute__((availability(macos, introduced=26.4))) __attribute__((availability(watchos, introduced=26.4))) __attribute__((availability(tvos, introduced=26.4))) __attribute__((availability(ios, introduced=26.4)));
+	[Export ("installmentsInfo", ArgumentSemantic.Strong)]
+	RCInstallmentsInfo InstallmentsInfo { get; }
+
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull id;
+	[Export ("id")]
+	string Id { get; }
 
 	// @property (readonly, nonatomic, strong) SWIFT_AVAILABILITY(macos,unavailable,message="'introductoryPrice' has been renamed to 'introductoryDiscount': Use StoreProductDiscount instead") SKProductDiscount * introductoryPrice __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
 	[Export ("introductoryPrice", ArgumentSemantic.Strong)]
@@ -2094,6 +2233,14 @@ interface RCStoreTransaction
 	[NullAllowed, Export ("jwsRepresentation")]
 	string JwsRepresentation { get; }
 
+	// @property (readonly, copy, nonatomic) NSDate * _Nullable revocationDate;
+	[NullAllowed, Export ("revocationDate", ArgumentSemantic.Copy)]
+	NSDate RevocationDate { get; }
+
+	// @property (readonly, nonatomic, strong) RCRevocationReason * _Nullable revocationReason;
+	[NullAllowed, Export ("revocationReason", ArgumentSemantic.Strong)]
+	RCRevocationReason RevocationReason { get; }
+
 	// -(BOOL)isEqual:(id _Nullable)object __attribute__((warn_unused_result("")));
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
@@ -2188,6 +2335,10 @@ interface RCSubscriptionInfo : INativeObject
 	[NullAllowed, Export ("gracePeriodExpiresDate", ArgumentSemantic.Copy)]
 	NSDate GracePeriodExpiresDate { get; }
 
+	// @property (readonly, copy, nonatomic) NSDate * _Nullable autoResumeDate;
+	[NullAllowed, Export ("autoResumeDate", ArgumentSemantic.Copy)]
+	NSDate AutoResumeDate { get; }
+
 	// @property (readonly, nonatomic) enum RCPurchaseOwnershipType ownershipType;
 	[Export ("ownershipType")]
 	RCPurchaseOwnershipType OwnershipType { get; }
@@ -2224,6 +2375,10 @@ interface RCSubscriptionInfo : INativeObject
 	[NullAllowed, Export ("managementURL", ArgumentSemantic.Copy)]
 	NSUrl ManagementURL { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nullable productPlanIdentifier;
+	[NullAllowed, Export ("productPlanIdentifier")]
+	string ProductPlanIdentifier { get; }
+
 	// @property (readonly, copy, nonatomic) NSString * _Nonnull description;
 }
 
@@ -2245,11 +2400,11 @@ interface RCSubscriptionPeriod
 	[Export ("hash")]
 	nuint Hash { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull debugDescription;
+
 	// @property (readonly, nonatomic) NSInteger numberOfUnits __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
 	[Export ("numberOfUnits")]
 	nint NumberOfUnits { get; }
-
-	// @property (readonly, copy, nonatomic) NSString * _Nonnull debugDescription;
 }
 
 
@@ -2299,6 +2454,12 @@ interface RCVirtualCurrency : INativeObject
 }
 
 
+// @interface RCWebPurchaseRedemption : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCWebPurchaseRedemption
+{
+}
 
 // @interface RCWinBackOffer : NSObject
 [BaseType (typeof(NSObject))]
