@@ -11,7 +11,14 @@ on:
 jobs:
   generate-bindings:
     name: Generate iOS Bindings
-    runs-on: macos-latest
+    # Pinned to macos-15, matching publish-ios.yml. `macos-latest` has moved to
+    # macOS 26, whose image carries only iOS 26.x SDKs and only Xcode 26.x.
+    # Two things break there: Objective Sharpie's bundled clang cannot parse the
+    # iOS 26 SDK ("could not build module 'Foundation'"), and the Xcode 16.4
+    # selection further down finds no such app. The SDK auto-detect below takes
+    # the last entry `sharpie xcode -sdks` prints, which silently depended on the
+    # older iOS 18.x SDKs still being present on the image.
+    runs-on: macos-15
     permissions:
       contents: read
 
