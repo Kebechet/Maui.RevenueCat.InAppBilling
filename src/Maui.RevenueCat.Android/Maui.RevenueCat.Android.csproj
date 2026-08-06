@@ -24,14 +24,14 @@
 		<DebugType>embedded</DebugType>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<EmbedAllSources>true</EmbedAllSources>
-		<Version>10.1.2.2</Version>
-		<PackageReleaseNotes>10.1.2.2: the RevenueCat AAR is now consumed via AndroidMavenLibrary (fetched from Maven Central when the binding itself is built) with POM-driven Java dependency verification, and the committed Jars were removed - shipped binaries are byte-identical to 10.1.2.1, nothing changes for consumers. 10.1.2.1: removed the Dev.Drewhamilton.Poko.PokoAnnotations dependency (compile-time annotation not referenced by the RevenueCat AAR bytecode), which drops the transitive Dependencies.Gradle/SharpCompress chain (GHSA-6c8g-7p36-r338) and the build-time Gradle invocation that failed on Windows SDK paths with spaces. See #114 and #83.</PackageReleaseNotes>
+		<Version>10.16.1.0</Version>
+		<PackageReleaseNotes>10.16.1.0: RevenueCat Android SDK updated from 10.1.2 to 10.16.1. Notable upstream core-SDK changes: BillingClient connection moved off the main thread, showInAppMessages guarded against BillingClient runtime crashes, several OutOfMemory fixes around cached offerings/ETag responses, interface default methods made usable from Java in all published modules, unified StoreReplacementMode API. Full changelog: https://github.com/RevenueCat/purchases-android/releases. POM dependency list is unchanged from 10.1.2. 10.1.2.2: the RevenueCat AAR is now consumed via AndroidMavenLibrary (fetched from Maven Central when the binding itself is built) with POM-driven Java dependency verification, and the committed Jars were removed - shipped binaries are byte-identical to 10.1.2.1, nothing changes for consumers.</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<!--The AAR is downloaded from Maven Central and its POM drives Java dependency
 		verification, so every RevenueCat bump cross-checks the PackageReference list below.-->
-		<AndroidMavenLibrary Include="com.revenuecat.purchases:purchases" Version="10.1.2" />
+		<AndroidMavenLibrary Include="com.revenuecat.purchases:purchases" Version="10.16.1" />
 		<!--RevenueCat uses Poko only as a compile-time Gradle plugin and @Poko is
 		source-retention, so the POM's runtime dependency has no bytecode footprint.
 		Referencing a binding for it caused #83 and #114.-->
