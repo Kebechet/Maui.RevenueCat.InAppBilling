@@ -11,12 +11,13 @@ A .NET MAUI wrapper library for [RevenueCat](https://www.revenuecat.com/) in-app
 
 ## Features
 
-- Unified API for iOS and Android in-app purchases
+- Unified API for iOS, Android and Mac Catalyst in-app purchases
 - Subscription and one-time purchase support
 - User authentication (anonymous and identified users)
 - Subscription status and entitlement checking
 - Trial/intro discount eligibility
 - Subscriber attributes management
+- [Test Store](#test-store-api-keys) `test_…` keys work in **Release** builds on iOS - the shipped xcframework is built from source with `BYPASS_SIMULATED_STORE_RELEASE_CHECK`, so it does not force-close the app
 - Stub implementation for Windows (for development convenience)
 
 ## Installation
@@ -68,7 +69,7 @@ public partial class App : Application
 
 > **Important**: Initialize must be called in `OnStart()`, not in the constructor.
 
-### Test Store API keys (iOS)
+### Test Store API keys
 
 RevenueCat's [Test Store](https://www.revenuecat.com/docs/test-and-launch/sandbox/test-store) lets you exercise the full purchase flow without configuring App Store Connect / Play Console products. Test Store keys start with `test_`.
 

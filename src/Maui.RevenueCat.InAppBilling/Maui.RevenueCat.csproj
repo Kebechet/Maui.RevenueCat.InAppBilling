@@ -22,7 +22,7 @@
     <Authors>Kebechet</Authors>
     <IsPackable>true</IsPackable>
     <PackageId>Kebechet.Maui.RevenueCat.InAppBilling</PackageId>
-    <Description>Serves as an abstraction around RevenueCat Android, iOS and Mac Catalyst SDKs https://docs.revenuecat.com/docs</Description>
+    <Description>A unified C# API over the RevenueCat Android, iOS and Mac Catalyst SDKs, so you write no platform-specific purchase code. Covers subscriptions, one-time purchases, entitlements, restore, login/logout and subscriber attributes, with a Windows stub for development. RevenueCat Test Store keys (test_...) also work in iOS Release builds - the shipped xcframework is built from source with BYPASS_SIMULATED_STORE_RELEASE_CHECK instead of using the prebuilt framework, which would force-close the app. https://docs.revenuecat.com/docs</Description>
     <RepositoryUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</RepositoryUrl>
     <PackageProjectUrl>https://github.com/Kebechet/Maui.RevenueCat.InAppBilling</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
