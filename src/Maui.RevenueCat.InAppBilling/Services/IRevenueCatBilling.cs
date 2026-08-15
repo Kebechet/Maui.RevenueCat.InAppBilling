@@ -16,7 +16,7 @@ public interface IRevenueCatBilling
     /// Initializes RevenueCat with a custom App User ID so no anonymous user
     /// (<c>$RCAnonymousID:...</c>) is created. Prefer this overload when the user's ID is
     /// already known at startup; otherwise use <see cref="Initialize(string)"/> and call
-    /// <see cref="Login"/> once the user is identified (which aliases the anonymous ID).
+    /// <see cref="Login(string, CancellationToken)"/> once the user is identified (which aliases the anonymous ID).
     /// </summary>
     void Initialize(string apiKey, string appUserId);
 
