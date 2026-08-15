@@ -33,11 +33,13 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>7.4.0</Version>
+    <Version>8.0.0</Version>
     <PackageReleaseNotes>
-CHANGED
-- Android binding updated to `Kebechet.Maui.RevenueCat.Android` 10.16.1 (RevenueCat Android SDK 10.1.2 -> 10.16.1). Notable upstream fixes: BillingClient connection moved off the main thread, showInAppMessages guarded against BillingClient runtime crashes, several OutOfMemory fixes around cached offerings responses. Full changelog: https://github.com/RevenueCat/purchases-android/releases
-- iOS binding updated to `Kebechet.Maui.RevenueCat.iOS` 5.83.1 (RevenueCat iOS SDK 5.72.0 -> 5.83.1). Notable upstream changes: Test Store free-trial support, Test Store no longer logs misleading App Store/StoreKit messages, and a T-SAN memory-alignment crash fix. Full changelog: https://github.com/RevenueCat/purchases-ios/releases
+ADDED
+- `Initialize(string apiKey, string appUserId)` is now exposed on `IRevenueCatBilling`. It has been implemented on the concrete class since v4.5.0 (#40) but never surfaced on the interface, so DI consumers could not call it. Prefer it when the user's ID is already known at startup - no anonymous user (`$RCAnonymousID:...`) is created, so no alias is added on a later `Login`. #122
+
+BREAKING
+- `IRevenueCatBilling` has a new member: binary-breaking if you implement the interface yourself (e.g. a hand-rolled test fake); transparent for callers and dynamic mocks (NSubstitute/Moq).
 </PackageReleaseNotes>
   </PropertyGroup>
 
