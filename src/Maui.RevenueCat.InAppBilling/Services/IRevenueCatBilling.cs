@@ -13,6 +13,14 @@ public interface IRevenueCatBilling
     void Initialize(string apiKey);
 
     /// <summary>
+    /// Initializes RevenueCat with a custom App User ID so no anonymous user
+    /// (<c>$RCAnonymousID:...</c>) is created. Prefer this overload when the user's ID is
+    /// already known at startup; otherwise use <see cref="Initialize(string)"/> and call
+    /// <see cref="Login"/> once the user is identified (which aliases the anonymous ID).
+    /// </summary>
+    void Initialize(string apiKey, string appUserId);
+
+    /// <summary>
     /// Checks trial or introductory discount eligibility for the given product identifiers.
     /// Apple platforms only (iOS and Mac Catalyst): the underlying RevenueCat API has no
     /// Android equivalent, so the Android implementation throws <see cref="NotImplementedException"/>.

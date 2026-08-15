@@ -69,6 +69,8 @@ public partial class App : Application
 
 > **Important**: Initialize must be called in `OnStart()`, not in the constructor.
 
+> **Tip**: If you already know your user's ID at startup, use `Initialize(revenueCatApiKey, appUserId)` instead - RevenueCat then never creates an anonymous user (`$RCAnonymousID:...`), so your custom ID won't show up as an alias of an anonymous customer.
+
 ### Test Store API keys
 
 RevenueCat's [Test Store](https://www.revenuecat.com/docs/test-and-launch/sandbox/test-store) lets you exercise the full purchase flow without configuring App Store Connect / Play Console products. Test Store keys start with `test_`.
@@ -86,6 +88,7 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | Method | Description |
 |--------|-------------|
 | `Initialize(string apiKey)` | Initialize RevenueCat with your platform-specific API key |
+| `Initialize(string apiKey, string appUserId)` | Initialize with a custom App User ID - no anonymous user is created, so no alias is added later |
 | `IsInitialized()` | Check if the SDK has been initialized |
 | `IsAnonymous()` | Check if current user is anonymous |
 | `GetAppUserId()` | Get the current user ID |
