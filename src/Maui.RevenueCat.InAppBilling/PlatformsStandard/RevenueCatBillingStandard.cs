@@ -79,7 +79,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             AllPurchasedIdentifiers = [],
             FirstSeen = DateTime.MinValue,
             LatestExpirationDate = DateTime.MinValue,
-            ManagementURL = string.Empty,
+            ManagementUrl = string.Empty,
             NonConsumablePurchases = [],
             Entitlements = [],
         },

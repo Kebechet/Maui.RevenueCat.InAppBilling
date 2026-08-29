@@ -22,7 +22,7 @@ public class CustomerInfoResultTests
         NonConsumablePurchases = [],
         FirstSeen = null,
         LatestExpirationDate = null,
-        ManagementURL = null,
+        ManagementUrl = null,
         Entitlements = [CreateEntitlement("pro")],
     };
 

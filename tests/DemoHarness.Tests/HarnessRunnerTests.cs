@@ -47,7 +47,7 @@ public class HarnessRunnerTests
                     NonConsumablePurchases = [],
                     FirstSeen = null,
                     LatestExpirationDate = null,
-                    ManagementURL = null,
+                    ManagementUrl = null,
                     Entitlements = [],
                 },
             });
