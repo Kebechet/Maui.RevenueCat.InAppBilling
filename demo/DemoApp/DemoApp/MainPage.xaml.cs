@@ -201,9 +201,7 @@ public partial class MainPage : ContentPage
         try
         {
             var restoreResult = await _revenueCatBilling.RestoreTransactions();
-            _harnessLog.Add(restoreResult.IsSuccess
-                ? $"PASS {nameof(IRevenueCatBilling.RestoreTransactions)}: {FormatCustomerInfo(restoreResult.CustomerInfo)}"
-                : $"FAIL {nameof(IRevenueCatBilling.RestoreTransactions)}: {restoreResult.ErrorStatus} {restoreResult.ErrorMessage}");
+            _harnessLog.Add(HarnessFormatter.FormatRestoreResult(restoreResult));
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -224,7 +222,7 @@ public partial class MainPage : ContentPage
         try
         {
             var customerInfo = await _revenueCatBilling.Login(appUserId);
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Login)} as {appUserId}: {FormatCustomerInfo(customerInfo)}");
+            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Login)} as {appUserId}: {HarnessFormatter.FormatCustomerInfo(customerInfo)}");
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -238,7 +236,7 @@ public partial class MainPage : ContentPage
         try
         {
             var customerInfo = await _revenueCatBilling.Logout();
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Logout)}: {FormatCustomerInfo(customerInfo)}");
+            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Logout)}: {HarnessFormatter.FormatCustomerInfo(customerInfo)}");
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -272,15 +270,4 @@ public partial class MainPage : ContentPage
         _harnessLog.Add("Log copied to clipboard");
     }
 
-    private static string FormatCustomerInfo(CustomerInfoDto? customerInfo)
-    {
-        if (customerInfo is null)
-        {
-            return "null";
-        }
-        var entitlementIdentifiers = customerInfo.Entitlements.Any()
-            ? string.Join(", ", customerInfo.Entitlements.Select(x => x.Identifier))
-            : "none";
-        return $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.AllPurchasedIdentifiers.Count} purchased, entitlements: {entitlementIdentifiers}";
-    }
 }

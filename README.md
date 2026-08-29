@@ -216,9 +216,9 @@ branched on the same way:
 ```csharp
 var restoreResult = await _revenueCat.RestoreTransactions();
 
-if (restoreResult.IsSuccess)
+if (restoreResult.IsSuccess && restoreResult.CustomerInfo is not null)
 {
-    var customerInfo = restoreResult.CustomerInfo;
+    var activeSubscriptions = restoreResult.CustomerInfo.ActiveSubscriptions;
 }
 else
 {
@@ -226,9 +226,14 @@ else
 }
 ```
 
-`ErrorStatus` is the stable value to branch on. `ErrorMessage` carries diagnostic detail from the
-underlying store SDK (RevenueCat backend codes such as `7255 alias limit reached` show up here) and
-is meant for logs, not for users. `Transaction` is never set by `RestoreTransactions()`.
+`ErrorStatus` is the stable value to branch on. `CustomerInfo` stays nullable even when `IsSuccess`
+is `true`, so null-check it. `ErrorMessage` carries diagnostic detail from the underlying store SDK
+- its exact shape is platform-specific and it may include the RevenueCat backend code and message
+(e.g. `7255 alias limit reached`) - and is meant for logs, not for users; it is null on
+cancellation. `Transaction` is never set by `RestoreTransactions()`.
+
+Restore has no user-facing cancel, so `PurchaseCancelledError` from `RestoreTransactions()` means
+the `CancellationToken` you passed fired - not that the user cancelled anything.
 
 ### Common Error Codes
 

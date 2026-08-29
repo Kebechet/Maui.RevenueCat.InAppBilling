@@ -36,12 +36,18 @@ public interface IRevenueCatBilling
     Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Restores previous purchases for the current App User ID. On success
-    /// <see cref="PurchaseResultDto.CustomerInfo"/> holds the refreshed customer info; on failure
-    /// <see cref="PurchaseResultDto.ErrorStatus"/> says why (branch on this) and
-    /// <see cref="PurchaseResultDto.ErrorMessage"/> carries the underlying store SDK detail for logs.
-    /// <see cref="PurchaseResultDto.Transaction"/> is never set - restore reports no single transaction.
+    /// Restores previous purchases for the current App User ID.
     /// </summary>
+    /// <remarks>
+    /// On success <see cref="PurchaseResultDto.CustomerInfo"/> holds the refreshed customer info -
+    /// still null-check it, <see cref="PurchaseResultDto.IsSuccess"/> does not narrow the type.
+    /// On failure <see cref="PurchaseResultDto.ErrorStatus"/> is the stable value to branch on and
+    /// <see cref="PurchaseResultDto.ErrorMessage"/> carries the underlying store SDK detail for logs,
+    /// except on cancellation where it stays null. Restore has no user-facing cancel, so
+    /// <see cref="PurchaseErrorStatus.PurchaseCancelledError"/> here means the supplied
+    /// <paramref name="cancellationToken"/> fired - not that the user cancelled anything.
+    /// <see cref="PurchaseResultDto.Transaction"/> is never set - restore reports no single transaction.
+    /// </remarks>
     Task<PurchaseResultDto> RestoreTransactions(CancellationToken cancellationToken = default);
     Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken = default);
 
