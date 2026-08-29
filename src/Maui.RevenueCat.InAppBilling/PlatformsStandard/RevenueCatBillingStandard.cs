@@ -78,15 +78,24 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     }
     public async partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken)
     {
-        return new()
+        var result = await RestoreTransactionsWithResult(cancellationToken);
+        return result.CustomerInfo;
+    }
+    public async partial Task<PurchaseResultDto> RestoreTransactionsWithResult(CancellationToken cancellationToken)
+    {
+        return new PurchaseResultDto
         {
-            ActiveSubscriptions = [],
-            AllPurchasedIdentifiers = [],
-            FirstSeen = DateTime.MinValue,
-            LatestExpirationDate = DateTime.MinValue,
-            ManagementURL = string.Empty,
-            NonConsumablePurchases = [],
-            Entitlements = [],
+            IsSuccess = true,
+            CustomerInfo = new CustomerInfoDto
+            {
+                ActiveSubscriptions = [],
+                AllPurchasedIdentifiers = [],
+                FirstSeen = DateTime.MinValue,
+                LatestExpirationDate = DateTime.MinValue,
+                ManagementURL = string.Empty,
+                NonConsumablePurchases = [],
+                Entitlements = [],
+            }
         };
     }
     public async partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken)

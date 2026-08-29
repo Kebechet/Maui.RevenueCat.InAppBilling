@@ -42,6 +42,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken);
+    public partial Task<PurchaseResultDto> RestoreTransactionsWithResult(CancellationToken cancellationToken);
     public partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken);
     public partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken);
 

@@ -108,7 +108,8 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | `GetActiveSubscriptions()` | Get list of active subscription identifiers |
 | `GetAllPurchasedIdentifiers()` | Get all purchased product identifiers |
 | `GetPurchaseDateForProductIdentifier(string productSku)` | Get purchase date for a specific product |
-| `RestoreTransactions()` | Restore previous purchases |
+| `RestoreTransactions()` | Restore previous purchases and return customer information, or `null` when the operation fails |
+| `RestoreTransactionsWithResult()` | Restore previous purchases and return customer information plus structured error status and underlying SDK details |
 
 ### User Management
 
@@ -209,6 +210,23 @@ The library follows a non-throwing approach for runtime errors:
   - `null` for nullable types
 
 This design ensures your app never crashes due to store-related issues.
+
+Use `RestoreTransactionsWithResult()` when restore failures need to be distinguished:
+
+```csharp
+var result = await _revenueCat.RestoreTransactionsWithResult();
+
+if (result.IsSuccess)
+{
+    var customerInfo = result.CustomerInfo;
+}
+else
+{
+    Console.WriteLine($"Restore failed: {result.ErrorStatus} {result.ErrorMessage}");
+}
+```
+
+`ErrorStatus` is the stable value to branch on. `ErrorMessage` contains diagnostic details from the underlying store SDK and should not be shown directly to users.
 
 ### Common Error Codes
 
