@@ -374,7 +374,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         {
             var purchaseError = ex.PurchasesErrorCode.ToPurchaseErrorStatus();
 
-            if (purchaseError != PurchaseErrorStatus.PurchaseCancelledError)
+            if (purchaseError == PurchaseErrorStatus.PurchaseCancelledError)
+            {
+                _logger.LogDebug(ex, $"{nameof(RestoreTransactions)} was cancelled.");
+            }
+            else
             {
                 _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
             }
