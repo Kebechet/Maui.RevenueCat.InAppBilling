@@ -37,15 +37,19 @@ public class HarnessRunnerTests
         revenueCatBilling.CheckTrialOrIntroDiscountEligibility(Arg.Any<List<string>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, IntroElegibilityStatus>());
         revenueCatBilling.GetCustomerInfo(Arg.Any<CancellationToken>())
-            .Returns(new CustomerInfoDto
+            .Returns(new CustomerInfoResultDto
             {
-                ActiveSubscriptions = [],
-                AllPurchasedIdentifiers = [],
-                NonConsumablePurchases = [],
-                FirstSeen = null,
-                LatestExpirationDate = null,
-                ManagementURL = null,
-                Entitlements = [],
+                IsSuccess = true,
+                CustomerInfo = new CustomerInfoDto
+                {
+                    ActiveSubscriptions = [],
+                    AllPurchasedIdentifiers = [],
+                    NonConsumablePurchases = [],
+                    FirstSeen = null,
+                    LatestExpirationDate = null,
+                    ManagementURL = null,
+                    Entitlements = [],
+                },
             });
         revenueCatBilling.GetActiveSubscriptions(Arg.Any<CancellationToken>()).Returns(new List<string>());
         revenueCatBilling.GetAllPurchasedIdentifiers(Arg.Any<CancellationToken>()).Returns(new List<string>());

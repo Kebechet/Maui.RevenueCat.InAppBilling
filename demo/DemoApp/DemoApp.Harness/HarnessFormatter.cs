@@ -24,17 +24,17 @@ public static class HarnessFormatter
         return $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.AllPurchasedIdentifiers.Count} purchased, entitlements: {entitlementIdentifiers}";
     }
 
-    public static string FormatRestoreResult(PurchaseResultDto restoreResult)
+    public static string FormatCustomerInfoResult(CustomerInfoResultDto customerInfoResult, string operationName)
     {
-        if (restoreResult.IsSuccess)
+        if (customerInfoResult.IsSuccess)
         {
-            return $"PASS {nameof(IRevenueCatBilling.RestoreTransactions)}: {FormatCustomerInfo(restoreResult.CustomerInfo)}";
+            return $"PASS {operationName}: {FormatCustomerInfo(customerInfoResult.CustomerInfo)}";
         }
 
-        var errorDetail = string.IsNullOrEmpty(restoreResult.ErrorMessage)
-            ? $"{restoreResult.ErrorStatus}"
-            : $"{restoreResult.ErrorStatus}: {restoreResult.ErrorMessage}";
+        var errorDetail = string.IsNullOrEmpty(customerInfoResult.ErrorMessage)
+            ? $"{customerInfoResult.ErrorStatus}"
+            : $"{customerInfoResult.ErrorStatus}: {customerInfoResult.ErrorMessage}";
 
-        return $"FAIL {nameof(IRevenueCatBilling.RestoreTransactions)}: {errorDetail}";
+        return $"FAIL {operationName}: {errorDetail}";
     }
 }

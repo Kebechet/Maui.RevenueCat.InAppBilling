@@ -32,24 +32,37 @@ public interface IRevenueCatBilling
     Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken = default);
     Task<DateTime?> GetPurchaseDateForProductIdentifier(string productSku, CancellationToken cancellationToken = default);
     Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
-    Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken = default);
-    Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Logs in an identified user, aliasing any anonymous ID onto it.
+    /// </summary>
+    /// <inheritdoc cref="RestoreTransactions" path="/remarks"/>
+    Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Logs the current user out and returns to a fresh anonymous App User ID.
+    /// </summary>
+    /// <inheritdoc cref="RestoreTransactions" path="/remarks"/>
+    Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Restores previous purchases for the current App User ID.
     /// </summary>
     /// <remarks>
-    /// On success <see cref="PurchaseResultDto.CustomerInfo"/> holds the refreshed customer info -
-    /// still null-check it, <see cref="PurchaseResultDto.IsSuccess"/> does not narrow the type.
-    /// On failure <see cref="PurchaseResultDto.ErrorStatus"/> is the stable value to branch on and
-    /// <see cref="PurchaseResultDto.ErrorMessage"/> carries the underlying store SDK detail for logs,
-    /// except on cancellation where it stays null. Restore has no user-facing cancel, so
-    /// <see cref="PurchaseErrorStatus.PurchaseCancelledError"/> here means the supplied
-    /// <paramref name="cancellationToken"/> fired - not that the user cancelled anything.
-    /// <see cref="PurchaseResultDto.Transaction"/> is never set - restore reports no single transaction.
+    /// On success <see cref="CustomerInfoResultDto.CustomerInfo"/> holds the customer info - still
+    /// null-check it, <see cref="CustomerInfoResultDto.IsSuccess"/> does not narrow the type.
+    /// On failure <see cref="CustomerInfoResultDto.ErrorStatus"/> is the stable value to branch on
+    /// and <see cref="CustomerInfoResultDto.ErrorMessage"/> carries the underlying store SDK detail
+    /// for logs, except on cancellation where it stays null. None of these operations has a
+    /// user-facing cancel, so <see cref="PurchaseErrorStatus.PurchaseCancelledError"/> means the
+    /// supplied <paramref name="cancellationToken"/> fired - not that the user cancelled anything.
     /// </remarks>
-    Task<PurchaseResultDto> RestoreTransactions(CancellationToken cancellationToken = default);
-    Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken = default);
+    Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads the current customer info and entitlements.
+    /// </summary>
+    /// <inheritdoc cref="RestoreTransactions" path="/remarks"/>
+    Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns the ISO 3166-1 alpha-2 country code of the user's App Store / Play Store

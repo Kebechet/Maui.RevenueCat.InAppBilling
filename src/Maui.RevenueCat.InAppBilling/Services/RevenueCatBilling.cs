@@ -39,10 +39,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);
     public partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken);
     public partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
-    public partial Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken);
-    public partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken);
-    public partial Task<PurchaseResultDto> RestoreTransactions(CancellationToken cancellationToken);
-    public partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken);
     public partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken);
 
     // Subscriber Attributes

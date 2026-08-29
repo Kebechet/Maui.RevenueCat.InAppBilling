@@ -201,7 +201,7 @@ public partial class MainPage : ContentPage
         try
         {
             var restoreResult = await _revenueCatBilling.RestoreTransactions();
-            _harnessLog.Add(HarnessFormatter.FormatRestoreResult(restoreResult));
+            _harnessLog.Add(HarnessFormatter.FormatCustomerInfoResult(restoreResult, nameof(IRevenueCatBilling.RestoreTransactions)));
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -221,8 +221,8 @@ public partial class MainPage : ContentPage
 
         try
         {
-            var customerInfo = await _revenueCatBilling.Login(appUserId);
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Login)} as {appUserId}: {HarnessFormatter.FormatCustomerInfo(customerInfo)}");
+            var loginResult = await _revenueCatBilling.Login(appUserId);
+            _harnessLog.Add(HarnessFormatter.FormatCustomerInfoResult(loginResult, $"{nameof(IRevenueCatBilling.Login)} as {appUserId}"));
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -235,8 +235,8 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var customerInfo = await _revenueCatBilling.Logout();
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Logout)}: {HarnessFormatter.FormatCustomerInfo(customerInfo)}");
+            var logoutResult = await _revenueCatBilling.Logout();
+            _harnessLog.Add(HarnessFormatter.FormatCustomerInfoResult(logoutResult, nameof(IRevenueCatBilling.Logout)));
             await RefreshStatus();
         }
         catch (Exception exception)

@@ -121,7 +121,12 @@ public sealed class HarnessRunner
             );
             yield return (nameof(IRevenueCatBilling.GetCustomerInfo), async cancellationToken =>
             {
-                var customerInfo = await _revenueCatBilling.GetCustomerInfo(cancellationToken);
+                var customerInfoResult = await _revenueCatBilling.GetCustomerInfo(cancellationToken);
+                if (customerInfoResult.IsError)
+                {
+                    return $"error {customerInfoResult.ErrorStatus}: {customerInfoResult.ErrorMessage}";
+                }
+                var customerInfo = customerInfoResult.CustomerInfo;
                 return customerInfo is null
                     ? "null"
                     : $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.Entitlements.Count} entitlement(s)";

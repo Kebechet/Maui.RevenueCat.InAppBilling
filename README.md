@@ -108,15 +108,15 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | `GetActiveSubscriptions()` | Get list of active subscription identifiers |
 | `GetAllPurchasedIdentifiers()` | Get all purchased product identifiers |
 | `GetPurchaseDateForProductIdentifier(string productSku)` | Get purchase date for a specific product |
-| `RestoreTransactions()` | Restore previous purchases; returns `PurchaseResultDto` with the refreshed `CustomerInfo` or an `ErrorStatus` |
+| `RestoreTransactions()` | Restore previous purchases; returns `CustomerInfoResultDto` |
 
 ### User Management
 
 | Method | Description |
 |--------|-------------|
-| `Login(string appUserId)` | Log in an identified user |
-| `Logout()` | Log out and create anonymous user |
-| `GetCustomerInfo()` | Get current customer info and entitlements |
+| `Login(string appUserId)` | Log in an identified user; returns `CustomerInfoResultDto` |
+| `Logout()` | Log out and create anonymous user; returns `CustomerInfoResultDto` |
+| `GetCustomerInfo()` | Get current customer info and entitlements; returns `CustomerInfoResultDto` |
 | `GetManagementSubscriptionUrl()` | Get URL for subscription management |
 
 ### Subscriber Attributes
@@ -174,8 +174,8 @@ public class PurchaseService
 
     public async Task<bool> HasActiveSubscription(string entitlementId)
     {
-        var customerInfo = await _revenueCat.GetCustomerInfo();
-        return customerInfo?.ActiveSubscriptions
+        var customerInfoResult = await _revenueCat.GetCustomerInfo();
+        return customerInfoResult.CustomerInfo?.ActiveSubscriptions
             .Any(e => e == entitlementId) ?? false;
     }
 }
@@ -204,14 +204,14 @@ The library follows a non-throwing approach for runtime errors:
 
 - **Exceptions are thrown only** for developer mistakes (e.g., calling methods before `Initialize()`)
 - **Runtime errors** (network issues, store problems, etc.) return:
-  - `ErrorStatus` in result DTOs (e.g., `PurchaseResultDto.ErrorStatus`)
+  - `ErrorStatus` in result DTOs (`PurchaseResultDto.ErrorStatus`, `CustomerInfoResultDto.ErrorStatus`)
   - Empty collections for list returns
   - `null` for nullable types
 
 This design ensures your app never crashes due to store-related issues.
 
-`PurchaseProduct()` and `RestoreTransactions()` both return `PurchaseResultDto`, so failures are
-branched on the same way:
+Every operation that returns customer info - `RestoreTransactions()`, `Login()`, `Logout()` and
+`GetCustomerInfo()` - returns `CustomerInfoResultDto`, so they are all branched on the same way:
 
 ```csharp
 var restoreResult = await _revenueCat.RestoreTransactions();
@@ -226,14 +226,17 @@ else
 }
 ```
 
+`PurchaseProduct()` returns `PurchaseResultDto`, which has the same `IsSuccess` / `ErrorStatus` /
+`ErrorMessage` / `CustomerInfo` members plus the `Transaction` only a purchase produces.
+
 `ErrorStatus` is the stable value to branch on. `CustomerInfo` stays nullable even when `IsSuccess`
 is `true`, so null-check it. `ErrorMessage` carries diagnostic detail from the underlying store SDK
 - its exact shape is platform-specific and it may include the RevenueCat backend code and message
 (e.g. `7255 alias limit reached`) - and is meant for logs, not for users; it is null on
-cancellation. `Transaction` is never set by `RestoreTransactions()`.
+cancellation.
 
-Restore has no user-facing cancel, so `PurchaseCancelledError` from `RestoreTransactions()` means
-the `CancellationToken` you passed fired - not that the user cancelled anything.
+None of these operations has a user-facing cancel, so `PurchaseCancelledError` from them means the
+`CancellationToken` you passed fired - not that the user cancelled anything.
 
 ### Common Error Codes
 
