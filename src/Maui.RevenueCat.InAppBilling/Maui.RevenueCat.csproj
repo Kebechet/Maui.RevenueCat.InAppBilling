@@ -33,13 +33,27 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>8.0.0</Version>
+    <Version>9.0.0</Version>
     <PackageReleaseNotes>
-ADDED
-- `Initialize(string apiKey, string appUserId)` is now exposed on `IRevenueCatBilling`. It has been implemented on the concrete class since v4.5.0 (#40) but never surfaced on the interface, so DI consumers could not call it. Prefer it when the user's ID is already known at startup - no anonymous user (`$RCAnonymousID:...`) is created, so no alias is added on a later `Login`. #122
-
 BREAKING
-- `IRevenueCatBilling` has a new member: binary-breaking if you implement the interface yourself (e.g. a hand-rolled test fake); transparent for callers and dynamic mocks (NSubstitute/Moq).
+- Every `IRevenueCatBilling` member that resolves customer data now reports why it failed instead of returning `null`. Previously a network blip, a cancellation and a backend rejection were all indistinguishable from a legitimately empty result - the RevenueCat error was only ever written to the log. Migration is a compile error plus one property read.
+  - `RestoreTransactions()`, `Login()`, `Logout()` and `GetCustomerInfo()` return `CustomerInfoResultDto` instead of `CustomerInfoDto?`. Read `.CustomerInfo`; branch on `.ErrorStatus`.
+  - `GetManagementSubscriptionUrl()` returns `ManagementUrlResultDto` instead of `string?`. Read `.ManagementUrl`.
+- `CustomerInfoDto.ManagementURL` is renamed to `CustomerInfoDto.ManagementUrl`, matching .NET acronym casing and the new `ManagementUrlResultDto.ManagementUrl`.
+- These are signature changes on `IRevenueCatBilling`, so they break callers as well as anyone implementing the interface.
+
+ADDED
+- `CustomerInfoResultDto` - `IsSuccess` / `IsError` / `ErrorStatus` / `ErrorMessage` / `CustomerInfo`. `ErrorStatus` is the stable value to branch on; `ErrorMessage` carries the underlying store SDK detail and is meant for logs, not for users. `CustomerInfo` stays nullable on success, so null-check it.
+- `ManagementUrlResultDto` - the same shape carrying `ManagementUrl`. A success with a null `ManagementUrl` means the user has no store-managed subscription, which is now distinct from a failure.
+
+FIXED
+- Android `GetManagementSubscriptionUrl()` returned `null` both when the user had no store subscription and when the call failed; iOS returned `string.Empty` for the former. The two cases are now distinguishable, and the platforms agree.
+- `RestoreTransactions()` logged nothing at all when the native error code mapped to a cancellation - it only skipped the error log. Both cancellation paths now log at debug.
+- Removed the `_cachedManagementUrl` field. It was read on both platforms but never assigned, so its early-return guard could never fire. Caching it would have been wrong regardless: the URL is per-customer, so a process-lifetime cache would survive `Login`/`Logout`.
+
+NOTE
+- `PurchaseProduct()` is unchanged and still returns `PurchaseResultDto`, which is the same shape plus the `Transaction` only a purchase produces.
+- `GetOfferings()`, `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()`, `GetPurchaseDateForProductIdentifier()`, `GetStorefrontCountryCode()`, `CanMakePayments()` and `CheckTrialOrIntroDiscountEligibility()` still return empty/default values on failure.
 </PackageReleaseNotes>
   </PropertyGroup>
 
