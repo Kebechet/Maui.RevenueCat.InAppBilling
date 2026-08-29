@@ -55,7 +55,8 @@ public class HarnessRunnerTests
         revenueCatBilling.GetAllPurchasedIdentifiers(Arg.Any<CancellationToken>()).Returns(new List<string>());
         revenueCatBilling.GetPurchaseDateForProductIdentifier(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns((DateTime?)null);
-        revenueCatBilling.GetManagementSubscriptionUrl(Arg.Any<CancellationToken>()).Returns((string?)null);
+        revenueCatBilling.GetManagementSubscriptionUrl(Arg.Any<CancellationToken>())
+            .Returns(new ManagementUrlResultDto { IsSuccess = true });
         revenueCatBilling.GetStorefrontCountryCode(Arg.Any<CancellationToken>()).Returns("US");
         return revenueCatBilling;
     }

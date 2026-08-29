@@ -46,9 +46,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return DateTime.MinValue;
     }
-    public async partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
+    public async partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
     {
-        return string.Empty;
+        return new()
+        {
+            IsSuccess = true,
+        };
     }
     public async partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken)
     {

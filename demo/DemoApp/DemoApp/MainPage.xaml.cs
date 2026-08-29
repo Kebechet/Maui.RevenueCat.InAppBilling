@@ -249,14 +249,19 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var managementUrl = await _revenueCatBilling.GetManagementSubscriptionUrl();
-            if (managementUrl is null)
+            var managementUrlResult = await _revenueCatBilling.GetManagementSubscriptionUrl();
+            if (managementUrlResult.IsError)
+            {
+                _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: {managementUrlResult.ErrorStatus} {managementUrlResult.ErrorMessage}");
+                return;
+            }
+            if (managementUrlResult.ManagementUrl is null)
             {
                 _harnessLog.Add($"{nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: null (no active store subscription)");
                 return;
             }
-            _harnessLog.Add($"Opening {managementUrl}");
-            await Launcher.OpenAsync(managementUrl);
+            _harnessLog.Add($"Opening {managementUrlResult.ManagementUrl}");
+            await Launcher.OpenAsync(managementUrlResult.ManagementUrl);
         }
         catch (Exception exception)
         {

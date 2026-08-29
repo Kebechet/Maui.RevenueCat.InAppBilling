@@ -31,7 +31,16 @@ public interface IRevenueCatBilling
     Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken = default);
     Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken = default);
     Task<DateTime?> GetPurchaseDateForProductIdentifier(string productSku, CancellationToken cancellationToken = default);
-    Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resolves the store's subscription-management URL for the current user.
+    /// </summary>
+    /// <remarks>
+    /// A success with a null <see cref="ManagementUrlResultDto.ManagementUrl"/> means the user has
+    /// no store-managed subscription; that is distinct from a failure, which reports
+    /// <see cref="ManagementUrlResultDto.ErrorStatus"/>.
+    /// </remarks>
+    Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
     /// <summary>
     /// Logs in an identified user, aliasing any anonymous ID onto it.
     /// </summary>

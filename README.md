@@ -117,7 +117,7 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | `Login(string appUserId)` | Log in an identified user; returns `CustomerInfoResultDto` |
 | `Logout()` | Log out and create anonymous user; returns `CustomerInfoResultDto` |
 | `GetCustomerInfo()` | Get current customer info and entitlements; returns `CustomerInfoResultDto` |
-| `GetManagementSubscriptionUrl()` | Get URL for subscription management |
+| `GetManagementSubscriptionUrl()` | Get URL for subscription management; returns `ManagementUrlResultDto` |
 
 ### Subscriber Attributes
 

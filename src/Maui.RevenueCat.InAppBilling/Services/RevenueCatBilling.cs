@@ -10,7 +10,6 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     private static bool _isInstanceCreated = false;
     private volatile bool _isInitialized = false;
-    private string _cachedManagementUrl = string.Empty;
 
     public RevenueCatBilling(ILogger<RevenueCatBilling> logger)
     {
@@ -38,7 +37,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken);
     public partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);
     public partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken);
-    public partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
+    public partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken);

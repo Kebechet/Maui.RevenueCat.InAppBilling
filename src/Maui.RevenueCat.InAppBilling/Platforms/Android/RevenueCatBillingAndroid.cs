@@ -304,32 +304,21 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return null;
         }
     }
-    public async partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
+    public async partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
     {
-        if (!_cachedManagementUrl.IsNullOrEmpty())
-        {
-            return _cachedManagementUrl;
-        }
-
         try
         {
             using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
-            if (customerInfo is null || customerInfo.ManagementURL is null)
-            {
-                return null;
-            }
 
-            return customerInfo.ManagementURL.ToString()!;
-        }
-        catch (OperationCanceledException ex)
-        {
-            _logger.LogDebug(ex, $"{nameof(GetManagementSubscriptionUrl)} was cancelled.");
-            return null;
+            return new ManagementUrlResultDto
+            {
+                IsSuccess = true,
+                ManagementUrl = customerInfo?.ManagementURL?.ToString()
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Couldn't retrieve management url.");
-            return null;
+            return ToManagementUrlFailure(ex);
         }
     }
     public async partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken)
@@ -400,7 +389,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return ToCustomerInfoFailure(ex);
         }
     }
-    private CustomerInfoResultDto ToCustomerInfoFailure(Exception exception, [CallerMemberName] string operationName = "")
+    private (PurchaseErrorStatus ErrorStatus, string? ErrorMessage) ToFailure(Exception exception, string operationName)
     {
         var errorStatus = exception switch
         {
@@ -420,11 +409,19 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             _logger.LogError(exception, "{operationName} failed.", operationName);
         }
 
-        return new CustomerInfoResultDto
-        {
-            ErrorStatus = errorStatus,
-            ErrorMessage = isCancelled ? null : exception.Message
-        };
+        return (errorStatus, isCancelled ? null : exception.Message);
+    }
+
+    private CustomerInfoResultDto ToCustomerInfoFailure(Exception exception, [CallerMemberName] string operationName = "")
+    {
+        var (errorStatus, errorMessage) = ToFailure(exception, operationName);
+        return new CustomerInfoResultDto { ErrorStatus = errorStatus, ErrorMessage = errorMessage };
+    }
+
+    private ManagementUrlResultDto ToManagementUrlFailure(Exception exception, [CallerMemberName] string operationName = "")
+    {
+        var (errorStatus, errorMessage) = ToFailure(exception, operationName);
+        return new ManagementUrlResultDto { ErrorStatus = errorStatus, ErrorMessage = errorMessage };
     }
 
     // Subscriber Attributes

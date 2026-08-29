@@ -156,7 +156,15 @@ public sealed class HarnessRunner
             }
             );
             yield return (nameof(IRevenueCatBilling.GetManagementSubscriptionUrl), async cancellationToken =>
-                await _revenueCatBilling.GetManagementSubscriptionUrl(cancellationToken) ?? "null (no active store subscription)");
+            {
+                var managementUrlResult = await _revenueCatBilling.GetManagementSubscriptionUrl(cancellationToken);
+                if (managementUrlResult.IsError)
+                {
+                    return $"error {managementUrlResult.ErrorStatus}: {managementUrlResult.ErrorMessage}";
+                }
+                return managementUrlResult.ManagementUrl ?? "null (no active store subscription)";
+            }
+            );
             yield return (nameof(IRevenueCatBilling.GetStorefrontCountryCode), async cancellationToken =>
             {
                 var storefrontCountryCode = await _revenueCatBilling.GetStorefrontCountryCode(cancellationToken);
