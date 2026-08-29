@@ -34,7 +34,15 @@ public interface IRevenueCatBilling
     Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
     Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken = default);
     Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken = default);
-    Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Restores previous purchases for the current App User ID. On success
+    /// <see cref="PurchaseResultDto.CustomerInfo"/> holds the refreshed customer info; on failure
+    /// <see cref="PurchaseResultDto.ErrorStatus"/> says why (branch on this) and
+    /// <see cref="PurchaseResultDto.ErrorMessage"/> carries the underlying store SDK detail for logs.
+    /// <see cref="PurchaseResultDto.Transaction"/> is never set - restore reports no single transaction.
+    /// </summary>
+    Task<PurchaseResultDto> RestoreTransactions(CancellationToken cancellationToken = default);
     Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -358,23 +358,51 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return null;
         }
     }
-    public async partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken)
+    public async partial Task<PurchaseResultDto> RestoreTransactions(CancellationToken cancellationToken)
     {
         try
         {
             var customerInfo = await Purchases.SharedPurchases.RestorePurchasesAsync(cancellationToken);
 
-            return customerInfo.ToCustomerInfoDto();
+            return new PurchaseResultDto
+            {
+                IsSuccess = true,
+                CustomerInfo = customerInfo.ToCustomerInfoDto()
+            };
+        }
+        catch (PurchasesErrorException ex)
+        {
+            var purchaseError = ex.PurchasesErrorCode.ToPurchaseErrorStatus();
+
+            if (purchaseError != PurchaseErrorStatus.PurchaseCancelledError)
+            {
+                _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
+            }
+
+            return new PurchaseResultDto
+            {
+                ErrorStatus = purchaseError,
+                ErrorMessage = purchaseError == PurchaseErrorStatus.PurchaseCancelledError
+                    ? null
+                    : ex.Message
+            };
         }
         catch (OperationCanceledException ex)
         {
             _logger.LogDebug(ex, $"{nameof(RestoreTransactions)} was cancelled.");
-            return null;
+            return new PurchaseResultDto
+            {
+                ErrorStatus = PurchaseErrorStatus.PurchaseCancelledError
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"{nameof(RestoreTransactions)} failed.");
-            return null;
+            return new PurchaseResultDto
+            {
+                ErrorStatus = PurchaseErrorStatus.UnknownError,
+                ErrorMessage = ex.Message
+            };
         }
     }
     public async partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken)

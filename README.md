@@ -108,7 +108,7 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 | `GetActiveSubscriptions()` | Get list of active subscription identifiers |
 | `GetAllPurchasedIdentifiers()` | Get all purchased product identifiers |
 | `GetPurchaseDateForProductIdentifier(string productSku)` | Get purchase date for a specific product |
-| `RestoreTransactions()` | Restore previous purchases |
+| `RestoreTransactions()` | Restore previous purchases; returns `PurchaseResultDto` with the refreshed `CustomerInfo` or an `ErrorStatus` |
 
 ### User Management
 
@@ -209,6 +209,26 @@ The library follows a non-throwing approach for runtime errors:
   - `null` for nullable types
 
 This design ensures your app never crashes due to store-related issues.
+
+`PurchaseProduct()` and `RestoreTransactions()` both return `PurchaseResultDto`, so failures are
+branched on the same way:
+
+```csharp
+var restoreResult = await _revenueCat.RestoreTransactions();
+
+if (restoreResult.IsSuccess)
+{
+    var customerInfo = restoreResult.CustomerInfo;
+}
+else
+{
+    Console.WriteLine($"Restore failed: {restoreResult.ErrorStatus} {restoreResult.ErrorMessage}");
+}
+```
+
+`ErrorStatus` is the stable value to branch on. `ErrorMessage` carries diagnostic detail from the
+underlying store SDK (RevenueCat backend codes such as `7255 alias limit reached` show up here) and
+is meant for logs, not for users. `Transaction` is never set by `RestoreTransactions()`.
 
 ### Common Error Codes
 

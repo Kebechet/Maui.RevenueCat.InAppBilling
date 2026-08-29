@@ -200,8 +200,10 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var customerInfo = await _revenueCatBilling.RestoreTransactions();
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.RestoreTransactions)}: {FormatCustomerInfo(customerInfo)}");
+            var restoreResult = await _revenueCatBilling.RestoreTransactions();
+            _harnessLog.Add(restoreResult.IsSuccess
+                ? $"PASS {nameof(IRevenueCatBilling.RestoreTransactions)}: {FormatCustomerInfo(restoreResult.CustomerInfo)}"
+                : $"FAIL {nameof(IRevenueCatBilling.RestoreTransactions)}: {restoreResult.ErrorStatus} {restoreResult.ErrorMessage}");
             await RefreshStatus();
         }
         catch (Exception exception)
