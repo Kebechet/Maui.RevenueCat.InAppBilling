@@ -239,7 +239,7 @@ own payload:
 | `ManagementUrlResultDto` | `string?` | `GetManagementSubscriptionUrl()` |
 | `StorefrontResultDto` | `string?` | `GetStorefrontCountryCode()` |
 | `CustomerInfoResultDto` | `CustomerInfoDto` | `Login()`, `Logout()`, `RestoreTransactions()`, `GetCustomerInfo()` |
-| `PurchaseResultDto` | `CustomerInfoDto` | `PurchaseProduct()` - a `CustomerInfoResultDto` plus the `Transaction` only a purchase produces |
+| `PurchaseResultDto` | `CustomerInfoDto` | `PurchaseProduct()` - carries the same payload as `CustomerInfoResultDto` plus a `Transaction`, but is a sibling of it, not a subclass |
 
 `ErrorException.Message` is platform-specific and may include the RevenueCat backend code and
 message (e.g. `7255 alias limit reached`), but that is not guaranteed - branch on `Error`, log

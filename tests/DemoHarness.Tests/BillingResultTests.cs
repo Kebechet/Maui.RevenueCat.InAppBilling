@@ -139,15 +139,17 @@ public class BillingResultTests
     {
         var result = new CustomerInfoResultDto
         {
-            Error = PurchaseErrorStatus.UnknownBackendError,
-            ErrorException = new InvalidOperationException("There was a problem with the store. (7255 alias limit reached) code: 16"),
+            // RevenueCat collapses backend code 7255 (could-not-create-alias) into
+            // ConfigurationError on both platforms; the numeric code survives only in the message.
+            Error = PurchaseErrorStatus.ConfigurationError,
+            ErrorException = new InvalidOperationException("There was a problem with the store. (7255 alias limit reached) code: 23"),
         };
 
         Assert.False(result.IsSuccess);
         Assert.True(result.IsError);
         Assert.Null(result.Value);
         Assert.Equal(
-            $"FAIL {operationName}: UnknownBackendError: There was a problem with the store. (7255 alias limit reached) code: 16",
+            $"FAIL {operationName}: ConfigurationError: There was a problem with the store. (7255 alias limit reached) code: 23",
             HarnessFormatter.FormatCustomerInfoResult(result, operationName));
     }
 
@@ -208,7 +210,11 @@ public class BillingResultTests
         ];
 
         Assert.All(resultDtos, x => Assert.True(typeof(Result<PurchaseErrorStatus>).IsAssignableFrom(x)));
-        // A purchase result is a customer-info result plus the transaction only a purchase makes.
-        Assert.True(typeof(CustomerInfoResultDto).IsAssignableFrom(typeof(PurchaseResultDto)));
+
+        // Purchase and customer-info results carry the same payload today, but a purchase is not a
+        // kind of customer-info read. They stay siblings so neither is substitutable for the other
+        // and either can gain members without the other inheriting them.
+        Assert.False(typeof(CustomerInfoResultDto).IsAssignableFrom(typeof(PurchaseResultDto)));
+        Assert.False(typeof(PurchaseResultDto).IsAssignableFrom(typeof(CustomerInfoResultDto)));
     }
 }

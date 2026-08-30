@@ -38,7 +38,7 @@
 BREAKING
 - Every asynchronous `IRevenueCatBilling` member now returns a result DTO instead of a bare value. Previously a network blip, a cancellation and a backend rejection were indistinguishable from a legitimately empty result - the RevenueCat error only ever reached the log. Read `.Value` on success; branch on `.Error`; log `.ErrorException`.
   - `CanMakePaymentsResultDto`, `IntroEligibilityResultDto`, `OfferingsResultDto`, `ProductIdentifiersResultDto`, `PurchaseDateResultDto`, `ManagementUrlResultDto`, `StorefrontResultDto`, `CustomerInfoResultDto` and `PurchaseResultDto`. Each is a thin named subclass of `DataResult&lt;TValue, PurchaseErrorStatus&gt;` from the `Kebechet.Types.Result` package, so signatures stay readable and every result shares one contract.
-  - `PurchaseProduct()` keeps returning `PurchaseResultDto`, now a `CustomerInfoResultDto` subclass: `ErrorStatus` becomes `Error`, `ErrorMessage` becomes `ErrorException`, `CustomerInfo` becomes `Value`, and `Transaction` stays.
+  - `PurchaseProduct()` keeps returning `PurchaseResultDto`, now a `DataResult&lt;CustomerInfoDto, PurchaseErrorStatus&gt;` subclass: `ErrorStatus` becomes `Error`, `ErrorMessage` becomes `ErrorException`, `CustomerInfo` becomes `Value`, and `Transaction` stays. It is a sibling of `CustomerInfoResultDto`, not a subclass of it.
 - `CustomerInfoDto.ManagementURL` is renamed to `CustomerInfoDto.ManagementUrl`, matching .NET acronym casing.
 - New public dependency on `Kebechet.Types.Result` (1.0.0). It cannot be hidden behind `PrivateAssets` because the types appear in the public signatures.
 
