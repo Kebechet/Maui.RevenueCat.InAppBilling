@@ -36,24 +36,25 @@
     <Version>9.0.0</Version>
     <PackageReleaseNotes>
 BREAKING
-- Every `IRevenueCatBilling` member that resolves customer data now reports why it failed instead of returning `null`. Previously a network blip, a cancellation and a backend rejection were all indistinguishable from a legitimately empty result - the RevenueCat error was only ever written to the log. Migration is a compile error plus one property read.
-  - `RestoreTransactions()`, `Login()`, `Logout()` and `GetCustomerInfo()` return `CustomerInfoResultDto` instead of `CustomerInfoDto?`. Read `.CustomerInfo`; branch on `.ErrorStatus`.
-  - `GetManagementSubscriptionUrl()` returns `ManagementUrlResultDto` instead of `string?`. Read `.ManagementUrl`.
-- `CustomerInfoDto.ManagementURL` is renamed to `CustomerInfoDto.ManagementUrl`, matching .NET acronym casing and the new `ManagementUrlResultDto.ManagementUrl`.
-- These are signature changes on `IRevenueCatBilling`, so they break callers as well as anyone implementing the interface.
+- Every asynchronous `IRevenueCatBilling` member now returns `DataResult&lt;TValue, PurchaseErrorStatus&gt;` from the `Kebechet.Types.Result` package instead of a bare value. Previously a network blip, a cancellation and a backend rejection were indistinguishable from a legitimately empty result - the RevenueCat error only ever reached the log. Read `.Value` on success; branch on `.Error`; log `.ErrorException`.
+  - `CanMakePayments()`, `CheckTrialOrIntroDiscountEligibility()`, `GetOfferings()`, `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()`, `GetPurchaseDateForProductIdentifier()`, `GetManagementSubscriptionUrl()`, `Login()`, `Logout()`, `RestoreTransactions()`, `GetCustomerInfo()` and `GetStorefrontCountryCode()`.
+  - `PurchaseProduct()` keeps returning `PurchaseResultDto`, but it is now a `DataResult&lt;CustomerInfoDto, PurchaseErrorStatus&gt;` subclass: `ErrorStatus` becomes `Error`, `ErrorMessage` becomes `ErrorException`, `CustomerInfo` becomes `Value`, and `Transaction` stays.
+- `CustomerInfoDto.ManagementURL` is renamed to `CustomerInfoDto.ManagementUrl`, matching .NET acronym casing.
+- New public dependency on `Kebechet.Types.Result` (1.0.0). It cannot be hidden behind `PrivateAssets` because the types appear in the public signatures.
 
 ADDED
-- `CustomerInfoResultDto` - `IsSuccess` / `IsError` / `ErrorStatus` / `ErrorMessage` / `CustomerInfo`. `ErrorStatus` is the stable value to branch on; `ErrorMessage` carries the underlying store SDK detail and is meant for logs, not for users. `CustomerInfo` stays nullable on success, so null-check it.
-- `ManagementUrlResultDto` - the same shape carrying `ManagementUrl`. A success with a null `ManagementUrl` means the user has no store-managed subscription, which is now distinct from a failure.
+- `PurchaseErrorStatus` is now reported by every fallible member, so the documented failure modes can be handled exhaustively with a `switch`.
+- `GetPurchaseDateForProductIdentifier()` and `GetManagementSubscriptionUrl()` distinguish "not purchased" / "no store-managed subscription" (success with a null `Value`) from a failure (`Error` set).
 
 FIXED
 - Android `GetManagementSubscriptionUrl()` returned `null` both when the user had no store subscription and when the call failed; iOS returned `string.Empty` for the former. The two cases are now distinguishable, and the platforms agree.
+- `PurchaseProduct()` returned a result that was neither `IsSuccess` nor `IsError` when the transaction did not reach the purchased state. That state now reports `PaymentPendingError` while still carrying the `Transaction`.
 - `RestoreTransactions()` logged nothing at all when the native error code mapped to a cancellation - it only skipped the error log. Both cancellation paths now log at debug.
 - Removed the `_cachedManagementUrl` field. It was read on both platforms but never assigned, so its early-return guard could never fire. Caching it would have been wrong regardless: the URL is per-customer, so a process-lifetime cache would survive `Login`/`Logout`.
+- The Windows and PlatformsStandard stubs no longer report `IsSuccess == false` together with `IsError == false` for `PurchaseProduct()`, a state that satisfied neither branch of the documented pattern.
 
 NOTE
-- `PurchaseProduct()` is unchanged and still returns `PurchaseResultDto`, which is the same shape plus the `Transaction` only a purchase produces.
-- `GetOfferings()`, `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()`, `GetPurchaseDateForProductIdentifier()`, `GetStorefrontCountryCode()`, `CanMakePayments()` and `CheckTrialOrIntroDiscountEligibility()` still return empty/default values on failure.
+- Exceptions are still thrown for developer mistakes, such as calling a member before `Initialize()`, and `CheckTrialOrIntroDiscountEligibility()` still throws `NotImplementedException` on Android.
 </PackageReleaseNotes>
   </PropertyGroup>
 
@@ -68,6 +69,9 @@ NOTE
       <PrivateAssets>compile</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <!-- Public dependency on purpose: DataResult<,> appears in IRevenueCatBilling's signatures,
+         so it cannot be hidden behind PrivateAssets the way IsNullOrEmpty is. -->
+    <PackageReference Include="Kebechet.Types.Result" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

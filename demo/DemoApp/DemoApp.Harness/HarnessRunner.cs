@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Services;
+using Types.Result;
 
 namespace DemoApp.Harness;
 
@@ -39,6 +41,21 @@ public sealed class HarnessRunner
         }
 
         return harnessCheckResults;
+    }
+
+    /// <summary>
+    /// Unwraps a billing result, turning a reported store failure into the exception that
+    /// <see cref="ExecuteCheck"/> already knows how to report - so an error result shows as FAILED
+    /// rather than as a check that passed while carrying an error message.
+    /// </summary>
+    private static TValue? Unwrap<TValue>(DataResult<TValue, PurchaseErrorStatus> result)
+    {
+        if (result.IsError)
+        {
+            throw new InvalidOperationException(HarnessFormatter.FormatError(result), result.ErrorException);
+        }
+
+        return result.Value;
     }
 
     private async Task<HarnessCheckResult> ExecuteCheck(string checkName, Func<CancellationToken, Task<string>> checkAction)
@@ -87,17 +104,18 @@ public sealed class HarnessRunner
             yield return (nameof(IRevenueCatBilling.IsInitialized), _ => Task.FromResult(_revenueCatBilling.IsInitialized().ToString()));
             yield return (nameof(IRevenueCatBilling.IsAnonymous), _ => Task.FromResult(_revenueCatBilling.IsAnonymous().ToString()));
             yield return (nameof(IRevenueCatBilling.GetAppUserId), _ => Task.FromResult(_revenueCatBilling.GetAppUserId()));
-            yield return (nameof(IRevenueCatBilling.CanMakePayments), async cancellationToken => (await _revenueCatBilling.CanMakePayments(cancellationToken)).ToString());
+            yield return (nameof(IRevenueCatBilling.CanMakePayments), async cancellationToken =>
+                Unwrap(await _revenueCatBilling.CanMakePayments(cancellationToken)).ToString());
             yield return (nameof(IRevenueCatBilling.GetOfferings), async cancellationToken =>
             {
-                LastLoadedOfferings = await _revenueCatBilling.GetOfferings(false, cancellationToken);
+                LastLoadedOfferings = Unwrap(await _revenueCatBilling.GetOfferings(false, cancellationToken)) ?? [];
                 var packageCount = LastLoadedOfferings.Sum(x => x.AvailablePackages.Count);
                 return $"{LastLoadedOfferings.Count} offering(s), {packageCount} package(s)";
             }
             );
             yield return ($"{nameof(IRevenueCatBilling.GetOfferings)} forceRefresh", async cancellationToken =>
             {
-                var refreshedOfferings = await _revenueCatBilling.GetOfferings(true, cancellationToken);
+                var refreshedOfferings = Unwrap(await _revenueCatBilling.GetOfferings(true, cancellationToken)) ?? [];
                 return $"{refreshedOfferings.Count} offering(s)";
             }
             );
@@ -109,24 +127,19 @@ public sealed class HarnessRunner
                     .Where(x => !string.IsNullOrEmpty(x))
                     .Distinct()
                     .ToList();
-                if (!productSkus.Any())
+                if (productSkus.Count == 0)
                 {
                     return "skipped, no products loaded";
                 }
-                var eligibilityStatuses = await _revenueCatBilling.CheckTrialOrIntroDiscountEligibility(productSkus, cancellationToken);
-                return eligibilityStatuses.Any()
+                var eligibilityStatuses = Unwrap(await _revenueCatBilling.CheckTrialOrIntroDiscountEligibility(productSkus, cancellationToken));
+                return eligibilityStatuses is not null && eligibilityStatuses.Count != 0
                     ? string.Join(", ", eligibilityStatuses.Select(x => $"{x.Key}={x.Value}"))
                     : "empty result";
             }
             );
             yield return (nameof(IRevenueCatBilling.GetCustomerInfo), async cancellationToken =>
             {
-                var customerInfoResult = await _revenueCatBilling.GetCustomerInfo(cancellationToken);
-                if (customerInfoResult.IsError)
-                {
-                    return $"error {customerInfoResult.ErrorStatus}: {customerInfoResult.ErrorMessage}";
-                }
-                var customerInfo = customerInfoResult.CustomerInfo;
+                var customerInfo = Unwrap(await _revenueCatBilling.GetCustomerInfo(cancellationToken));
                 return customerInfo is null
                     ? "null"
                     : $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.Entitlements.Count} entitlement(s)";
@@ -134,40 +147,33 @@ public sealed class HarnessRunner
             );
             yield return (nameof(IRevenueCatBilling.GetActiveSubscriptions), async cancellationToken =>
             {
-                var activeSubscriptions = await _revenueCatBilling.GetActiveSubscriptions(cancellationToken);
-                return activeSubscriptions.Any() ? string.Join(", ", activeSubscriptions) : "none";
+                var activeSubscriptions = Unwrap(await _revenueCatBilling.GetActiveSubscriptions(cancellationToken)) ?? [];
+                return activeSubscriptions.Count != 0 ? string.Join(", ", activeSubscriptions) : "none";
             }
             );
             yield return (nameof(IRevenueCatBilling.GetAllPurchasedIdentifiers), async cancellationToken =>
             {
-                var purchasedIdentifiers = await _revenueCatBilling.GetAllPurchasedIdentifiers(cancellationToken);
-                return purchasedIdentifiers.Any() ? string.Join(", ", purchasedIdentifiers) : "none";
+                var purchasedIdentifiers = Unwrap(await _revenueCatBilling.GetAllPurchasedIdentifiers(cancellationToken)) ?? [];
+                return purchasedIdentifiers.Count != 0 ? string.Join(", ", purchasedIdentifiers) : "none";
             }
             );
             yield return (nameof(IRevenueCatBilling.GetPurchaseDateForProductIdentifier), async cancellationToken =>
             {
-                var firstPurchasedIdentifier = (await _revenueCatBilling.GetAllPurchasedIdentifiers(cancellationToken)).FirstOrDefault();
+                var purchasedIdentifiers = Unwrap(await _revenueCatBilling.GetAllPurchasedIdentifiers(cancellationToken)) ?? [];
+                var firstPurchasedIdentifier = purchasedIdentifiers.FirstOrDefault();
                 if (firstPurchasedIdentifier is null)
                 {
                     return "skipped, nothing purchased yet";
                 }
-                var purchaseDate = await _revenueCatBilling.GetPurchaseDateForProductIdentifier(firstPurchasedIdentifier, cancellationToken);
+                var purchaseDate = Unwrap(await _revenueCatBilling.GetPurchaseDateForProductIdentifier(firstPurchasedIdentifier, cancellationToken));
                 return $"{firstPurchasedIdentifier}: {purchaseDate?.ToString("O") ?? "null"}";
             }
             );
             yield return (nameof(IRevenueCatBilling.GetManagementSubscriptionUrl), async cancellationToken =>
-            {
-                var managementUrlResult = await _revenueCatBilling.GetManagementSubscriptionUrl(cancellationToken);
-                if (managementUrlResult.IsError)
-                {
-                    return $"error {managementUrlResult.ErrorStatus}: {managementUrlResult.ErrorMessage}";
-                }
-                return managementUrlResult.ManagementUrl ?? "null (no active store subscription)";
-            }
-            );
+                Unwrap(await _revenueCatBilling.GetManagementSubscriptionUrl(cancellationToken)) ?? "null (no active store subscription)");
             yield return (nameof(IRevenueCatBilling.GetStorefrontCountryCode), async cancellationToken =>
             {
-                var storefrontCountryCode = await _revenueCatBilling.GetStorefrontCountryCode(cancellationToken);
+                var storefrontCountryCode = Unwrap(await _revenueCatBilling.GetStorefrontCountryCode(cancellationToken));
                 return string.IsNullOrEmpty(storefrontCountryCode) ? "empty" : storefrontCountryCode;
             }
             );

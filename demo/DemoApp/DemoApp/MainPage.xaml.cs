@@ -150,7 +150,7 @@ public partial class MainPage : ContentPage
             var isInitialized = _revenueCatBilling.IsInitialized();
             var isAnonymous = _revenueCatBilling.IsAnonymous();
             var appUserId = _revenueCatBilling.GetAppUserId();
-            var storefrontCountryCode = await _revenueCatBilling.GetStorefrontCountryCode();
+            var storefrontCountryCode = (await _revenueCatBilling.GetStorefrontCountryCode()).Value;
             var activeApiKey = DemoStoreSelection.ActiveApiKey;
             var activeApiKeyPrefix = activeApiKey.Length > 5 ? activeApiKey[..5] : activeApiKey;
             Dispatcher.Dispatch(() =>
@@ -183,7 +183,7 @@ public partial class MainPage : ContentPage
             var purchaseResult = await Task.Run(() => _revenueCatBilling.PurchaseProduct(packageToPurchase));
             _harnessLog.Add(purchaseResult.IsSuccess
                 ? $"PASS Purchase {packageToPurchase.Identifier}: transaction {purchaseResult.Transaction?.TransactionIdentifier ?? "?"}"
-                : $"FAIL Purchase {packageToPurchase.Identifier}: {purchaseResult.ErrorStatus} {purchaseResult.ErrorMessage}");
+                : $"FAIL Purchase {packageToPurchase.Identifier}: {HarnessFormatter.FormatError(purchaseResult)}");
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -252,16 +252,16 @@ public partial class MainPage : ContentPage
             var managementUrlResult = await _revenueCatBilling.GetManagementSubscriptionUrl();
             if (managementUrlResult.IsError)
             {
-                _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: {managementUrlResult.ErrorStatus} {managementUrlResult.ErrorMessage}");
+                _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: {HarnessFormatter.FormatError(managementUrlResult)}");
                 return;
             }
-            if (managementUrlResult.ManagementUrl is null)
+            if (managementUrlResult.Value is null)
             {
                 _harnessLog.Add($"{nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: null (no active store subscription)");
                 return;
             }
-            _harnessLog.Add($"Opening {managementUrlResult.ManagementUrl}");
-            await Launcher.OpenAsync(managementUrlResult.ManagementUrl);
+            _harnessLog.Add($"Opening {managementUrlResult.Value}");
+            await Launcher.OpenAsync(managementUrlResult.Value);
         }
         catch (Exception exception)
         {

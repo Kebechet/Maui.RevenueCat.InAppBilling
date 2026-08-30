@@ -1,5 +1,7 @@
+using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Services;
+using Types.Result;
 
 namespace DemoApp.Harness;
 
@@ -24,17 +26,24 @@ public static class HarnessFormatter
         return $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.AllPurchasedIdentifiers.Count} purchased, entitlements: {entitlementIdentifiers}";
     }
 
-    public static string FormatCustomerInfoResult(CustomerInfoResultDto customerInfoResult, string operationName)
+    public static string FormatCustomerInfoResult(DataResult<CustomerInfoDto, PurchaseErrorStatus> customerInfoResult, string operationName)
     {
-        if (customerInfoResult.IsSuccess)
-        {
-            return $"PASS {operationName}: {FormatCustomerInfo(customerInfoResult.CustomerInfo)}";
-        }
+        return customerInfoResult.IsSuccess
+            ? $"PASS {operationName}: {FormatCustomerInfo(customerInfoResult.Value)}"
+            : $"FAIL {operationName}: {FormatError(customerInfoResult)}";
+    }
 
-        var errorDetail = string.IsNullOrEmpty(customerInfoResult.ErrorMessage)
-            ? $"{customerInfoResult.ErrorStatus}"
-            : $"{customerInfoResult.ErrorStatus}: {customerInfoResult.ErrorMessage}";
+    /// <summary>
+    /// Renders the failure side of any billing result: the closed <see cref="PurchaseErrorStatus"/>
+    /// plus the store SDK exception message when there is one.
+    /// </summary>
+    public static string FormatError<TError>(Result<TError> result)
+        where TError : struct
+    {
+        var errorMessage = result.ErrorException?.Message;
 
-        return $"FAIL {operationName}: {errorDetail}";
+        return string.IsNullOrEmpty(errorMessage)
+            ? $"{result.Error}"
+            : $"{result.Error}: {errorMessage}";
     }
 }
