@@ -26,7 +26,7 @@ public static class HarnessFormatter
         return $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.AllPurchasedIdentifiers.Count} purchased, entitlements: {entitlementIdentifiers}";
     }
 
-    public static string FormatCustomerInfoResult(DataResult<CustomerInfoDto, PurchaseErrorStatus> customerInfoResult, string operationName)
+    public static string FormatCustomerInfoResult(CustomerInfoResultDto customerInfoResult, string operationName)
     {
         return customerInfoResult.IsSuccess
             ? $"PASS {operationName}: {FormatCustomerInfo(customerInfoResult.Value)}"

@@ -27,23 +27,23 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public bool IsInitialized() => _isInitialized;
     public partial bool IsAnonymous();
     public partial string GetAppUserId();
-    public partial Task<DataResult<bool, PurchaseErrorStatus>> CanMakePayments(CancellationToken cancellationToken);
+    public partial Task<CanMakePaymentsResultDto> CanMakePayments(CancellationToken cancellationToken);
 
     public partial void Initialize(string apiKey);
     public partial void Initialize(string apiKey, string appUserId);
 
-    public partial Task<DataResult<Dictionary<string, IntroElegibilityStatus>, PurchaseErrorStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken);
-    public partial Task<DataResult<List<OfferingDto>, PurchaseErrorStatus>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken);
+    public partial Task<IntroEligibilityResultDto> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken);
+    public partial Task<OfferingsResultDto> GetOfferings(bool forceRefresh, CancellationToken cancellationToken);
     public partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken);
-    public partial Task<DataResult<List<string>, PurchaseErrorStatus>> GetActiveSubscriptions(CancellationToken cancellationToken);
-    public partial Task<DataResult<List<string>, PurchaseErrorStatus>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);
-    public partial Task<DataResult<DateTime?, PurchaseErrorStatus>> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken);
-    public partial Task<DataResult<string, PurchaseErrorStatus>> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
-    public partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> Login(string appUserId, CancellationToken cancellationToken);
-    public partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> Logout(CancellationToken cancellationToken);
-    public partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> RestoreTransactions(CancellationToken cancellationToken);
-    public partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> GetCustomerInfo(CancellationToken cancellationToken);
-    public partial Task<DataResult<string, PurchaseErrorStatus>> GetStorefrontCountryCode(CancellationToken cancellationToken);
+    public partial Task<ProductIdentifiersResultDto> GetActiveSubscriptions(CancellationToken cancellationToken);
+    public partial Task<ProductIdentifiersResultDto> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);
+    public partial Task<PurchaseDateResultDto> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken);
+    public partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken);
+    public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken);
 
     // Subscriber Attributes
     public partial void SetEmail(string email);

@@ -24,7 +24,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial bool IsAnonymous() => Purchases.SharedInstance.IsAnonymous;
     public partial string GetAppUserId() => Purchases.SharedInstance.AppUserID;
 
-    public async partial Task<DataResult<bool, PurchaseErrorStatus>> CanMakePayments(CancellationToken cancellationToken)
+    public async partial Task<CanMakePaymentsResultDto> CanMakePayments(CancellationToken cancellationToken)
     {
         if (_currentActivityContext is null)
         {
@@ -37,7 +37,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<bool>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
 
@@ -99,13 +99,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
     }
 
-    public async partial Task<DataResult<Dictionary<string, IntroElegibilityStatus>, PurchaseErrorStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
+    public async partial Task<IntroEligibilityResultDto> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         throw new NotImplementedException("This method is iOS Only");
     }
 
-    public async partial Task<DataResult<List<OfferingDto>, PurchaseErrorStatus>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
+    public async partial Task<OfferingsResultDto> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
         if (!forceRefresh && _cachedOfferingPackages != null)
         {
@@ -124,7 +124,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<List<OfferingDto>>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
     public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
@@ -167,12 +167,13 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToPurchaseFailure(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
 
         if (purchaseSuccessInfo is null)
         {
-            return ToPurchaseFailure(new InvalidOperationException($"{nameof(purchaseSuccessInfo)} is null"));
+            var missingInfo = new InvalidOperationException($"{nameof(purchaseSuccessInfo)} is null");
+            return new() { Error = LogAndMapError(missingInfo), ErrorException = missingInfo };
         }
 
         var transaction = purchaseSuccessInfo.StoreTransaction.ToStoreTransactionDto();
@@ -200,7 +201,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             Value = customerInfo
         };
     }
-    public async partial Task<DataResult<List<string>, PurchaseErrorStatus>> GetActiveSubscriptions(CancellationToken cancellationToken)
+    public async partial Task<ProductIdentifiersResultDto> GetActiveSubscriptions(CancellationToken cancellationToken)
     {
         try
         {
@@ -214,10 +215,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<List<string>>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<DataResult<List<string>, PurchaseErrorStatus>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
+    public async partial Task<ProductIdentifiersResultDto> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
     {
         try
         {
@@ -231,10 +232,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<List<string>>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<DataResult<DateTime?, PurchaseErrorStatus>> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
+    public async partial Task<PurchaseDateResultDto> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
     {
         try
         {
@@ -248,10 +249,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<DateTime?>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<DataResult<string, PurchaseErrorStatus>> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
+    public async partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
     {
         try
         {
@@ -261,10 +262,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<string>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> Login(string appUserId, CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken)
     {
         try
         {
@@ -274,10 +275,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<CustomerInfoDto>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> Logout(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken)
     {
         try
         {
@@ -287,10 +288,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<CustomerInfoDto>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> RestoreTransactions(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken)
     {
         try
         {
@@ -300,10 +301,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<CustomerInfoDto>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> GetCustomerInfo(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken)
     {
         try
         {
@@ -313,10 +314,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<CustomerInfoDto>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    private PurchaseErrorStatus LogAndMapError(Exception exception, string operationName)
+    private PurchaseErrorStatus LogAndMapError(Exception exception, [CallerMemberName] string operationName = "")
     {
         var errorStatus = exception switch
         {
@@ -338,11 +339,6 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         return errorStatus;
     }
 
-    private DataResult<TValue, PurchaseErrorStatus> ToFailureResult<TValue>(Exception exception, [CallerMemberName] string operationName = "")
-        => new() { Error = LogAndMapError(exception, operationName), ErrorException = exception };
-
-    private PurchaseResultDto ToPurchaseFailure(Exception exception, [CallerMemberName] string operationName = "")
-        => new() { Error = LogAndMapError(exception, operationName), ErrorException = exception };
 
     // Subscriber Attributes
     public partial void SetEmail(string email)
@@ -362,7 +358,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         Purchases.SharedInstance.SetAttributes(attributes);
     }
 
-    public async partial Task<DataResult<string, PurchaseErrorStatus>> GetStorefrontCountryCode(CancellationToken cancellationToken)
+    public async partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken)
     {
         try
         {
@@ -372,7 +368,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return ToFailureResult<string>(ex);
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
 

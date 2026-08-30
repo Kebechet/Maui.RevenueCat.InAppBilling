@@ -89,7 +89,7 @@ public class BillingResultTests
     {
         var billing = _standardPlatformBilling.Value;
 
-        DataResult<CustomerInfoDto, PurchaseErrorStatus>[] results =
+        CustomerInfoResultDto[] results =
         [
             await billing.RestoreTransactions(CancellationToken.None),
             await billing.Login("harness", CancellationToken.None),
@@ -126,7 +126,7 @@ public class BillingResultTests
     [MemberData(nameof(CustomerInfoOperations))]
     public void FormatCustomerInfoResult_Success_RendersCustomerInfo(string operationName)
     {
-        var result = new DataResult<CustomerInfoDto, PurchaseErrorStatus> { Value = CreateCustomerInfo() };
+        var result = new CustomerInfoResultDto { Value = CreateCustomerInfo() };
 
         Assert.Equal(
             $"PASS {operationName}: 1 active sub(s), 1 purchased, entitlements: pro",
@@ -137,7 +137,7 @@ public class BillingResultTests
     [MemberData(nameof(CustomerInfoOperations))]
     public void FormatCustomerInfoResult_BackendRejection_SurfacesErrorStatusAndSdkMessage(string operationName)
     {
-        var result = new DataResult<CustomerInfoDto, PurchaseErrorStatus>
+        var result = new CustomerInfoResultDto
         {
             Error = PurchaseErrorStatus.UnknownBackendError,
             ErrorException = new InvalidOperationException("There was a problem with the store. (7255 alias limit reached) code: 16"),
@@ -154,7 +154,7 @@ public class BillingResultTests
     [Fact]
     public void FormatError_ErrorWithoutException_LeavesNoDanglingSeparator()
     {
-        var result = new DataResult<CustomerInfoDto, PurchaseErrorStatus> { Error = PurchaseErrorStatus.PurchaseCancelledError };
+        var result = new CustomerInfoResultDto { Error = PurchaseErrorStatus.PurchaseCancelledError };
 
         Assert.Equal("PurchaseCancelledError", HarnessFormatter.FormatError(result));
     }
@@ -162,7 +162,7 @@ public class BillingResultTests
     [Fact]
     public void FormatCustomerInfoResult_SuccessWithoutCustomerInfo_DoesNotThrow()
     {
-        var result = new DataResult<CustomerInfoDto, PurchaseErrorStatus>();
+        var result = new CustomerInfoResultDto();
 
         Assert.Equal(
             "PASS Login: null",
@@ -192,8 +192,23 @@ public class BillingResultTests
     }
 
     [Fact]
-    public void PurchaseResultDto_ShareTheCustomerInfoResultShape()
+    public void EveryResultDto_SharesTheSameResultContract()
     {
-        Assert.True(typeof(DataResult<CustomerInfoDto, PurchaseErrorStatus>).IsAssignableFrom(typeof(PurchaseResultDto)));
+        Type[] resultDtos =
+        [
+            typeof(CanMakePaymentsResultDto),
+            typeof(IntroEligibilityResultDto),
+            typeof(OfferingsResultDto),
+            typeof(ProductIdentifiersResultDto),
+            typeof(PurchaseDateResultDto),
+            typeof(ManagementUrlResultDto),
+            typeof(StorefrontResultDto),
+            typeof(CustomerInfoResultDto),
+            typeof(PurchaseResultDto),
+        ];
+
+        Assert.All(resultDtos, x => Assert.True(typeof(Result<PurchaseErrorStatus>).IsAssignableFrom(x)));
+        // A purchase result is a customer-info result plus the transaction only a purchase makes.
+        Assert.True(typeof(CustomerInfoResultDto).IsAssignableFrom(typeof(PurchaseResultDto)));
     }
 }

@@ -29,7 +29,7 @@ public interface IRevenueCatBilling
     bool IsInitialized();
     bool IsAnonymous();
     string GetAppUserId();
-    Task<DataResult<bool, PurchaseErrorStatus>> CanMakePayments(CancellationToken cancellationToken = default);
+    Task<CanMakePaymentsResultDto> CanMakePayments(CancellationToken cancellationToken = default);
 
     void Initialize(string apiKey);
 
@@ -46,9 +46,9 @@ public interface IRevenueCatBilling
     /// Apple platforms only (iOS and Mac Catalyst): the underlying RevenueCat API has no
     /// Android equivalent, so the Android implementation throws <see cref="NotImplementedException"/>.
     /// </summary>
-    Task<DataResult<Dictionary<string, IntroElegibilityStatus>, PurchaseErrorStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken = default);
+    Task<IntroEligibilityResultDto> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken = default);
 
-    Task<DataResult<List<OfferingDto>, PurchaseErrorStatus>> GetOfferings(bool forceRefresh = false, CancellationToken cancellationToken = default);
+    Task<OfferingsResultDto> GetOfferings(bool forceRefresh = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Runs the store purchase flow for a package previously returned by <see cref="GetOfferings"/>.
@@ -61,48 +61,48 @@ public interface IRevenueCatBilling
     /// </remarks>
     Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken = default);
 
-    Task<DataResult<List<string>, PurchaseErrorStatus>> GetActiveSubscriptions(CancellationToken cancellationToken = default);
-    Task<DataResult<List<string>, PurchaseErrorStatus>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken = default);
+    Task<ProductIdentifiersResultDto> GetActiveSubscriptions(CancellationToken cancellationToken = default);
+    Task<ProductIdentifiersResultDto> GetAllPurchasedIdentifiers(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Purchase date for a product the user owns. A success with a null <c>Value</c> means the
     /// product was never purchased, which is distinct from a failure.
     /// </summary>
-    Task<DataResult<DateTime?, PurchaseErrorStatus>> GetPurchaseDateForProductIdentifier(string productSku, CancellationToken cancellationToken = default);
+    Task<PurchaseDateResultDto> GetPurchaseDateForProductIdentifier(string productSku, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resolves the store's subscription-management URL for the current user. A success with a
     /// null <c>Value</c> means the user has no store-managed subscription, which is distinct from
     /// a failure.
     /// </summary>
-    Task<DataResult<string, PurchaseErrorStatus>> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
+    Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Logs in an identified user, aliasing any anonymous ID onto it.
     /// </summary>
-    Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> Login(string appUserId, CancellationToken cancellationToken = default);
+    Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Logs the current user out and returns to a fresh anonymous App User ID.
     /// </summary>
-    Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> Logout(CancellationToken cancellationToken = default);
+    Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Restores previous purchases for the current App User ID.
     /// </summary>
-    Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> RestoreTransactions(CancellationToken cancellationToken = default);
+    Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Reads the current customer info and entitlements.
     /// </summary>
-    Task<DataResult<CustomerInfoDto, PurchaseErrorStatus>> GetCustomerInfo(CancellationToken cancellationToken = default);
+    Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns the ISO 3166-1 alpha-2 country code of the user's App Store / Play Store
     /// storefront (e.g. <c>"US"</c>, <c>"CZ"</c>). Independent of the device's
     /// <see cref="System.Globalization.CultureInfo.CurrentCulture"/>.
     /// </summary>
-    Task<DataResult<string, PurchaseErrorStatus>> GetStorefrontCountryCode(CancellationToken cancellationToken = default);
+    Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken = default);
 
     // Subscriber Attributes
     void SetEmail(string email);

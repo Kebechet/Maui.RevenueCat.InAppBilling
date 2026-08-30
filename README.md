@@ -202,7 +202,7 @@ The library follows a non-throwing approach for runtime errors:
 - **Exceptions are thrown only** for developer mistakes (e.g., calling methods before `Initialize()`)
 - **Runtime errors** (network issues, store problems, etc.) come back as a failed result
 
-Every asynchronous member returns
+Every asynchronous member returns a named result DTO built on
 [`DataResult<TValue, PurchaseErrorStatus>`](https://github.com/Kebechet/Types.Result) from the
 `Kebechet.Types.Result` package, so they are all branched on the same way:
 
@@ -226,9 +226,20 @@ else
 | `ErrorException` | The raw store SDK exception, for logs and diagnostics. Never surface it to users |
 | `Value` | The payload. Only meaningful when `IsSuccess`, and **`IsSuccess` does not narrow it** - null-check it |
 
-`PurchaseProduct()` returns `PurchaseResultDto`, which *is* a
-`DataResult<CustomerInfoDto, PurchaseErrorStatus>` with one extra member, the `Transaction` only a
-purchase produces. So the same branching works there too.
+The result DTOs are thin named subclasses, so signatures stay readable and each type documents its
+own payload:
+
+| Result DTO | `Value` | Returned by |
+|------------|---------|-------------|
+| `CanMakePaymentsResultDto` | `bool` | `CanMakePayments()` |
+| `IntroEligibilityResultDto` | `Dictionary<string, IntroElegibilityStatus>` | `CheckTrialOrIntroDiscountEligibility()` |
+| `OfferingsResultDto` | `List<OfferingDto>` | `GetOfferings()` |
+| `ProductIdentifiersResultDto` | `List<string>` | `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()` |
+| `PurchaseDateResultDto` | `DateTime?` | `GetPurchaseDateForProductIdentifier()` |
+| `ManagementUrlResultDto` | `string?` | `GetManagementSubscriptionUrl()` |
+| `StorefrontResultDto` | `string?` | `GetStorefrontCountryCode()` |
+| `CustomerInfoResultDto` | `CustomerInfoDto` | `Login()`, `Logout()`, `RestoreTransactions()`, `GetCustomerInfo()` |
+| `PurchaseResultDto` | `CustomerInfoDto` | `PurchaseProduct()` - a `CustomerInfoResultDto` plus the `Transaction` only a purchase produces |
 
 `ErrorException.Message` is platform-specific and may include the RevenueCat backend code and
 message (e.g. `7255 alias limit reached`), but that is not guaranteed - branch on `Error`, log
