@@ -179,17 +179,28 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         var transaction = purchaseSuccessInfo.StoreTransaction.ToStoreTransactionDto();
         var customerInfo = purchaseSuccessInfo.CustomerInfo.ToCustomerInfoDto();
 
-        if (purchaseSuccessInfo.StoreTransaction.PurchaseState != PurchaseState.Purchased)
+        var purchaseState = purchaseSuccessInfo.StoreTransaction.PurchaseState;
+
+        if (purchaseState != PurchaseState.Purchased)
         {
-            // The call itself succeeded but the transaction never reached Purchased, which on
-            // Play Billing means it is pending (e.g. awaiting a slow payment method). Previously
-            // this returned a result that was neither IsSuccess nor IsError, so callers could
-            // not act on it at all.
-            _logger.LogWarning("{operationName} returned a transaction that is not in the purchased state.", nameof(PurchaseProduct));
+            // The call succeeded but the transaction never reached Purchased. Only Pending means
+            // "awaiting a slow payment method"; UnspecifiedState is Play Billing reporting that it
+            // does not know the state - telling the user to check back later would be wrong.
+            // This previously produced a result that was neither IsSuccess nor IsError, so callers
+            // could not act on it at all.
+            var errorStatus = purchaseState == PurchaseState.Pending
+                ? PurchaseErrorStatus.PaymentPendingError
+                : PurchaseErrorStatus.UnknownError;
+
+            _logger.LogWarning(
+                "{operationName} returned a transaction in state {transactionState}, reported as {errorStatus}.",
+                nameof(PurchaseProduct),
+                purchaseState?.ToString() ?? "unknown",
+                errorStatus);
 
             return new PurchaseResultDto
             {
-                Error = PurchaseErrorStatus.PaymentPendingError,
+                Error = errorStatus,
                 Transaction = transaction,
                 Value = customerInfo
             };
