@@ -95,7 +95,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken)
     {
-        return Task.FromResult(new StorefrontResultDto { Value = string.Empty });
+        return Task.FromResult(new StorefrontResultDto { Value = null });
     }
 
     internal static partial void EnableDebugLogs(bool enable)

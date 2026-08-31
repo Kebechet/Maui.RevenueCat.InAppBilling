@@ -39,6 +39,7 @@ BREAKING
 - Every asynchronous `IRevenueCatBilling` member now returns a result DTO instead of a bare value. Previously a network blip, a cancellation and a backend rejection were indistinguishable from a legitimately empty result - the RevenueCat error only ever reached the log. Read `.Value` on success; branch on `.Error`; log `.ErrorException`.
   - `CanMakePaymentsResultDto`, `IntroEligibilityResultDto`, `OfferingsResultDto`, `ProductIdentifiersResultDto`, `PurchaseDateResultDto`, `ManagementUrlResultDto`, `StorefrontResultDto`, `CustomerInfoResultDto` and `PurchaseResultDto`. Each is a thin named subclass of `DataResult&lt;TValue, PurchaseErrorStatus&gt;` from the `Kebechet.Types.Result` package, so signatures stay readable and every result shares one contract.
   - `PurchaseProduct()` keeps returning `PurchaseResultDto`, now a `DataResult&lt;CustomerInfoDto, PurchaseErrorStatus&gt;` subclass: `ErrorStatus` becomes `Error`, `ErrorMessage` becomes `ErrorException`, `CustomerInfo` becomes `Value`, and `Transaction` stays. It is a sibling of `CustomerInfoResultDto`, not a subclass of it.
+- `PurchaseResultDto` is a `class`, not a `sealed record`. Value equality, `with` expressions and the record `ToString()` are gone, so `resultA == resultB` is now reference equality rather than a compile error or a value comparison. The other result DTOs are classes for the same reason - they derive from the `Kebechet.Types.Result` base types.
 - `CustomerInfoDto.ManagementURL` is renamed to `CustomerInfoDto.ManagementUrl`, matching .NET acronym casing.
 - New public dependency on `Kebechet.Types.Result` (1.0.0). It cannot be hidden behind `PrivateAssets` because the types appear in the public signatures.
 
@@ -49,7 +50,7 @@ ADDED
 FIXED
 - Android `GetManagementSubscriptionUrl()` returned `null` both when the user had no store subscription and when the call failed; iOS returned `string.Empty` for the former. The two cases are now distinguishable, and the platforms agree.
 - `PurchaseProduct()` returned a result that was neither `IsSuccess` nor `IsError` when the transaction did not reach the purchased state. That state now reports `PaymentPendingError` while still carrying the `Transaction`.
-- `RestoreTransactions()` logged nothing at all when the native error code mapped to a cancellation - it only skipped the error log. Both cancellation paths now log at debug.
+- `PurchaseProduct()` logged nothing at all when the native error code mapped to a cancellation - it skipped the error log without logging anything else. Every member now logs cancellation at debug and other failures at error, through one shared classifier.
 - Removed the `_cachedManagementUrl` field. It was read on both platforms but never assigned, so its early-return guard could never fire. Caching it would have been wrong regardless: the URL is per-customer, so a process-lifetime cache would survive `Login`/`Logout`.
 - The Windows and PlatformsStandard stubs no longer report `IsSuccess == false` together with `IsError == false` for `PurchaseProduct()`, a state that satisfied neither branch of the documented pattern.
 
@@ -71,7 +72,7 @@ NOTE
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <!-- Public dependency on purpose: DataResult<,> appears in IRevenueCatBilling's signatures,
          so it cannot be hidden behind PrivateAssets the way IsNullOrEmpty is. -->
-    <PackageReference Include="Kebechet.Types.Result" Version="1.0.0" />
+    <PackageReference Include="Kebechet.Types.Result" Version="[1.0.0,2.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

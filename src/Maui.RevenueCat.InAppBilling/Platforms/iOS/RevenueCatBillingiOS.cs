@@ -149,8 +149,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new() { Error = LogAndMapError(missingInfo), ErrorException = missingInfo };
         }
 
-        var isPurchased = purchaseSuccessInfo.StoreTransaction.Sk1Transaction is not null
-            ? purchaseSuccessInfo.StoreTransaction.Sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
+        var sk1Transaction = purchaseSuccessInfo.StoreTransaction.Sk1Transaction;
+        var isPurchased = sk1Transaction is not null
+            ? sk1Transaction.TransactionState == StoreKit.SKPaymentTransactionState.Purchased
             : !purchaseSuccessInfo.StoreTransaction.TransactionIdentifier.IsNullOrEmpty();
 
         var transaction = purchaseSuccessInfo.StoreTransaction.ToStoreTransactionDto();
@@ -158,14 +159,24 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         if (!isPurchased)
         {
-            // The call succeeded but the transaction never reached Purchased, which on StoreKit
-            // means it is deferred / awaiting approval. This previously produced a result that was
-            // neither IsSuccess nor IsError, so callers could not act on it at all.
-            _logger.LogWarning("{operationName} returned a transaction that is not in the purchased state.", nameof(PurchaseProduct));
+            // The call succeeded but the transaction never reached Purchased. Only Deferred means
+            // "awaiting approval"; Purchasing/Failed/Restored, and a StoreKit 2 transaction with no
+            // identifier, are anomalies here - telling the user to check back later would be wrong.
+            // This previously produced a result that was neither IsSuccess nor IsError, so callers
+            // could not act on it at all.
+            var errorStatus = sk1Transaction?.TransactionState == StoreKit.SKPaymentTransactionState.Deferred
+                ? PurchaseErrorStatus.PaymentPendingError
+                : PurchaseErrorStatus.UnknownError;
+
+            _logger.LogWarning(
+                "{operationName} returned a transaction in state {transactionState}, reported as {errorStatus}.",
+                nameof(PurchaseProduct),
+                sk1Transaction?.TransactionState.ToString() ?? "StoreKit2 (no identifier)",
+                errorStatus);
 
             return new PurchaseResultDto
             {
-                Error = PurchaseErrorStatus.PaymentPendingError,
+                Error = errorStatus,
                 Transaction = transaction,
                 Value = customerInfo
             };

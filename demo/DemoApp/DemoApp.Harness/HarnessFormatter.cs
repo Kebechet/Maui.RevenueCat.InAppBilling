@@ -19,7 +19,7 @@ public static class HarnessFormatter
             return "null";
         }
 
-        var entitlementIdentifiers = customerInfo.Entitlements.Any()
+        var entitlementIdentifiers = customerInfo.Entitlements.Count != 0
             ? string.Join(", ", customerInfo.Entitlements.Select(x => x.Identifier))
             : "none";
 
@@ -40,10 +40,15 @@ public static class HarnessFormatter
     public static string FormatError<TError>(Result<TError> result)
         where TError : struct
     {
+        var errorStatus = result.Error?.ToString();
         var errorMessage = result.ErrorException?.Message;
 
-        return string.IsNullOrEmpty(errorMessage)
-            ? $"{result.Error}"
-            : $"{result.Error}: {errorMessage}";
+        return (errorStatus, errorMessage) switch
+        {
+            (null, null) => "unspecified error",
+            (null, _) => errorMessage!,
+            (_, null or "") => errorStatus!,
+            _ => $"{errorStatus}: {errorMessage}",
+        };
     }
 }

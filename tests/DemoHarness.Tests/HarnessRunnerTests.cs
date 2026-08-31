@@ -113,6 +113,26 @@ public class HarnessRunnerTests
     }
 
     [Fact]
+    public async Task RunAllChecks_CancelledResult_ReportsTimedOutNotFailed()
+    {
+        // The platform implementations catch OperationCanceledException and report it as a
+        // cancelled *result*, so the per-call timeout never reaches the runner as an exception.
+        var revenueCatBilling = CreateHappyBilling();
+        revenueCatBilling.GetOfferings(false, Arg.Any<CancellationToken>())
+            .Returns(new OfferingsResultDto
+            {
+                Error = PurchaseErrorStatus.PurchaseCancelledError,
+                ErrorException = new OperationCanceledException(),
+            });
+        var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
+
+        var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
+
+        var offeringsCheck = harnessCheckResults.First(x => x.Name == nameof(IRevenueCatBilling.GetOfferings));
+        Assert.Equal(HarnessCheckStatus.TimedOut, offeringsCheck.Status);
+    }
+
+    [Fact]
     public async Task RunAllChecks_MethodHangs_ReportsTimedOut()
     {
         var revenueCatBilling = CreateHappyBilling();

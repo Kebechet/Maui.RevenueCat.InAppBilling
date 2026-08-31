@@ -150,7 +150,12 @@ public partial class MainPage : ContentPage
             var isInitialized = _revenueCatBilling.IsInitialized();
             var isAnonymous = _revenueCatBilling.IsAnonymous();
             var appUserId = _revenueCatBilling.GetAppUserId();
-            var storefrontCountryCode = (await _revenueCatBilling.GetStorefrontCountryCode()).Value;
+            var storefrontResult = await _revenueCatBilling.GetStorefrontCountryCode();
+            if (storefrontResult.IsError)
+            {
+                _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.GetStorefrontCountryCode)}: {HarnessFormatter.FormatError(storefrontResult)}");
+            }
+            var storefrontCountryCode = storefrontResult.Value;
             var activeApiKey = DemoStoreSelection.ActiveApiKey;
             var activeApiKeyPrefix = activeApiKey.Length > 5 ? activeApiKey[..5] : activeApiKey;
             Dispatcher.Dispatch(() =>

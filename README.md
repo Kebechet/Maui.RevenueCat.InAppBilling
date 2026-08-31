@@ -237,7 +237,7 @@ own payload:
 | `ProductIdentifiersResultDto` | `List<string>` | `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()` |
 | `PurchaseDateResultDto` | `DateTime?` | `GetPurchaseDateForProductIdentifier()` |
 | `ManagementUrlResultDto` | `string?` | `GetManagementSubscriptionUrl()` |
-| `StorefrontResultDto` | `string?` | `GetStorefrontCountryCode()` |
+| `StorefrontResultDto` | `string?` | `GetStorefrontCountryCode()` - empty string when the storefront is not yet known |
 | `CustomerInfoResultDto` | `CustomerInfoDto` | `Login()`, `Logout()`, `RestoreTransactions()`, `GetCustomerInfo()` |
 | `PurchaseResultDto` | `CustomerInfoDto` | `PurchaseProduct()` - carries the same payload as `CustomerInfoResultDto` plus a `Transaction`, but is a sibling of it, not a subclass |
 

@@ -50,12 +50,20 @@ public sealed class HarnessRunner
     /// </summary>
     private static TValue? Unwrap<TValue>(DataResult<TValue, PurchaseErrorStatus> result)
     {
-        if (result.IsError)
+        if (!result.IsError)
         {
-            throw new InvalidOperationException(HarnessFormatter.FormatError(result), result.ErrorException);
+            return result.Value;
         }
 
-        return result.Value;
+        // The platform implementations catch OperationCanceledException and report it as a
+        // cancelled result, so the per-call timeout no longer reaches ExecuteCheck as an
+        // exception. Rethrow it as one, or the timeout is misreported as a plain failure.
+        if (result.Error == PurchaseErrorStatus.PurchaseCancelledError)
+        {
+            throw new OperationCanceledException(HarnessFormatter.FormatError(result), result.ErrorException);
+        }
+
+        throw new InvalidOperationException(HarnessFormatter.FormatError(result), result.ErrorException);
     }
 
     private async Task<HarnessCheckResult> ExecuteCheck(string checkName, Func<CancellationToken, Task<string>> checkAction)

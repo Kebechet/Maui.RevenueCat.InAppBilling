@@ -99,7 +99,8 @@ public interface IRevenueCatBilling
 
     /// <summary>
     /// Returns the ISO 3166-1 alpha-2 country code of the user's App Store / Play Store
-    /// storefront (e.g. <c>"US"</c>, <c>"CZ"</c>). Independent of the device's
+    /// storefront (e.g. <c>"US"</c>, <c>"CZ"</c>), or an empty string when the platform has not
+    /// observed the storefront yet. Independent of the device's
     /// <see cref="System.Globalization.CultureInfo.CurrentCulture"/>.
     /// </summary>
     Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken = default);
