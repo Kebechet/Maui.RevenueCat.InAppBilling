@@ -135,12 +135,12 @@ public sealed class HarnessRunner
                     .Where(x => !string.IsNullOrEmpty(x))
                     .Distinct()
                     .ToList();
-                if (productSkus.Count == 0)
+                if (!productSkus.Any())
                 {
                     return "skipped, no products loaded";
                 }
                 var eligibilityStatuses = Unwrap(await _revenueCatBilling.CheckTrialOrIntroDiscountEligibility(productSkus, cancellationToken));
-                return eligibilityStatuses is not null && eligibilityStatuses.Count != 0
+                return eligibilityStatuses is not null && eligibilityStatuses.Any()
                     ? string.Join(", ", eligibilityStatuses.Select(x => $"{x.Key}={x.Value}"))
                     : "empty result";
             }
@@ -156,13 +156,13 @@ public sealed class HarnessRunner
             yield return (nameof(IRevenueCatBilling.GetActiveSubscriptions), async cancellationToken =>
             {
                 var activeSubscriptions = Unwrap(await _revenueCatBilling.GetActiveSubscriptions(cancellationToken)) ?? [];
-                return activeSubscriptions.Count != 0 ? string.Join(", ", activeSubscriptions) : "none";
+                return activeSubscriptions.Any() ? string.Join(", ", activeSubscriptions) : "none";
             }
             );
             yield return (nameof(IRevenueCatBilling.GetAllPurchasedIdentifiers), async cancellationToken =>
             {
                 var purchasedIdentifiers = Unwrap(await _revenueCatBilling.GetAllPurchasedIdentifiers(cancellationToken)) ?? [];
-                return purchasedIdentifiers.Count != 0 ? string.Join(", ", purchasedIdentifiers) : "none";
+                return purchasedIdentifiers.Any() ? string.Join(", ", purchasedIdentifiers) : "none";
             }
             );
             yield return (nameof(IRevenueCatBilling.GetPurchaseDateForProductIdentifier), async cancellationToken =>

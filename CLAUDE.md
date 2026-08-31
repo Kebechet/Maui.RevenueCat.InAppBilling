@@ -129,6 +129,23 @@ return [];
 return new();
 ```
 
+### Emptiness Checks
+Prefer LINQ over `Count` comparisons — `.Any()` reads better and works on any `IEnumerable<T>`,
+not just types that expose a count:
+```csharp
+// Correct
+if (items.Any())
+if (!items.Any())
+
+// Incorrect
+if (items.Count != 0)
+if (items.Count == 0)
+```
+Inside `Maui.RevenueCat.InAppBilling` itself, prefer `IsNullOrEmpty()` from
+`Kebechet.Extensions.IsNullOrEmpty` (namespace `IsNullOrEmpty.Extensions`) when the check also
+covers null. That package is referenced with `<PrivateAssets>compile</PrivateAssets>`, so it does
+**not** flow to `DemoApp.Harness`, the demo app or the tests — use `.Any()` there.
+
 ### Extension Methods
 Extract transformation logic to extension methods rather than inline:
 ```csharp

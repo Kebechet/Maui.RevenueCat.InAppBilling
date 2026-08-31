@@ -19,7 +19,7 @@ public static class HarnessFormatter
             return "null";
         }
 
-        var entitlementIdentifiers = customerInfo.Entitlements.Count != 0
+        var entitlementIdentifiers = customerInfo.Entitlements.Any()
             ? string.Join(", ", customerInfo.Entitlements.Select(x => x.Identifier))
             : "none";
 
