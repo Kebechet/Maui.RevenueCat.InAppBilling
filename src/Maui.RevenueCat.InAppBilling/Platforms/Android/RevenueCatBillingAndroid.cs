@@ -332,6 +332,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         var errorStatus = exception switch
         {
+            // Matched before the code for the same reason as iOS: userCancelled is the
+            // authoritative signal, and a missing PurchasesError or Code would otherwise
+            // degrade a cancellation into UnknownError.
+            PurchasesErrorException { UserCancelled: true } => PurchaseErrorStatus.PurchaseCancelledError,
             PurchasesErrorException purchasesErrorException =>
                 purchasesErrorException.PurchasesError?.Code?.ToPurchaseErrorStatus() ?? PurchaseErrorStatus.UnknownError,
             OperationCanceledException => PurchaseErrorStatus.PurchaseCancelledError,

@@ -315,6 +315,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         var errorStatus = exception switch
         {
+            // StoreKit reports a user cancellation with userCancelled set and, in that case, no
+            // NSError. The exception constructor only reads PurchasesErrorCode off a non-null
+            // NSError, so it stays at its default 0 - which is RCPurchasesErrorCode.UnknownError.
+            // UserCancelled is the authoritative signal, so it has to be matched before the code.
+            PurchasesErrorException { UserCancelled: true } => PurchaseErrorStatus.PurchaseCancelledError,
             PurchasesErrorException purchasesErrorException => purchasesErrorException.PurchasesErrorCode.ToPurchaseErrorStatus(),
             OperationCanceledException => PurchaseErrorStatus.PurchaseCancelledError,
             _ => PurchaseErrorStatus.UnknownError,
