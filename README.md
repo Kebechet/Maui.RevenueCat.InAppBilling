@@ -144,7 +144,7 @@ public class PurchaseService
     {
         var offeringsResult = await _revenueCat.GetOfferings();
         var offerings = offeringsResult.Value;
-        if (offeringsResult.IsError || offerings is null || offerings.Count == 0)
+        if (offeringsResult.IsError || offerings is null || !offerings.Any())
             return false;
 
         var defaultOffering = offerings.FirstOrDefault(o => o.IsCurrent);
