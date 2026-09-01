@@ -16,7 +16,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-if (args.Length == 0)
+if (!args.Any())
 {
     Console.Error.WriteLine(
         "usage: dotnet run postprocess_ios_bindings.cs -- <file>... [--report <path>]");
@@ -326,7 +326,7 @@ static class Postprocess
             if (Regex.IsMatch(lead, @"\bModel\b")) continue; // keep consumer protocols
             inheritanceProtocols.Add(m.Groups["name"].Value);
         }
-        if (inheritanceProtocols.Count == 0) return text;
+        if (!inheritanceProtocols.Any()) return text;
 
         // Scrub the `: I<Name>` base-list references first so the standalone
         // protocol blocks are easier to detect by the empty-removal logic.
@@ -414,7 +414,7 @@ static class Postprocess
             }
 
             // (3) Member-level removal.
-            while (keep.Count > 0 && attrRe.IsMatch(keep[^1]))
+            while (keep.Any() && attrRe.IsMatch(keep[^1]))
             {
                 keep.RemoveAt(keep.Count - 1);
             }
@@ -543,7 +543,7 @@ static class Postprocess
         {
             if (targetRe.IsMatch(lines[i]))
             {
-                while (keep.Count > 0 && attrRe.IsMatch(keep[^1]))
+                while (keep.Any() && attrRe.IsMatch(keep[^1]))
                 {
                     keep.RemoveAt(keep.Count - 1);
                 }
@@ -594,7 +594,7 @@ static class Postprocess
             list.Add(m);
         }
 
-        if (suffixesByCanonical.Count == 0) return text;
+        if (!suffixesByCanonical.Any()) return text;
 
         var edits = new List<(int Start, int End, string Replacement)>();
         foreach (var (canonicalName, suffixes) in suffixesByCanonical)
@@ -681,7 +681,7 @@ static class Postprocess
                 }
                 edits.Add((m.Index, m.Index + m.Length));
             }
-            if (edits.Count == 0) return text;
+            if (!edits.Any()) return text;
             edits.Sort((a, b) => b.Start.CompareTo(a.Start));
             foreach (var (start, end) in edits)
             {
@@ -715,7 +715,7 @@ static class Postprocess
             valueTypes.Add(m.Groups[1].Value);
         }
 
-        if (valueTypes.Count == 0) return text;
+        if (!valueTypes.Any()) return text;
 
         return InterfaceBlockRe.Replace(text, m =>
         {
@@ -806,7 +806,7 @@ static class Postprocess
                     edits.Add((sigStart, sigStart + sigLine.Length, renamed));
                 }
 
-                if (edits.Count == 0) return body;
+                if (!edits.Any()) return body;
                 edits.Sort((a, b) => b.Start.CompareTo(a.Start));
                 foreach (var (start, end, replacement) in edits)
                 {
@@ -920,7 +920,7 @@ static class Postprocess
             RegexOptions.Multiline);
 
         var matches = declRe.Matches(text).Cast<Match>().ToList();
-        if (matches.Count == 0) return text;
+        if (!matches.Any()) return text;
 
         var edits = new List<(int Start, int End)>();
         foreach (var m in matches)
@@ -989,7 +989,7 @@ static class Postprocess
             order.Add(sig);
         }
 
-        if (order.Count == 0) return text;
+        if (!order.Any()) return text;
 
         text = re.Replace(text, m =>
         {
@@ -1142,7 +1142,7 @@ static class Postprocess
         foreach (var (label, fn) in Detectors)
         {
             var items = fn(text);
-            if (items.Count > 0) findings[label] = items;
+            if (items.Any()) findings[label] = items;
         }
         return new FileResult(path, original.Length, text.Length, stats, findings);
     }
@@ -1174,7 +1174,7 @@ static class Postprocess
             }
             sb.AppendLine();
 
-            if (r.Findings.Count > 0)
+            if (r.Findings.Any())
             {
                 sb.AppendLine("### Manual follow-ups detected");
                 sb.AppendLine();

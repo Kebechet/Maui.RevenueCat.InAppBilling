@@ -97,27 +97,27 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 
 | Method | Description |
 |--------|-------------|
-| `GetOfferings(bool forceRefresh = false)` | Fetch available offerings and packages |
-| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. Apple platforms only (iOS and Mac Catalyst); throws `NotImplementedException` on Android |
+| `GetOfferings(bool forceRefresh = false)` | Fetch available offerings and packages. `Value` is `List<OfferingDto>` |
+| `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. `Value` is `Dictionary<string, IntroElegibilityStatus>`. Apple platforms only (iOS and Mac Catalyst); throws `NotImplementedException` on Android |
 
 ### Purchases
 
 | Method | Description |
 |--------|-------------|
-| `PurchaseProduct(PackageDto package)` | Initiate a purchase flow |
-| `GetActiveSubscriptions()` | Get list of active subscription identifiers |
-| `GetAllPurchasedIdentifiers()` | Get all purchased product identifiers |
-| `GetPurchaseDateForProductIdentifier(string productSku)` | Get purchase date for a specific product |
-| `RestoreTransactions()` | Restore previous purchases |
+| `PurchaseProduct(PackageDto package)` | Initiate a purchase flow. Returns `PurchaseResultDto` - `Value` is the refreshed `CustomerInfoDto`, plus a `Transaction` |
+| `GetActiveSubscriptions()` | Get list of active subscription identifiers. `Value` is `List<string>` |
+| `GetAllPurchasedIdentifiers()` | Get all purchased product identifiers. `Value` is `List<string>` |
+| `GetPurchaseDateForProductIdentifier(string productSku)` | Get purchase date for a specific product. `Value` is `DateTime?`; null means never purchased |
+| `RestoreTransactions()` | Restore previous purchases. `Value` is `CustomerInfoDto` |
 
 ### User Management
 
 | Method | Description |
 |--------|-------------|
-| `Login(string appUserId)` | Log in an identified user |
-| `Logout()` | Log out and create anonymous user |
-| `GetCustomerInfo()` | Get current customer info and entitlements |
-| `GetManagementSubscriptionUrl()` | Get URL for subscription management |
+| `Login(string appUserId)` | Log in an identified user. `Value` is `CustomerInfoDto` |
+| `Logout()` | Log out and create anonymous user. `Value` is `CustomerInfoDto` |
+| `GetCustomerInfo()` | Get current customer info and entitlements. `Value` is `CustomerInfoDto` |
+| `GetManagementSubscriptionUrl()` | Get URL for subscription management. `Value` is `string?`; null means no store-managed subscription |
 
 ### Subscriber Attributes
 
@@ -142,8 +142,9 @@ public class PurchaseService
 
     public async Task<bool> PurchaseSubscription()
     {
-        var offerings = await _revenueCat.GetOfferings();
-        if (offerings.Count == 0)
+        var offeringsResult = await _revenueCat.GetOfferings();
+        var offerings = offeringsResult.Value;
+        if (offeringsResult.IsError || offerings is null || !offerings.Any())
             return false;
 
         var defaultOffering = offerings.FirstOrDefault(o => o.IsCurrent);
@@ -161,21 +162,21 @@ public class PurchaseService
             return true;
         }
 
-        if (result.ErrorStatus == PurchaseErrorStatus.PurchaseCancelledError)
+        if (result.Error == PurchaseErrorStatus.PurchaseCancelledError)
         {
             // User cancelled - not an error
             return false;
         }
 
         // Handle other errors
-        Console.WriteLine($"Purchase failed: {result.ErrorStatus}");
+        Console.WriteLine($"Purchase failed: {result.Error}");
         return false;
     }
 
     public async Task<bool> HasActiveSubscription(string entitlementId)
     {
-        var customerInfo = await _revenueCat.GetCustomerInfo();
-        return customerInfo?.ActiveSubscriptions
+        var customerInfoResult = await _revenueCat.GetCustomerInfo();
+        return customerInfoResult.Value?.ActiveSubscriptions
             .Any(e => e == entitlementId) ?? false;
     }
 }
@@ -190,25 +191,64 @@ public class PurchaseService
 | Windows | Stub (returns defaults) |
 | MacCatalyst | Full implementation (shares the iOS implementation) |
 
-Stub implementations return:
-- `true` for boolean methods
-- Empty collections for list methods
-- `string.Empty` for string methods
-- `null` for nullable types
-
-This allows you to build and test on Windows/Mac without platform conditionals.
+Stub implementations return a successful result (`IsSuccess == true`, no `Error`) whose `Value` is
+an empty collection, an empty `CustomerInfoDto`, `string.Empty` for the storefront country code, or
+`null` for `GetManagementSubscriptionUrl()` and `GetPurchaseDateForProductIdentifier()`. This allows
+you to build and test on Windows without platform conditionals.
 
 ## Error Handling
 
 The library follows a non-throwing approach for runtime errors:
 
 - **Exceptions are thrown only** for developer mistakes (e.g., calling methods before `Initialize()`)
-- **Runtime errors** (network issues, store problems, etc.) return:
-  - `ErrorStatus` in result DTOs (e.g., `PurchaseResultDto.ErrorStatus`)
-  - Empty collections for list returns
-  - `null` for nullable types
+- **Runtime errors** (network issues, store problems, etc.) come back as a failed result
 
-This design ensures your app never crashes due to store-related issues.
+Every asynchronous member returns a named result DTO built on
+[`DataResult<TValue, PurchaseErrorStatus>`](https://github.com/Kebechet/Types.Result) from the
+`Kebechet.Types.Result` package, so they are all branched on the same way:
+
+```csharp
+var restoreResult = await _revenueCat.RestoreTransactions();
+
+if (restoreResult.IsSuccess)
+{
+    var activeSubscriptions = restoreResult.Value?.ActiveSubscriptions;
+}
+else
+{
+    Console.WriteLine($"Restore failed: {restoreResult.Error} {restoreResult.ErrorException?.Message}");
+}
+```
+
+| Member | Meaning |
+|--------|---------|
+| `IsSuccess` / `IsError` | Whether the call produced a failure |
+| `Error` | The `PurchaseErrorStatus` to branch on - a closed, documented set you can `switch` over exhaustively |
+| `ErrorException` | The raw store SDK exception, for logs and diagnostics. Never surface it to users |
+| `Value` | The payload. Only meaningful when `IsSuccess`, and **`IsSuccess` does not narrow it** - null-check it |
+
+The result DTOs are thin named subclasses, so signatures stay readable and each type documents its
+own payload:
+
+| Result DTO | `Value` | Returned by |
+|------------|---------|-------------|
+| `CanMakePaymentsResultDto` | `bool` | `CanMakePayments()` |
+| `IntroEligibilityResultDto` | `Dictionary<string, IntroElegibilityStatus>` | `CheckTrialOrIntroDiscountEligibility()` |
+| `OfferingsResultDto` | `List<OfferingDto>` | `GetOfferings()` |
+| `ProductIdentifiersResultDto` | `List<string>` | `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()` |
+| `PurchaseDateResultDto` | `DateTime?` | `GetPurchaseDateForProductIdentifier()` |
+| `ManagementUrlResultDto` | `string?` | `GetManagementSubscriptionUrl()` |
+| `StorefrontResultDto` | `string?` | `GetStorefrontCountryCode()` - empty string when the storefront is not yet known |
+| `CustomerInfoResultDto` | `CustomerInfoDto` | `Login()`, `Logout()`, `RestoreTransactions()`, `GetCustomerInfo()` |
+| `PurchaseResultDto` | `CustomerInfoDto` | `PurchaseProduct()` - carries the same payload as `CustomerInfoResultDto` plus a `Transaction`, but is a sibling of it, not a subclass |
+
+`ErrorException.Message` is platform-specific and may include the RevenueCat backend code and
+message (e.g. `7255 alias limit reached`), but that is not guaranteed - branch on `Error`, log
+`ErrorException`.
+
+Only `PurchaseProduct()` has a user-facing cancel. On every other member,
+`PurchaseCancelledError` means the `CancellationToken` you passed fired - not that the user
+cancelled anything.
 
 ### Common Error Codes
 

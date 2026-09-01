@@ -1,5 +1,6 @@
 using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
+using Types.Result;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
 
@@ -8,9 +9,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public partial bool IsAnonymous() => true;
     public partial string GetAppUserId() => string.Empty;
-    public async partial Task<bool> CanMakePayments(CancellationToken cancellationToken)
+    public async partial Task<CanMakePaymentsResultDto> CanMakePayments(CancellationToken cancellationToken)
     {
-        return false;
+        return new() { Value = false };
     }
 
     public partial void Initialize(string apiKey)
@@ -21,87 +22,62 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         _isInitialized = true;
     }
-    public async partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
+    public async partial Task<IntroEligibilityResultDto> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken)
     {
-        return [];
+        return new() { Value = [] };
     }
 
-    public async partial Task<List<OfferingDto>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
+    public async partial Task<OfferingsResultDto> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
-        return [];
+        return new() { Value = [] };
     }
     public async partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken)
     {
+        return new() { Value = CreateEmptyCustomerInfo() };
+    }
+    public async partial Task<ProductIdentifiersResultDto> GetActiveSubscriptions(CancellationToken cancellationToken)
+    {
+        return new() { Value = [] };
+    }
+    public async partial Task<ProductIdentifiersResultDto> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
+    {
+        return new() { Value = [] };
+    }
+    public async partial Task<PurchaseDateResultDto> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
+    {
         return new();
     }
-    public async partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken)
+    public async partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
     {
-        return [];
+        return new();
     }
-    public async partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken)
     {
-        return [];
+        return new() { Value = CreateEmptyCustomerInfo() };
     }
-    public async partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken)
     {
-        return DateTime.MinValue;
+        return new() { Value = CreateEmptyCustomerInfo() };
     }
-    public async partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken)
     {
-        return string.Empty;
+        return new() { Value = CreateEmptyCustomerInfo() };
     }
-    public async partial Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken)
     {
-        return new()
-        {
-            ActiveSubscriptions = [],
-            AllPurchasedIdentifiers = [],
-            FirstSeen = DateTime.MinValue,
-            LatestExpirationDate = DateTime.MinValue,
-            ManagementURL = string.Empty,
-            NonConsumablePurchases = [],
-            Entitlements = [],
-        };
+        return new() { Value = CreateEmptyCustomerInfo() };
     }
-    public async partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken)
+
+    private static CustomerInfoDto CreateEmptyCustomerInfo() => new()
     {
-        return new()
-        {
-            ActiveSubscriptions = [],
-            AllPurchasedIdentifiers = [],
-            FirstSeen = DateTime.MinValue,
-            LatestExpirationDate = DateTime.MinValue,
-            ManagementURL = string.Empty,
-            NonConsumablePurchases = [],
-            Entitlements = [],
-        };
-    }
-    public async partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken)
-    {
-        return new()
-        {
-            ActiveSubscriptions = [],
-            AllPurchasedIdentifiers = [],
-            FirstSeen = DateTime.MinValue,
-            LatestExpirationDate = DateTime.MinValue,
-            ManagementURL = string.Empty,
-            NonConsumablePurchases = [],
-            Entitlements = [],
-        };
-    }
-    public async partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken)
-    {
-        return new()
-        {
-            ActiveSubscriptions = [],
-            AllPurchasedIdentifiers = [],
-            FirstSeen = DateTime.MinValue,
-            LatestExpirationDate = DateTime.MinValue,
-            ManagementURL = string.Empty,
-            NonConsumablePurchases = [],
-            Entitlements = [],
-        };
-    }
+        ActiveSubscriptions = [],
+        AllPurchasedIdentifiers = [],
+        FirstSeen = DateTime.MinValue,
+        LatestExpirationDate = DateTime.MinValue,
+        ManagementUrl = null,
+        NonConsumablePurchases = [],
+        Entitlements = [],
+    };
 
     // Subscriber Attributes
     public partial void SetEmail(string email)
@@ -116,9 +92,12 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial void SetAttributes(IDictionary<string, string> attributes)
     {
     }
-    public partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken)
+
+    public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken)
     {
-        return Task.FromResult(string.Empty);
+        // Empty, not null: the interface documents the empty string as "storefront not observed
+        // yet" and both real platforms coerce to it. null is the DataResult failure sentinel.
+        return Task.FromResult(new StorefrontResultDto { Value = string.Empty });
     }
 
     internal static partial void EnableDebugLogs(bool enable)

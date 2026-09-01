@@ -1,6 +1,7 @@
 using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
 using Microsoft.Extensions.Logging;
+using Types.Result;
 
 namespace Maui.RevenueCat.InAppBilling.Services;
 
@@ -10,7 +11,6 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     private static bool _isInstanceCreated = false;
     private volatile bool _isInitialized = false;
-    private string _cachedManagementUrl = string.Empty;
 
     public RevenueCatBilling(ILogger<RevenueCatBilling> logger)
     {
@@ -27,23 +27,23 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public bool IsInitialized() => _isInitialized;
     public partial bool IsAnonymous();
     public partial string GetAppUserId();
-    public partial Task<bool> CanMakePayments(CancellationToken cancellationToken);
+    public partial Task<CanMakePaymentsResultDto> CanMakePayments(CancellationToken cancellationToken);
 
     public partial void Initialize(string apiKey);
     public partial void Initialize(string apiKey, string appUserId);
 
-    public partial Task<Dictionary<string, IntroElegibilityStatus>> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken);
-    public partial Task<List<OfferingDto>> GetOfferings(bool forceRefresh, CancellationToken cancellationToken);
+    public partial Task<IntroEligibilityResultDto> CheckTrialOrIntroDiscountEligibility(List<string> identifiers, CancellationToken cancellationToken);
+    public partial Task<OfferingsResultDto> GetOfferings(bool forceRefresh, CancellationToken cancellationToken);
     public partial Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken);
-    public partial Task<List<string>> GetActiveSubscriptions(CancellationToken cancellationToken);
-    public partial Task<List<string>> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);
-    public partial Task<DateTime?> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken);
-    public partial Task<string?> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
-    public partial Task<CustomerInfoDto?> Login(string appUserId, CancellationToken cancellationToken);
-    public partial Task<CustomerInfoDto?> Logout(CancellationToken cancellationToken);
-    public partial Task<CustomerInfoDto?> RestoreTransactions(CancellationToken cancellationToken);
-    public partial Task<CustomerInfoDto?> GetCustomerInfo(CancellationToken cancellationToken);
-    public partial Task<string> GetStorefrontCountryCode(CancellationToken cancellationToken);
+    public partial Task<ProductIdentifiersResultDto> GetActiveSubscriptions(CancellationToken cancellationToken);
+    public partial Task<ProductIdentifiersResultDto> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);
+    public partial Task<PurchaseDateResultDto> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken);
+    public partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken);
+    public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken);
 
     // Subscriber Attributes
     public partial void SetEmail(string email);

@@ -15,44 +15,55 @@ public class HarnessRunnerTests
         revenueCatBilling.IsInitialized().Returns(true);
         revenueCatBilling.IsAnonymous().Returns(true);
         revenueCatBilling.GetAppUserId().Returns("$RCAnonymousID:abc");
-        revenueCatBilling.CanMakePayments(Arg.Any<CancellationToken>()).Returns(true);
+        revenueCatBilling.CanMakePayments(Arg.Any<CancellationToken>())
+            .Returns(new CanMakePaymentsResultDto { Value = true });
         revenueCatBilling.GetOfferings(Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(new List<OfferingDto>
+            .Returns(new OfferingsResultDto
             {
-                new()
-                {
-                    Identifier = "default",
-                    IsCurrent = true,
-                    AvailablePackages = new List<PackageDto>
+                Value =
+                [
+                    new()
                     {
-                        new()
-                        {
-                            Identifier = "$rc_monthly",
-                            OfferingIdentifier = "default",
-                            Product = new ProductDto { Sku = "demo_sub_monthly" },
-                        },
+                        Identifier = "default",
+                        IsCurrent = true,
+                        AvailablePackages =
+                        [
+                            new()
+                            {
+                                Identifier = "$rc_monthly",
+                                OfferingIdentifier = "default",
+                                Product = new ProductDto { Sku = "demo_sub_monthly" },
+                            },
+                        ],
                     },
-                },
+                ],
             });
         revenueCatBilling.CheckTrialOrIntroDiscountEligibility(Arg.Any<List<string>>(), Arg.Any<CancellationToken>())
-            .Returns(new Dictionary<string, IntroElegibilityStatus>());
+            .Returns(new IntroEligibilityResultDto { Value = [] });
         revenueCatBilling.GetCustomerInfo(Arg.Any<CancellationToken>())
-            .Returns(new CustomerInfoDto
+            .Returns(new CustomerInfoResultDto
             {
-                ActiveSubscriptions = [],
-                AllPurchasedIdentifiers = [],
-                NonConsumablePurchases = [],
-                FirstSeen = null,
-                LatestExpirationDate = null,
-                ManagementURL = null,
-                Entitlements = [],
+                Value = new CustomerInfoDto
+                {
+                    ActiveSubscriptions = [],
+                    AllPurchasedIdentifiers = [],
+                    NonConsumablePurchases = [],
+                    FirstSeen = null,
+                    LatestExpirationDate = null,
+                    ManagementUrl = null,
+                    Entitlements = [],
+                },
             });
-        revenueCatBilling.GetActiveSubscriptions(Arg.Any<CancellationToken>()).Returns(new List<string>());
-        revenueCatBilling.GetAllPurchasedIdentifiers(Arg.Any<CancellationToken>()).Returns(new List<string>());
+        revenueCatBilling.GetActiveSubscriptions(Arg.Any<CancellationToken>())
+            .Returns(new ProductIdentifiersResultDto { Value = [] });
+        revenueCatBilling.GetAllPurchasedIdentifiers(Arg.Any<CancellationToken>())
+            .Returns(new ProductIdentifiersResultDto { Value = [] });
         revenueCatBilling.GetPurchaseDateForProductIdentifier(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns((DateTime?)null);
-        revenueCatBilling.GetManagementSubscriptionUrl(Arg.Any<CancellationToken>()).Returns((string?)null);
-        revenueCatBilling.GetStorefrontCountryCode(Arg.Any<CancellationToken>()).Returns("US");
+            .Returns(new PurchaseDateResultDto());
+        revenueCatBilling.GetManagementSubscriptionUrl(Arg.Any<CancellationToken>())
+            .Returns(new ManagementUrlResultDto());
+        revenueCatBilling.GetStorefrontCountryCode(Arg.Any<CancellationToken>())
+            .Returns(new StorefrontResultDto { Value = "US" });
         return revenueCatBilling;
     }
 
@@ -72,7 +83,7 @@ public class HarnessRunnerTests
     {
         var revenueCatBilling = CreateHappyBilling();
         revenueCatBilling.GetOfferings(false, Arg.Any<CancellationToken>())
-            .Returns(x => Task.FromException<List<OfferingDto>>(new InvalidOperationException("boom")));
+            .Returns(x => Task.FromException<OfferingsResultDto>(new InvalidOperationException("boom")));
         var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
 
         var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
@@ -83,11 +94,50 @@ public class HarnessRunnerTests
     }
 
     [Fact]
+    public async Task RunAllChecks_GetOfferingsReturnsErrorResult_ReportsFailedWithErrorStatus()
+    {
+        var revenueCatBilling = CreateHappyBilling();
+        revenueCatBilling.GetOfferings(false, Arg.Any<CancellationToken>())
+            .Returns(new OfferingsResultDto
+            {
+                Error = PurchaseErrorStatus.NetworkError,
+                ErrorException = new InvalidOperationException("offline"),
+            });
+        var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
+
+        var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
+
+        var failedCheck = harnessCheckResults.First(x => x.Status == HarnessCheckStatus.Failed);
+        Assert.Contains(nameof(PurchaseErrorStatus.NetworkError), failedCheck.Error);
+        Assert.Contains("offline", failedCheck.Error);
+    }
+
+    [Fact]
+    public async Task RunAllChecks_CancelledResult_ReportsTimedOutNotFailed()
+    {
+        // The platform implementations catch OperationCanceledException and report it as a
+        // cancelled *result*, so the per-call timeout never reaches the runner as an exception.
+        var revenueCatBilling = CreateHappyBilling();
+        revenueCatBilling.GetOfferings(false, Arg.Any<CancellationToken>())
+            .Returns(new OfferingsResultDto
+            {
+                Error = PurchaseErrorStatus.PurchaseCancelledError,
+                ErrorException = new OperationCanceledException(),
+            });
+        var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
+
+        var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
+
+        var offeringsCheck = harnessCheckResults.First(x => x.Name == nameof(IRevenueCatBilling.GetOfferings));
+        Assert.Equal(HarnessCheckStatus.TimedOut, offeringsCheck.Status);
+    }
+
+    [Fact]
     public async Task RunAllChecks_MethodHangs_ReportsTimedOut()
     {
         var revenueCatBilling = CreateHappyBilling();
         revenueCatBilling.GetStorefrontCountryCode(Arg.Any<CancellationToken>())
-            .Returns(new TaskCompletionSource<string>().Task);
+            .Returns(new TaskCompletionSource<StorefrontResultDto>().Task);
         var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog(), TimeSpan.FromMilliseconds(100));
 
         var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
@@ -127,7 +177,7 @@ public class HarnessRunnerTests
     {
         var revenueCatBilling = CreateHappyBilling();
         revenueCatBilling.CheckTrialOrIntroDiscountEligibility(Arg.Any<List<string>>(), Arg.Any<CancellationToken>())
-            .Returns<Task<Dictionary<string, IntroElegibilityStatus>>>(x => throw new NotImplementedException("This method is iOS Only"));
+            .Returns<Task<IntroEligibilityResultDto>>(x => throw new NotImplementedException("This method is iOS Only"));
         var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
 
         var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
@@ -145,7 +195,7 @@ public class HarnessRunnerTests
             .Returns(async x =>
             {
                 await Task.Delay(System.Threading.Timeout.Infinite, x.Arg<CancellationToken>());
-                return "US";
+                return new StorefrontResultDto { Value = "US" };
             });
         var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog(), TimeSpan.FromMilliseconds(100));
 

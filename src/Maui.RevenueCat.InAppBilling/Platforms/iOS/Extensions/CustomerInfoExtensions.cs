@@ -14,7 +14,7 @@ internal static class CustomerInfoExtensions
             NonConsumablePurchases = customerInfo.NonConsumablePurchases.ToStringList(),
             FirstSeen = customerInfo.FirstSeen.ToDateTime(),
             LatestExpirationDate = customerInfo.LatestExpirationDate.ToDateTime(),
-            ManagementURL = customerInfo.ManagementURL?.ToString(),
+            ManagementUrl = customerInfo.ManagementURL?.ToString(),
             Entitlements = customerInfo.Entitlements.ToEntitlementInfoDtoList(),
         };
     }

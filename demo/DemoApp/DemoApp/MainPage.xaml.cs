@@ -150,7 +150,12 @@ public partial class MainPage : ContentPage
             var isInitialized = _revenueCatBilling.IsInitialized();
             var isAnonymous = _revenueCatBilling.IsAnonymous();
             var appUserId = _revenueCatBilling.GetAppUserId();
-            var storefrontCountryCode = await _revenueCatBilling.GetStorefrontCountryCode();
+            var storefrontResult = await _revenueCatBilling.GetStorefrontCountryCode();
+            if (storefrontResult.IsError)
+            {
+                _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.GetStorefrontCountryCode)}: {HarnessFormatter.FormatError(storefrontResult)}");
+            }
+            var storefrontCountryCode = storefrontResult.Value;
             var activeApiKey = DemoStoreSelection.ActiveApiKey;
             var activeApiKeyPrefix = activeApiKey.Length > 5 ? activeApiKey[..5] : activeApiKey;
             Dispatcher.Dispatch(() =>
@@ -183,7 +188,7 @@ public partial class MainPage : ContentPage
             var purchaseResult = await Task.Run(() => _revenueCatBilling.PurchaseProduct(packageToPurchase));
             _harnessLog.Add(purchaseResult.IsSuccess
                 ? $"PASS Purchase {packageToPurchase.Identifier}: transaction {purchaseResult.Transaction?.TransactionIdentifier ?? "?"}"
-                : $"FAIL Purchase {packageToPurchase.Identifier}: {purchaseResult.ErrorStatus} {purchaseResult.ErrorMessage}");
+                : $"FAIL Purchase {packageToPurchase.Identifier}: {HarnessFormatter.FormatError(purchaseResult)}");
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -200,8 +205,8 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var customerInfo = await _revenueCatBilling.RestoreTransactions();
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.RestoreTransactions)}: {FormatCustomerInfo(customerInfo)}");
+            var restoreResult = await _revenueCatBilling.RestoreTransactions();
+            _harnessLog.Add(HarnessFormatter.FormatCustomerInfoResult(restoreResult, nameof(IRevenueCatBilling.RestoreTransactions)));
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -221,8 +226,8 @@ public partial class MainPage : ContentPage
 
         try
         {
-            var customerInfo = await _revenueCatBilling.Login(appUserId);
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Login)} as {appUserId}: {FormatCustomerInfo(customerInfo)}");
+            var loginResult = await _revenueCatBilling.Login(appUserId);
+            _harnessLog.Add(HarnessFormatter.FormatCustomerInfoResult(loginResult, $"{nameof(IRevenueCatBilling.Login)} as {appUserId}"));
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -235,8 +240,8 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var customerInfo = await _revenueCatBilling.Logout();
-            _harnessLog.Add($"PASS {nameof(IRevenueCatBilling.Logout)}: {FormatCustomerInfo(customerInfo)}");
+            var logoutResult = await _revenueCatBilling.Logout();
+            _harnessLog.Add(HarnessFormatter.FormatCustomerInfoResult(logoutResult, nameof(IRevenueCatBilling.Logout)));
             await RefreshStatus();
         }
         catch (Exception exception)
@@ -249,14 +254,19 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var managementUrl = await _revenueCatBilling.GetManagementSubscriptionUrl();
-            if (managementUrl is null)
+            var managementUrlResult = await _revenueCatBilling.GetManagementSubscriptionUrl();
+            if (managementUrlResult.IsError)
+            {
+                _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: {HarnessFormatter.FormatError(managementUrlResult)}");
+                return;
+            }
+            if (managementUrlResult.Value is null)
             {
                 _harnessLog.Add($"{nameof(IRevenueCatBilling.GetManagementSubscriptionUrl)}: null (no active store subscription)");
                 return;
             }
-            _harnessLog.Add($"Opening {managementUrl}");
-            await Launcher.OpenAsync(managementUrl);
+            _harnessLog.Add($"Opening {managementUrlResult.Value}");
+            await Launcher.OpenAsync(managementUrlResult.Value);
         }
         catch (Exception exception)
         {
@@ -270,15 +280,4 @@ public partial class MainPage : ContentPage
         _harnessLog.Add("Log copied to clipboard");
     }
 
-    private static string FormatCustomerInfo(CustomerInfoDto? customerInfo)
-    {
-        if (customerInfo is null)
-        {
-            return "null";
-        }
-        var entitlementIdentifiers = customerInfo.Entitlements.Any()
-            ? string.Join(", ", customerInfo.Entitlements.Select(x => x.Identifier))
-            : "none";
-        return $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.AllPurchasedIdentifiers.Count} purchased, entitlements: {entitlementIdentifiers}";
-    }
 }
