@@ -114,6 +114,15 @@ public class BillingResultTests
     }
 
     [Fact]
+    public async Task StandardPlatformStub_UnknownStorefront_SucceedsWithEmptyString()
+    {
+        var storefrontResult = await _standardPlatformBilling.Value.GetStorefrontCountryCode(CancellationToken.None);
+
+        Assert.True(storefrontResult.IsSuccess);
+        Assert.Equal(string.Empty, storefrontResult.Value);
+    }
+
+    [Fact]
     public async Task StandardPlatformStub_Purchase_ReportsNoTransaction()
     {
         var purchaseResult = await _standardPlatformBilling.Value.PurchaseProduct(new PackageDto(), CancellationToken.None);

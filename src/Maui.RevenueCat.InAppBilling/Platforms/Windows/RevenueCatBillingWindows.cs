@@ -95,7 +95,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken)
     {
-        return Task.FromResult(new StorefrontResultDto { Value = null });
+        // Empty, not null: the interface documents the empty string as "storefront not observed
+        // yet" and both real platforms coerce to it. null is the DataResult failure sentinel.
+        return Task.FromResult(new StorefrontResultDto { Value = string.Empty });
     }
 
     internal static partial void EnableDebugLogs(bool enable)
