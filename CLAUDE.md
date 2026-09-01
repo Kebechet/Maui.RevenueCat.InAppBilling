@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a .NET MAUI cross-platform wrapper library for RevenueCat in-app billing. It provides a unified C# API that abstracts platform-specific RevenueCat SDK implementations for iOS and Android, with stub implementations for Windows and MacCatalyst.
+This is a .NET MAUI cross-platform wrapper library for RevenueCat in-app billing. It provides a unified C# API that abstracts platform-specific RevenueCat SDK implementations for iOS, MacCatalyst (which shares the iOS sources) and Android, with stub implementations for Windows and unsupported platforms.
 
 **Published as**: `Kebechet.Maui.RevenueCat.InAppBilling` on NuGet
 
@@ -74,8 +74,10 @@ To verify a binding change end-to-end before publishing — i.e. consumed as a r
    - `Platforms/iOS/RevenueCatBillingiOS.cs` - Real iOS implementation
    - `Platforms/Android/RevenueCatBillingAndroid.cs` - Real Android implementation
    - `Platforms/Windows/RevenueCatBillingWindows.cs` - Stub implementation
-   - `Platforms/MacCatalyst/RevenueCatBillingMac.cs` - Stub implementation
    - `PlatformsStandard/RevenueCatBillingStandard.cs` - Stub for unsupported platforms
+   - MacCatalyst has **no** file of its own. The MAUI SDK auto-excludes `Platforms/iOS` for the
+     maccatalyst TFM, so the `_IncludeIosSourcesForMacCatalyst` target in `Maui.RevenueCat.csproj`
+     re-adds them: maccatalyst compiles the real iOS implementation. Closes #48.
 
 ### Partial Class Pattern
 
@@ -194,7 +196,16 @@ Must be called in `App.xaml.cs` `OnStart()` method (not in constructor) with pla
 - **Android**: Maps from `StoreTransaction` (uses `PurchaseToken` as identifier, derives quantity from `ProductIds.Count`)
 
 ### Stub Implementations
-Windows, MacCatalyst, and PlatformsStandard have dummy implementations that return empty collections and default values to avoid platform-specific code in consuming applications.
+Windows and PlatformsStandard have dummy implementations that return empty collections and default
+values to avoid platform-specific code in consuming applications. MacCatalyst is **not** a stub - it
+compiles the real iOS implementation (see the Partial Class Pattern section).
+
+The stubs return mock data and report success — that is the point: a consuming app builds and runs
+on Windows without platform conditionals. Do not turn a stub into an error path.
+
+One detail worth keeping straight: `GetStorefrontCountryCode()` returns `string.Empty`, not `null`,
+matching the interface contract and both real platforms. `null` is the `DataResult` failure
+sentinel, so a stub must not use it to mean "unknown".
 
 ### Price Localization
 `PricingDto.PriceLocalized` is set by the wrapper's `PackageDtoExtensions.GetLocalizedPrice(currencyCode, price)`, NOT by the platform's `StoreProduct.LocalizedPriceString` (iOS) / `Price.Formatted` (Android). The wrapper version drops `,00` for whole-number prices (`199 Kč`, not `199,00 Kč`) and is deterministic across runs via a stable ordinal scan over `CultureInfo.GetCultures()`. Per-period prices are derived in `GetPriceFor(PriceDuration)` / `GetPriceWithCurrencyFor(PriceDuration)` from the package's base `Price` normalized to monthly and then scaled to the requested duration (`Daily` / `Weekly` / `Monthly` / `Yearly`) — no platform per-period property is exposed on `PricingDto` (the platform's per-period strings would re-introduce the `,00` regression and only matter for trial/intro pricing that the wrapper doesn't surface anyway). If you ever want byte-for-byte parity with the App Store / Play Store payment confirmation, swap `PriceLocalized` back to the platform string in `PackageArrayExtensions.cs` (iOS) / `PackageListExtensions.cs` (Android).

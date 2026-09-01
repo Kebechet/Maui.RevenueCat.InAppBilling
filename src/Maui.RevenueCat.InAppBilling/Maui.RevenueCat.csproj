@@ -52,7 +52,7 @@ FIXED
 - `PurchaseProduct()` returned a result that was neither `IsSuccess` nor `IsError` when the transaction did not reach the purchased state. That state now reports an error while still carrying the `Transaction`: `PaymentPendingError` when the store says the payment is still settling (iOS `Deferred`, Android `PENDING`), and `UnknownError` for every other non-purchased state, which is an anomaly rather than something the user can wait out.
 - `PurchaseProduct()` logged nothing at all when the native error code mapped to a cancellation - it skipped the error log without logging anything else. Every member now logs cancellation at debug and other failures at error, through one shared classifier.
 - Removed the `_cachedManagementUrl` field. It was read on both platforms but never assigned, so its early-return guard could never fire. Caching it would have been wrong regardless: the URL is per-customer, so a process-lifetime cache would survive `Login`/`Logout`.
-- The Windows and PlatformsStandard stubs no longer report `IsSuccess == false` together with `IsError == false` for `PurchaseProduct()`, a state that satisfied neither branch of the documented pattern.
+- The Windows and PlatformsStandard stubs no longer report `IsSuccess == false` together with `IsError == false` for `PurchaseProduct()`, a state that satisfied neither branch of the documented pattern. Every stub member now reports an empty success, and `GetStorefrontCountryCode()` keeps the documented `string.Empty` sentinel rather than `null`.
 
 NOTE
 - Exceptions are still thrown for developer mistakes, such as calling a member before `Initialize()`, and `CheckTrialOrIntroDiscountEligibility()` still throws `NotImplementedException` on Android.

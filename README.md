@@ -192,8 +192,9 @@ public class PurchaseService
 | MacCatalyst | Full implementation (shares the iOS implementation) |
 
 Stub implementations return a successful result (`IsSuccess == true`, no `Error`) whose `Value` is
-an empty collection, an empty `CustomerInfoDto`, or `null` for the nullable payloads. This allows
-you to build and test on Windows/Mac without platform conditionals.
+an empty collection, an empty `CustomerInfoDto`, `string.Empty` for the storefront country code, or
+`null` for `GetManagementSubscriptionUrl()` and `GetPurchaseDateForProductIdentifier()`. This allows
+you to build and test on Windows without platform conditionals.
 
 ## Error Handling
 
