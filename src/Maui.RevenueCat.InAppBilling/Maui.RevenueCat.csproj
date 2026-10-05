@@ -33,29 +33,17 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>9.0.0</Version>
+    <Version>10.0.0</Version>
     <PackageReleaseNotes>
 BREAKING
-- Every asynchronous `IRevenueCatBilling` member now returns a result DTO instead of a bare value. Previously a network blip, a cancellation and a backend rejection were indistinguishable from a legitimately empty result - the RevenueCat error only ever reached the log. Read `.Value` on success; branch on `.Error`; log `.ErrorException`.
-  - `CanMakePaymentsResultDto`, `IntroEligibilityResultDto`, `OfferingsResultDto`, `ProductIdentifiersResultDto`, `PurchaseDateResultDto`, `ManagementUrlResultDto`, `StorefrontResultDto`, `CustomerInfoResultDto` and `PurchaseResultDto`. Each is a thin named subclass of `DataResult&lt;TValue, PurchaseErrorStatus&gt;` from the `Kebechet.Types.Result` package, so signatures stay readable and every result shares one contract.
-  - `PurchaseProduct()` keeps returning `PurchaseResultDto`, now a `DataResult&lt;CustomerInfoDto, PurchaseErrorStatus&gt;` subclass: `ErrorStatus` becomes `Error`, `ErrorMessage` becomes `ErrorException`, `CustomerInfo` becomes `Value`, and `Transaction` stays. It is a sibling of `CustomerInfoResultDto`, not a subclass of it.
-- `PurchaseResultDto` is a `class`, not a `sealed record`. Value equality, `with` expressions and the record `ToString()` are gone, so `resultA == resultB` is now reference equality rather than a compile error or a value comparison. The other result DTOs are classes for the same reason - they derive from the `Kebechet.Types.Result` base types.
-- `CustomerInfoDto.ManagementURL` is renamed to `CustomerInfoDto.ManagementUrl`, matching .NET acronym casing.
-- New public dependency on `Kebechet.Types.Result` (1.0.0). It cannot be hidden behind `PrivateAssets` because the types appear in the public signatures.
+- `GetCustomerInfo()` takes a `CustomerInfoFetchPolicy` before its `CancellationToken`: `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken cancellationToken = default)`. `GetCustomerInfo()` with no arguments compiles and behaves as before, but a call that passes only the token, `GetCustomerInfo(cancellationToken)`, no longer compiles - pass a policy first or name the argument (`GetCustomerInfo(cancellationToken: cancellationToken)`). Implementations of `IRevenueCatBilling` and mock setups such as `GetCustomerInfo(Arg.Any&lt;CancellationToken&gt;())` need the new parameter too.
 
 ADDED
-- `PurchaseErrorStatus` is now reported by every fallible member, so the documented failure modes can be handled exhaustively with a `switch`.
-- `GetPurchaseDateForProductIdentifier()` and `GetManagementSubscriptionUrl()` distinguish "not purchased" / "no store-managed subscription" (success with a null `Value`) from a failure (`Error` set).
-
-FIXED
-- Android `GetManagementSubscriptionUrl()` returned `null` both when the user had no store subscription and when the call failed; iOS returned `string.Empty` for the former. The two cases are now distinguishable, and the platforms agree.
-- `PurchaseProduct()` returned a result that was neither `IsSuccess` nor `IsError` when the transaction did not reach the purchased state. That state now reports an error while still carrying the `Transaction`: `PaymentPendingError` when the store says the payment is still settling (iOS `Deferred`, Android `PENDING`), and `UnknownError` for every other non-purchased state, which is an anomaly rather than something the user can wait out.
-- `PurchaseProduct()` logged nothing at all when the native error code mapped to a cancellation - it skipped the error log without logging anything else. Every member now logs cancellation at debug and other failures at error, through one shared classifier.
-- Removed the `_cachedManagementUrl` field. It was read on both platforms but never assigned, so its early-return guard could never fire. Caching it would have been wrong regardless: the URL is per-customer, so a process-lifetime cache would survive `Login`/`Logout`.
-- The Windows and PlatformsStandard stubs no longer report `IsSuccess == false` together with `IsError == false` for `PurchaseProduct()`, a state that satisfied neither branch of the documented pattern. Every stub member now reports an empty success, and `GetStorefrontCountryCode()` keeps the documented `string.Empty` sentinel rather than `null`.
-
-NOTE
-- Exceptions are still thrown for developer mistakes, such as calling a member before `Initialize()`, and `CheckTrialOrIntroDiscountEligibility()` still throws `NotImplementedException` on Android.
+- `CustomerInfoFetchPolicy` controls whether `GetCustomerInfo()` answers from the customer info the RevenueCat SDK caches on the device, which it treats as stale after 5 minutes. Previously the wrapper always used the SDK default, which returns the cache even when stale, so a change made outside the app (a web purchase, a grant from the RevenueCat dashboard) could not be read on demand. https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/128
+  - `CachedOrFetched` (default) returns the cache even when stale and fetches only when nothing is cached.
+  - `FetchCurrent` always fetches from RevenueCat.
+  - `NotStaleCachedOrFetched` returns the cache while it is fresh, otherwise fetches, and fails rather than returning stale data.
+  - `FromCacheOnly` never fetches.
 </PackageReleaseNotes>
   </PropertyGroup>
 
