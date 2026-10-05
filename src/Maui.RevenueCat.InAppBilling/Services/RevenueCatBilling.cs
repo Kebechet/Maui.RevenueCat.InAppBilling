@@ -42,7 +42,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken);
-    public partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken);
+    public partial Task<CustomerInfoResultDto> GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy, CancellationToken cancellationToken);
     public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken);
 
     // Subscriber Attributes

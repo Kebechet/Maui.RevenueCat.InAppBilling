@@ -116,8 +116,26 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 |--------|-------------|
 | `Login(string appUserId)` | Log in an identified user. `Value` is `CustomerInfoDto` |
 | `Logout()` | Log out and create anonymous user. `Value` is `CustomerInfoDto` |
-| `GetCustomerInfo()` | Get current customer info and entitlements. `Value` is `CustomerInfoDto` |
+| `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CachedOrFetched)` | Get current customer info and entitlements. `Value` is `CustomerInfoDto`. The default may return stale cached data - see [Customer Info Caching](#customer-info-caching) |
 | `GetManagementSubscriptionUrl()` | Get URL for subscription management. `Value` is `string?`; null means no store-managed subscription |
+
+### Customer Info Caching
+
+The RevenueCat SDK caches customer info on the device and treats it as stale after 5 minutes ([RevenueCat docs](https://www.revenuecat.com/docs/customers/customer-info)). `fetchPolicy` decides whether `GetCustomerInfo` answers from that cache:
+
+| `CustomerInfoFetchPolicy` | Behavior |
+|---------------------------|----------|
+| `CachedOrFetched` (default) | Returns the cache even when stale; fetches only when nothing is cached. A stale cache is refreshed in the background, but this call still returns the stale data |
+| `FetchCurrent` | Always fetches from RevenueCat. Fails when offline |
+| `NotStaleCachedOrFetched` | Returns the cache while it is fresh, otherwise fetches. Never returns stale data - fails instead when the fetch fails |
+| `FromCacheOnly` | Never fetches. Fails when nothing is cached |
+
+```csharp
+// e.g. after the user bought on the web, so the device cache cannot know about it yet
+var customerInfoResult = await _revenueCat.GetCustomerInfo(CustomerInfoFetchPolicy.FetchCurrent);
+```
+
+`PurchaseProduct()`, `RestoreTransactions()`, `Login()` and `Logout()` already return fresh customer info. `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()`, `GetPurchaseDateForProductIdentifier()` and `GetManagementSubscriptionUrl()` always read with `CachedOrFetched`.
 
 ### Subscriber Attributes
 

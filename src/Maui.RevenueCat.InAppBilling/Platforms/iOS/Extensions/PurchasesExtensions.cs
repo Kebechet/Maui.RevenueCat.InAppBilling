@@ -1,4 +1,5 @@
 using Foundation;
+using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Exceptions;
 using Maui.RevenueCat.InAppBilling.Platforms.iOS.Models;
 using Maui.RevenueCat.iOS;
@@ -115,12 +116,12 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
-    internal static Task<RCCustomerInfo> GetCustomerInfoAsync(this RCPurchases purchases,
+    internal static Task<RCCustomerInfo> GetCustomerInfoAsync(this RCPurchases purchases, CustomerInfoFetchPolicy fetchPolicy,
         CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<RCCustomerInfo>();
         cancellationToken.Register(() => tcs.TrySetCanceled());
-        purchases.GetCustomerInfoWithCompletion((RCCustomerInfo customerInfo, NSError error) =>
+        purchases.GetCustomerInfoWithFetchPolicy(fetchPolicy.ToRCCacheFetchPolicy(), (RCCustomerInfo customerInfo, NSError error) =>
         {
             if (error != null)
             {
