@@ -70,7 +70,7 @@ public class BillingResultTests
             await billing.Login("harness", CancellationToken.None),
             await billing.Logout(CancellationToken.None),
             await billing.RestoreTransactions(CancellationToken.None),
-            await billing.GetCustomerInfo(CancellationToken.None),
+            await billing.GetCustomerInfo(CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken.None),
             await billing.GetStorefrontCountryCode(CancellationToken.None),
         ];
 
@@ -94,7 +94,7 @@ public class BillingResultTests
             await billing.RestoreTransactions(CancellationToken.None),
             await billing.Login("harness", CancellationToken.None),
             await billing.Logout(CancellationToken.None),
-            await billing.GetCustomerInfo(CancellationToken.None),
+            await billing.GetCustomerInfo(CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken.None),
         ];
 
         Assert.All(results, result =>
