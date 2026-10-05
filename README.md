@@ -81,6 +81,24 @@ On Android no such rebuild is needed: the RevenueCat SDK ships as a normal AAR (
 
 See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-store-api-key-support-bypass_simulated_store_release_check) for the build-time details and issue [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116) for context.
 
+### Debug logs
+
+RevenueCat's debug logs are off by default. Enable them explicitly, for example only in your Debug builds:
+
+```csharp
+#if DEBUG
+builder.Services.AddRevenueCatBilling(forceEnableDebugLogs: true);
+#else
+builder.Services.AddRevenueCatBilling();
+#endif
+```
+
+Where to read them:
+- **Android:** logcat, filter by `Purchases`.
+- **iOS:** the device's system log, not the Visual Studio output window. Open it in Xcode → Window → Devices and Simulators → Open Console, or in Console.app on the Mac, and filter by `Purchases`.
+
+When offerings come back empty with a configuration error, the logs show which product identifiers RevenueCat requested from the store. See [Why are offerings empty?](https://rev.cat/why-are-offerings-empty) and issue [#127](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/127).
+
 ## API Reference
 
 ### Initialization & State
