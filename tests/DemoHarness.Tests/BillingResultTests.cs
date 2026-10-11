@@ -3,6 +3,7 @@ using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Types.Result;
 using Xunit;
 
@@ -129,6 +130,16 @@ public class BillingResultTests
 
         Assert.True(purchaseResult.IsSuccess);
         Assert.Null(purchaseResult.Transaction);
+    }
+
+    [Fact]
+    public async Task GetCustomerInfo_WithoutArguments_DefaultsToCachedOrFetched()
+    {
+        var revenueCatBilling = Substitute.For<IRevenueCatBilling>();
+
+        await revenueCatBilling.GetCustomerInfo();
+
+        await revenueCatBilling.Received(1).GetCustomerInfo(CustomerInfoFetchPolicy.CachedOrFetched, Arg.Any<CancellationToken>());
     }
 
     [Theory]
