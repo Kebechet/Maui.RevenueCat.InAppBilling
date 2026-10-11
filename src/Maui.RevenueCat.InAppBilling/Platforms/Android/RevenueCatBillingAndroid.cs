@@ -3,6 +3,7 @@ using Com.Revenuecat.Purchases;
 using Android.App;
 using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Extensions;
+using Maui.RevenueCat.InAppBilling.Platforms.Android;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Extensions;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
@@ -163,7 +164,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            purchaseSuccessInfo = await _purchases.PurchaseAsync(_currentActivityContext, packageToBuy, cancellationToken);
+            var subscriptionReplacement = await GetSubscriptionReplacement(packageToBuy.Product, cancellationToken);
+            purchaseSuccessInfo = await _purchases.PurchaseAsync(_currentActivityContext, packageToBuy, subscriptionReplacement, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -211,6 +213,63 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             Transaction = transaction,
             Value = customerInfo
         };
+    }
+
+    // Best effort, as in RevenueCat's own Paywalls: when the subscription to replace cannot be determined, the
+    // purchase still goes ahead, without a replacement, as it did before the wrapper replaced subscriptions.
+    private async Task<SubscriptionReplacement?> GetSubscriptionReplacement(IStoreProduct productToBuy, CancellationToken cancellationToken)
+    {
+        if (productToBuy.Type != ProductType.Subs)
+        {
+            return null;
+        }
+
+        try
+        {
+            // NotStaleCachedOrFetched rather than the cache RevenueCat's Paywalls read: a subscription the stale
+            // cache still reports as active makes RevenueCat fail the whole purchase with PurchaseInvalidError
+            // when Google Play no longer has it.
+            using var customerInfo = await _purchases.GetCustomerInfoAsync(CustomerInfoFetchPolicy.NotStaleCachedOrFetched, cancellationToken);
+            var activePlayStoreSubscriptions = customerInfo.SubscriptionsByProductIdentifier.Values
+                .Where(subscription => subscription.IsActive && subscription.Store == Store.PlayStore)
+                .Select(subscription => subscription.ToActivePlayStoreSubscription())
+                .ToList();
+
+            var (subscriptionIdToBuy, _) = SubscriptionReplacementRules.ParseProductIdentifier(productToBuy.Id);
+            var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace(activePlayStoreSubscriptions, subscriptionIdToBuy);
+            if (subscriptionToReplace is null)
+            {
+                return null;
+            }
+
+            var productsOfSubscriptionToReplace = await _purchases.GetSubscriptionProductsAsync([subscriptionToReplace.SubscriptionId], cancellationToken);
+            var productToReplace = productsOfSubscriptionToReplace
+                .FirstOrDefault(product => SubscriptionReplacementRules.IsProductOf(subscriptionToReplace, product.Id));
+
+            var isUpgrade = SubscriptionReplacementRules.IsUpgrade(
+                oldComparablePrice: productToReplace?.GetComparablePrice(subscriptionToReplace.IsSandbox),
+                newComparablePrice: productToBuy.GetComparablePrice(subscriptionToReplace.IsSandbox));
+
+            // The defaults of RevenueCat's Paywalls, which also match an App Store subscription group: an upgrade
+            // takes effect immediately, a downgrade at the next renewal.
+            var replacementMode = isUpgrade ? StoreReplacementMode.ChargeProratedPrice : StoreReplacementMode.Deferred;
+
+            _logger.LogDebug(
+                "{productToBuy} replaces the active subscription {subscriptionToReplace} as an {productChange}.",
+                productToBuy.Id,
+                subscriptionToReplace.SubscriptionId,
+                isUpgrade ? "upgrade" : "downgrade");
+
+            return new SubscriptionReplacement(subscriptionToReplace.SubscriptionId, replacementMode);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not determine which active subscription {productToBuy} replaces, so it is bought without a replacement.",
+                productToBuy.Id);
+            return null;
+        }
     }
     public async partial Task<ProductIdentifiersResultDto> GetActiveSubscriptions(CancellationToken cancellationToken)
     {

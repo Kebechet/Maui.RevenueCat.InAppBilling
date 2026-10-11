@@ -209,3 +209,16 @@ sentinel, so a stub must not use it to mean "unknown".
 
 ### Price Localization
 `PricingDto.PriceLocalized` is set by the wrapper's `PackageDtoExtensions.GetLocalizedPrice(currencyCode, price)`, NOT by the platform's `StoreProduct.LocalizedPriceString` (iOS) / `Price.Formatted` (Android). The wrapper version drops `,00` for whole-number prices (`199 Kč`, not `199,00 Kč`) and is deterministic across runs via a stable ordinal scan over `CultureInfo.GetCultures()`. Per-period prices are derived in `GetPriceFor(PriceDuration)` / `GetPriceWithCurrencyFor(PriceDuration)` from the package's base `Price` normalized to monthly and then scaled to the requested duration (`Daily` / `Weekly` / `Monthly` / `Yearly`) — no platform per-period property is exposed on `PricingDto` (the platform's per-period strings would re-introduce the `,00` regression and only matter for trial/intro pricing that the wrapper doesn't surface anyway). If you ever want byte-for-byte parity with the App Store / Play Store payment confirmation, swap `PriceLocalized` back to the platform string in `PackageArrayExtensions.cs` (iOS) / `PackageListExtensions.cs` (Android).
+
+### No Platform-Only Switches in the Public API
+`IRevenueCatBilling` must not grow parameters or options that only one platform honours. When the stores
+behave differently, the wrapper closes the gap internally so the call means the same thing everywhere.
+
+Example: subscription upgrades/downgrades (https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/131).
+The App Store replaces a subscription within its group by itself; Google Play has no groups and would run
+both in parallel. So on Android, `PurchaseProduct` names the user's single active Play Store subscription
+via `PurchaseParams.Builder.OldProductId` + `.ReplacementMode`, the way RevenueCat's own Paywalls do
+(https://github.com/RevenueCat/purchases-android/pull/3062). The decision rules live in
+`Platforms/Android/SubscriptionReplacementRules.cs`, which must stay free of Android types:
+`DemoHarness.Tests` compiles that file directly through a linked `<Compile>` item, because the test project
+cannot load the `net9.0-android` build.

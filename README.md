@@ -128,6 +128,21 @@ When offerings come back empty with a configuration error, the logs show which p
 | `GetPurchaseDateForProductIdentifier(string productSku)` | Get purchase date for a specific product. `Value` is `DateTime?`; null means never purchased |
 | `RestoreTransactions()` | Restore previous purchases. `Value` is `CustomerInfoDto` |
 
+### Switching Subscriptions
+
+Buying a subscription while the user has another one active replaces it (an upgrade or a downgrade), so the user does not pay for both. There is nothing to pass to `PurchaseProduct()`:
+
+- **iOS and Mac Catalyst** - the App Store replaces subscriptions within the same [subscription group](https://developer.apple.com/app-store/subscriptions/).
+- **Android** - Google Play has no subscription groups, so the wrapper names the active Play Store subscription as the one being replaced, the way RevenueCat's own Paywalls do. A higher price per month is an upgrade: it takes effect immediately and the user pays the prorated difference. Anything else is a downgrade and takes effect at the next renewal.
+
+On Android:
+
+- **Subscriptions cannot run side by side.** If your app sells subscriptions that are meant to be held together (separate subscription groups on iOS), buying the second one replaces the first.
+- Nothing is replaced when the user has more than one active Play Store subscription, since there is no telling which one the new purchase is meant to replace. A switch between base plans of the same subscription is left to Google Play, which handles it on its own.
+- Until a downgrade takes effect, `PurchaseProduct()` returns the `Transaction` and customer info of the subscription being replaced.
+- For Google Play license testers, whose plans renew every few minutes, Google compares the price per renewal minute instead, and so does the wrapper. A switch from monthly to yearly can therefore be an upgrade in testing and a downgrade in production.
+- If the subscription being replaced was bought with a different Google account than the one on the device, the purchase fails with `PurchaseInvalidError`.
+
 ### User Management
 
 | Method | Description |

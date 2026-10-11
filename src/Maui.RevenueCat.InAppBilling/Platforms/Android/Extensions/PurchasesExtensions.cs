@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Com.Revenuecat.Purchases;
+using Com.Revenuecat.Purchases.Models;
 using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
@@ -50,11 +51,28 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
+    internal static Task<IList<IStoreProduct>> GetSubscriptionProductsAsync(this Purchases purchases,
+        IList<string> productIds, CancellationToken cancellationToken = default)
+    {
+        var listener = new DelegatingGetStoreProductsCallback(cancellationToken);
+        purchases.GetProducts(productIds, ProductType.Subs, listener);
+        return listener.Task;
+    }
+
     internal static Task<PurchaseSuccessInfo> PurchaseAsync(this Purchases purchases, Activity activity,
-        Package packageToPurchase, CancellationToken cancellationToken = default)
+        Package packageToPurchase, SubscriptionReplacement? subscriptionReplacement,
+        CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingMakePurchaseListener(cancellationToken);
-        var purchaseParams = new PurchaseParams(new PurchaseParams.Builder(activity, packageToPurchase));
+        var purchaseParamsBuilder = new PurchaseParams.Builder(activity, packageToPurchase);
+        if (subscriptionReplacement is not null)
+        {
+            purchaseParamsBuilder
+                .OldProductId(subscriptionReplacement.OldProductId)
+                .ReplacementMode(subscriptionReplacement.ReplacementMode);
+        }
+
+        var purchaseParams = new PurchaseParams(purchaseParamsBuilder);
         // Purchases.Purchase must run on the main thread: Google requires launchBillingFlow on it,
         // and the Test Store shows its purchase AlertDialog synchronously on the calling thread,
         // which throws "Can't create handler... Looper.prepare()" from any background thread.
