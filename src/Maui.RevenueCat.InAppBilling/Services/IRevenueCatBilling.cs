@@ -95,7 +95,16 @@ public interface IRevenueCatBilling
     /// <summary>
     /// Reads the current customer info and entitlements.
     /// </summary>
-    Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken = default);
+    /// <remarks>
+    /// The default <see cref="CustomerInfoFetchPolicy.CachedOrFetched"/> may return stale cached
+    /// data. Pass <see cref="CustomerInfoFetchPolicy.FetchCurrent"/> when the entitlements may
+    /// have changed outside the app, such as after a web purchase.
+    /// <see cref="PurchaseProduct"/>, <see cref="RestoreTransactions"/> and <see cref="Logout"/>
+    /// already return fresh customer info, and so does <see cref="Login"/> when it switches to a
+    /// different app user ID. A <see cref="Login"/> with the ID that is already logged in reads with
+    /// <see cref="CustomerInfoFetchPolicy.CachedOrFetched"/>, so it can return stale data.
+    /// </remarks>
+    Task<CustomerInfoResultDto> GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns the ISO 3166-1 alpha-2 country code of the user's App Store / Play Store

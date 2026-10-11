@@ -145,14 +145,17 @@ public sealed class HarnessRunner
                     : "empty result";
             }
             );
-            yield return (nameof(IRevenueCatBilling.GetCustomerInfo), async cancellationToken =>
+            foreach (var fetchPolicy in Enum.GetValues<CustomerInfoFetchPolicy>())
             {
-                var customerInfo = Unwrap(await _revenueCatBilling.GetCustomerInfo(cancellationToken));
-                return customerInfo is null
-                    ? "null"
-                    : $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.Entitlements.Count} entitlement(s)";
+                yield return ($"{nameof(IRevenueCatBilling.GetCustomerInfo)} {fetchPolicy}", async cancellationToken =>
+                {
+                    var customerInfo = Unwrap(await _revenueCatBilling.GetCustomerInfo(fetchPolicy, cancellationToken));
+                    return customerInfo is null
+                        ? "null"
+                        : $"{customerInfo.ActiveSubscriptions.Count} active sub(s), {customerInfo.Entitlements.Count} entitlement(s)";
+                }
+                );
             }
-            );
             yield return (nameof(IRevenueCatBilling.GetActiveSubscriptions), async cancellationToken =>
             {
                 var activeSubscriptions = Unwrap(await _revenueCatBilling.GetActiveSubscriptions(cancellationToken)) ?? [];

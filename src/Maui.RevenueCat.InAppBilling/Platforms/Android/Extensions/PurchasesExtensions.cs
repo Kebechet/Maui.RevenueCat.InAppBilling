@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Com.Revenuecat.Purchases;
+using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Delegates;
 using Maui.RevenueCat.InAppBilling.Platforms.Android.Models;
 
@@ -17,11 +18,11 @@ internal static class PurchasesExtensions
         return result.BooleanValue();
     }
 
-    internal static Task<CustomerInfo> GetCustomerInfoAsync(this Purchases purchases,
+    internal static Task<CustomerInfo> GetCustomerInfoAsync(this Purchases purchases, CustomerInfoFetchPolicy fetchPolicy,
         CancellationToken cancellationToken = default)
     {
         var listener = new DelegatingReceiveCustomerInfoCallback(cancellationToken);
-        purchases.GetCustomerInfo(listener);
+        purchases.GetCustomerInfo(fetchPolicy.ToRCCacheFetchPolicy(), listener);
         return listener.Task;
     }
 

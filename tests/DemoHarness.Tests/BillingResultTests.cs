@@ -3,6 +3,7 @@ using Maui.RevenueCat.InAppBilling.Enums;
 using Maui.RevenueCat.InAppBilling.Models;
 using Maui.RevenueCat.InAppBilling.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Types.Result;
 using Xunit;
 
@@ -70,7 +71,7 @@ public class BillingResultTests
             await billing.Login("harness", CancellationToken.None),
             await billing.Logout(CancellationToken.None),
             await billing.RestoreTransactions(CancellationToken.None),
-            await billing.GetCustomerInfo(CancellationToken.None),
+            await billing.GetCustomerInfo(CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken.None),
             await billing.GetStorefrontCountryCode(CancellationToken.None),
         ];
 
@@ -94,7 +95,7 @@ public class BillingResultTests
             await billing.RestoreTransactions(CancellationToken.None),
             await billing.Login("harness", CancellationToken.None),
             await billing.Logout(CancellationToken.None),
-            await billing.GetCustomerInfo(CancellationToken.None),
+            await billing.GetCustomerInfo(CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken.None),
         ];
 
         Assert.All(results, result =>
@@ -129,6 +130,16 @@ public class BillingResultTests
 
         Assert.True(purchaseResult.IsSuccess);
         Assert.Null(purchaseResult.Transaction);
+    }
+
+    [Fact]
+    public async Task GetCustomerInfo_WithoutArguments_DefaultsToCachedOrFetched()
+    {
+        var revenueCatBilling = Substitute.For<IRevenueCatBilling>();
+
+        await revenueCatBilling.GetCustomerInfo();
+
+        await revenueCatBilling.Received(1).GetCustomerInfo(CustomerInfoFetchPolicy.CachedOrFetched, Arg.Any<CancellationToken>());
     }
 
     [Theory]

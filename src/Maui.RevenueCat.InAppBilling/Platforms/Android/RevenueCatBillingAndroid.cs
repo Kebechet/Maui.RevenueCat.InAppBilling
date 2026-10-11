@@ -216,7 +216,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(CustomerInfoFetchPolicy.CachedOrFetched, cancellationToken);
             if (customerInfo is null || customerInfo.ActiveSubscriptions.IsNullOrEmpty())
             {
                 return new() { Value = [] };
@@ -233,7 +233,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(CustomerInfoFetchPolicy.CachedOrFetched, cancellationToken);
             if (customerInfo is null || customerInfo.AllPurchasedProductIds.IsNullOrEmpty())
             {
                 return new() { Value = [] };
@@ -250,7 +250,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(CustomerInfoFetchPolicy.CachedOrFetched, cancellationToken);
             if (customerInfo is null)
             {
                 return new();
@@ -267,7 +267,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         try
         {
-            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            using var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(CustomerInfoFetchPolicy.CachedOrFetched, cancellationToken);
 
             return new() { Value = customerInfo?.ManagementURL?.ToString() };
         }
@@ -315,11 +315,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy, CancellationToken cancellationToken)
     {
         try
         {
-            var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(cancellationToken);
+            var customerInfo = await Purchases.SharedInstance.GetCustomerInfoAsync(fetchPolicy, cancellationToken);
 
             return new() { Value = customerInfo.ToCustomerInfoDto() };
         }

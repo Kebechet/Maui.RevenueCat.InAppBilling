@@ -40,7 +40,7 @@ public class HarnessRunnerTests
             });
         revenueCatBilling.CheckTrialOrIntroDiscountEligibility(Arg.Any<List<string>>(), Arg.Any<CancellationToken>())
             .Returns(new IntroEligibilityResultDto { Value = [] });
-        revenueCatBilling.GetCustomerInfo(Arg.Any<CancellationToken>())
+        revenueCatBilling.GetCustomerInfo(Arg.Any<CustomerInfoFetchPolicy>(), Arg.Any<CancellationToken>())
             .Returns(new CustomerInfoResultDto
             {
                 Value = new CustomerInfoDto
@@ -76,6 +76,21 @@ public class HarnessRunnerTests
 
         Assert.NotEmpty(harnessCheckResults);
         Assert.All(harnessCheckResults, x => Assert.Equal(HarnessCheckStatus.Passed, x.Status));
+    }
+
+    [Fact]
+    public async Task RunAllChecks_GetCustomerInfo_RunsOnceForEveryFetchPolicy()
+    {
+        var revenueCatBilling = CreateHappyBilling();
+        var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
+
+        var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
+
+        foreach (var fetchPolicy in Enum.GetValues<CustomerInfoFetchPolicy>())
+        {
+            await revenueCatBilling.Received(1).GetCustomerInfo(fetchPolicy, Arg.Any<CancellationToken>());
+            Assert.Contains(harnessCheckResults, x => x.Name == $"{nameof(IRevenueCatBilling.GetCustomerInfo)} {fetchPolicy}");
+        }
     }
 
     [Fact]

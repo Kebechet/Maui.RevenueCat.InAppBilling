@@ -63,7 +63,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return new() { Value = CreateEmptyCustomerInfo() };
     }
-    public async partial Task<CustomerInfoResultDto> GetCustomerInfo(CancellationToken cancellationToken)
+    public async partial Task<CustomerInfoResultDto> GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy, CancellationToken cancellationToken)
     {
         return new() { Value = CreateEmptyCustomerInfo() };
     }
