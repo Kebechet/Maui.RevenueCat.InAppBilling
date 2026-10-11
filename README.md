@@ -121,21 +121,23 @@ See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-s
 
 ### Customer Info Caching
 
-The RevenueCat SDK caches customer info on the device and treats it as stale after 5 minutes ([RevenueCat docs](https://www.revenuecat.com/docs/customers/customer-info)). `fetchPolicy` decides whether `GetCustomerInfo` answers from that cache:
+The RevenueCat SDK caches customer info on the device and treats it as stale after 5 minutes while the app is in the foreground ([RevenueCat docs](https://www.revenuecat.com/docs/customers/customer-info)), but only after 25 hours while it is in the background (an iOS sandbox build keeps 5 minutes). `fetchPolicy` decides whether `GetCustomerInfo` answers from that cache:
 
 | `CustomerInfoFetchPolicy` | Behavior |
 |---------------------------|----------|
-| `CachedOrFetched` (default) | Returns the cache even when stale; fetches only when nothing is cached. A stale cache is refreshed in the background, but this call still returns the stale data |
+| `CachedOrFetched` (default) | Returns the cache even when stale; waits for a fetch only when nothing is cached. A stale cache is also refreshed in the background, but this call still returns the stale data |
 | `FetchCurrent` | Always fetches from RevenueCat. Fails when offline |
 | `NotStaleCachedOrFetched` | Returns the cache while it is fresh, otherwise fetches. Never returns stale data - fails instead when the fetch fails |
 | `FromCacheOnly` | Never fetches. Fails when nothing is cached |
+
+A failed call sets `Error` to `CustomerInfoError` when `FromCacheOnly` finds nothing cached. A fetch that fails because the device is offline sets `NetworkError` on Android and `OfflineConnectionError` on iOS.
 
 ```csharp
 // e.g. after the user bought on the web, so the device cache cannot know about it yet
 var customerInfoResult = await _revenueCat.GetCustomerInfo(CustomerInfoFetchPolicy.FetchCurrent);
 ```
 
-`PurchaseProduct()`, `RestoreTransactions()`, `Login()` and `Logout()` already return fresh customer info. `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()`, `GetPurchaseDateForProductIdentifier()` and `GetManagementSubscriptionUrl()` always read with `CachedOrFetched`.
+`PurchaseProduct()`, `RestoreTransactions()` and `Logout()` already return fresh customer info, and so does `Login()` when it switches to a different app user ID. `Login()` with the ID that is already logged in reads with `CachedOrFetched` instead, so it can return stale data - follow it with `GetCustomerInfo(CustomerInfoFetchPolicy.FetchCurrent)` when that matters. `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()`, `GetPurchaseDateForProductIdentifier()` and `GetManagementSubscriptionUrl()` always read with `CachedOrFetched`.
 
 ### Subscriber Attributes
 

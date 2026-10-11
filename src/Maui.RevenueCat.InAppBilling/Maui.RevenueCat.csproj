@@ -39,11 +39,11 @@ BREAKING
 - `GetCustomerInfo()` takes a `CustomerInfoFetchPolicy` before its `CancellationToken`: `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken cancellationToken = default)`. `GetCustomerInfo()` with no arguments compiles and behaves as before, but a call that passes only the token, `GetCustomerInfo(cancellationToken)`, no longer compiles - pass a policy first or name the argument (`GetCustomerInfo(cancellationToken: cancellationToken)`). Implementations of `IRevenueCatBilling` and mock setups such as `GetCustomerInfo(Arg.Any&lt;CancellationToken&gt;())` need the new parameter too.
 
 ADDED
-- `CustomerInfoFetchPolicy` controls whether `GetCustomerInfo()` answers from the customer info the RevenueCat SDK caches on the device, which it treats as stale after 5 minutes. Previously the wrapper always used the SDK default, which returns the cache even when stale, so a change made outside the app (a web purchase, a grant from the RevenueCat dashboard) could not be read on demand. https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/128
-  - `CachedOrFetched` (default) returns the cache even when stale and fetches only when nothing is cached.
+- `CustomerInfoFetchPolicy` controls whether `GetCustomerInfo()` answers from the customer info the RevenueCat SDK caches on the device, which it treats as stale after 5 minutes in the foreground and after 25 hours in the background. Previously the wrapper always used the SDK default, which returns the cache even when stale, so a change made outside the app (a web purchase, a grant from the RevenueCat dashboard) could not be read on demand. https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/128
+  - `CachedOrFetched` (default) returns the cache even when stale and waits for a fetch only when nothing is cached. A stale cache is also refreshed in the background.
   - `FetchCurrent` always fetches from RevenueCat.
   - `NotStaleCachedOrFetched` returns the cache while it is fresh, otherwise fetches, and fails rather than returning stale data.
-  - `FromCacheOnly` never fetches.
+  - `FromCacheOnly` never fetches, and fails with `CustomerInfoError` when nothing is cached.
 </PackageReleaseNotes>
   </PropertyGroup>
 

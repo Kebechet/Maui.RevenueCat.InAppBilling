@@ -99,8 +99,10 @@ public interface IRevenueCatBilling
     /// The default <see cref="CustomerInfoFetchPolicy.CachedOrFetched"/> may return stale cached
     /// data. Pass <see cref="CustomerInfoFetchPolicy.FetchCurrent"/> when the entitlements may
     /// have changed outside the app, such as after a web purchase.
-    /// <see cref="PurchaseProduct"/>, <see cref="RestoreTransactions"/>, <see cref="Login"/> and
-    /// <see cref="Logout"/> already return fresh customer info.
+    /// <see cref="PurchaseProduct"/>, <see cref="RestoreTransactions"/> and <see cref="Logout"/>
+    /// already return fresh customer info, and so does <see cref="Login"/> when it switches to a
+    /// different app user ID. A <see cref="Login"/> with the ID that is already logged in reads with
+    /// <see cref="CustomerInfoFetchPolicy.CachedOrFetched"/>, so it can return stale data.
     /// </remarks>
     Task<CustomerInfoResultDto> GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken cancellationToken = default);
 
