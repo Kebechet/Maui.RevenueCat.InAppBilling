@@ -219,7 +219,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     // purchase still goes ahead, without a replacement, as it did before the wrapper replaced subscriptions.
     private async Task<SubscriptionReplacement?> GetSubscriptionReplacement(IStoreProduct productToBuy, CancellationToken cancellationToken)
     {
-        if (productToBuy.Type != ProductType.Subs)
+        // A subscription from RevenueCat's Test Store is not a Google Play product and has nothing to replace.
+        var googleProductToBuy = GoogleStoreProductKt.GetGoogleProduct(productToBuy);
+        if (productToBuy.Type != ProductType.Subs || googleProductToBuy is null)
         {
             return null;
         }
@@ -235,8 +237,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 .Select(subscription => subscription.ToActivePlayStoreSubscription())
                 .ToList();
 
-            var (subscriptionIdToBuy, _) = SubscriptionReplacementRules.ParseProductIdentifier(productToBuy.Id);
-            var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace(activePlayStoreSubscriptions, subscriptionIdToBuy);
+            var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace(activePlayStoreSubscriptions, googleProductToBuy.ProductId);
             if (subscriptionToReplace is null)
             {
                 return null;
@@ -244,7 +245,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
             var productsOfSubscriptionToReplace = await _purchases.GetSubscriptionProductsAsync([subscriptionToReplace.SubscriptionId], cancellationToken);
             var productToReplace = productsOfSubscriptionToReplace
-                .FirstOrDefault(product => SubscriptionReplacementRules.IsProductOf(subscriptionToReplace, product.Id));
+                .Select(GoogleStoreProductKt.GetGoogleProduct)
+                .FirstOrDefault(product => product is not null
+                    && SubscriptionReplacementRules.IsProductOf(subscriptionToReplace, product.ProductId, product.BasePlanId));
 
             var isUpgrade = SubscriptionReplacementRules.IsUpgrade(
                 oldComparablePrice: productToReplace?.GetComparablePrice(subscriptionToReplace.IsSandbox),

@@ -10,15 +10,6 @@ internal sealed record ActivePlayStoreSubscription(string SubscriptionId, string
 // Kept free of Android types so DemoHarness.Tests can compile and test it on plain .NET.
 internal static class SubscriptionReplacementRules
 {
-    private const char _basePlanSeparator = ':';
-
-    internal static (string SubscriptionId, string? BasePlanId) ParseProductIdentifier(string productIdentifier)
-    {
-        var parts = productIdentifier.Split(_basePlanSeparator, 2);
-
-        return (parts[0], parts.Length > 1 ? parts[1] : null);
-    }
-
     internal static ActivePlayStoreSubscription? FindSubscriptionToReplace(
         IReadOnlyCollection<ActivePlayStoreSubscription> activePlayStoreSubscriptions, string newSubscriptionId)
     {
@@ -36,10 +27,8 @@ internal static class SubscriptionReplacementRules
         return activeSubscription.SubscriptionId == newSubscriptionId ? null : activeSubscription;
     }
 
-    internal static bool IsProductOf(ActivePlayStoreSubscription subscription, string productIdentifier)
+    internal static bool IsProductOf(ActivePlayStoreSubscription subscription, string subscriptionId, string? basePlanId)
     {
-        var (subscriptionId, basePlanId) = ParseProductIdentifier(productIdentifier);
-
         return subscriptionId == subscription.SubscriptionId
             && (subscription.BasePlanId is null || basePlanId == subscription.BasePlanId);
     }

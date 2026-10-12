@@ -9,24 +9,6 @@ public class SubscriptionReplacementRulesTests
     private const long _monthlyMicros = 15_000_000;
 
     [Fact]
-    public void ParseProductIdentifier_WithBasePlan_SplitsSubscriptionAndBasePlan()
-    {
-        var (subscriptionId, basePlanId) = SubscriptionReplacementRules.ParseProductIdentifier("premium:monthly");
-
-        Assert.Equal("premium", subscriptionId);
-        Assert.Equal("monthly", basePlanId);
-    }
-
-    [Fact]
-    public void ParseProductIdentifier_WithoutBasePlan_ReturnsNullBasePlan()
-    {
-        var (subscriptionId, basePlanId) = SubscriptionReplacementRules.ParseProductIdentifier("premium");
-
-        Assert.Equal("premium", subscriptionId);
-        Assert.Null(basePlanId);
-    }
-
-    [Fact]
     public void FindSubscriptionToReplace_OneActiveSubscriptionOfAnotherProduct_ReturnsIt()
     {
         var basic = new ActivePlayStoreSubscription("basic", "monthly", IsSandbox: false);
@@ -66,14 +48,14 @@ public class SubscriptionReplacementRulesTests
     }
 
     [Theory]
-    [InlineData("basic:monthly", true)]
-    [InlineData("basic:yearly", false)]
-    [InlineData("premium:monthly", false)]
-    public void IsProductOf_KnownBasePlan_MatchesOnlyThatBasePlan(string productIdentifier, bool expectedIsProductOf)
+    [InlineData("basic", "monthly", true)]
+    [InlineData("basic", "yearly", false)]
+    [InlineData("premium", "monthly", false)]
+    public void IsProductOf_KnownBasePlan_MatchesOnlyThatBasePlan(string subscriptionId, string basePlanId, bool expectedIsProductOf)
     {
         var basicMonthly = new ActivePlayStoreSubscription("basic", "monthly", IsSandbox: false);
 
-        Assert.Equal(expectedIsProductOf, SubscriptionReplacementRules.IsProductOf(basicMonthly, productIdentifier));
+        Assert.Equal(expectedIsProductOf, SubscriptionReplacementRules.IsProductOf(basicMonthly, subscriptionId, basePlanId));
     }
 
     [Fact]
@@ -81,7 +63,7 @@ public class SubscriptionReplacementRulesTests
     {
         var basic = new ActivePlayStoreSubscription("basic", BasePlanId: null, IsSandbox: false);
 
-        Assert.True(SubscriptionReplacementRules.IsProductOf(basic, "basic:yearly"));
+        Assert.True(SubscriptionReplacementRules.IsProductOf(basic, "basic", "yearly"));
     }
 
     [Fact]
