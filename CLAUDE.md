@@ -148,6 +148,27 @@ Inside `Maui.RevenueCat.InAppBilling` itself, prefer `IsNullOrEmpty()` from
 covers null. That package is referenced with `<PrivateAssets>compile</PrivateAssets>`, so it does
 **not** flow to `DemoApp.Harness`, the demo app or the tests — use `.Any()` there.
 
+### Null Checks
+Write a null check as `is null` / `is not null`, then read a nullable value type through
+`.Value`. Don't use the property pattern `is not { } x` to check and unwrap in one step:
+```csharp
+// Correct
+if (periodInMonths is null)
+{
+    return null;
+}
+
+return (long)(priceAmountMicros / periodInMonths.Value);
+
+// Incorrect
+if (periodInMonths is not { } months)
+{
+    return null;
+}
+
+return (long)(priceAmountMicros / months);
+```
+
 ### Extension Methods
 Extract transformation logic to extension methods rather than inline:
 ```csharp
