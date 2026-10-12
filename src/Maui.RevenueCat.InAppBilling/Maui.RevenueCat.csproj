@@ -33,17 +33,15 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>10.0.0</Version>
+    <Version>11.0.0</Version>
     <PackageReleaseNotes>
 BREAKING
-- `GetCustomerInfo()` takes a `CustomerInfoFetchPolicy` before its `CancellationToken`: `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken cancellationToken = default)`. `GetCustomerInfo()` with no arguments compiles and behaves as before, but a call that passes only the token, `GetCustomerInfo(cancellationToken)`, no longer compiles - pass a policy first or name the argument (`GetCustomerInfo(cancellationToken: cancellationToken)`). Implementations of `IRevenueCatBilling` and mock setups such as `GetCustomerInfo(Arg.Any&lt;CancellationToken&gt;())` need the new parameter too.
-
-ADDED
-- `CustomerInfoFetchPolicy` controls whether `GetCustomerInfo()` answers from the customer info the RevenueCat SDK caches on the device, which it treats as stale after 5 minutes in the foreground and after 25 hours in the background. Previously the wrapper always used the SDK default, which returns the cache even when stale, so a change made outside the app (a web purchase, a grant from the RevenueCat dashboard) could not be read on demand. https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/128
-  - `CachedOrFetched` (default) returns the cache even when stale and waits for a fetch only when nothing is cached. A stale cache is also refreshed in the background.
-  - `FetchCurrent` always fetches from RevenueCat.
-  - `NotStaleCachedOrFetched` returns the cache while it is fresh, otherwise fetches, and fails rather than returning stale data.
-  - `FromCacheOnly` never fetches, and fails with `CustomerInfoError` when nothing is cached.
+- On Android, buying a subscription while the user has another Google Play subscription active now replaces it, the way the App Store handles a subscription group. Previously Google Play ran both in parallel and the user paid for both. There is no API change. https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/131
+  - An upgrade (a higher price per month) takes effect immediately and charges the prorated difference. Anything else is a downgrade and takes effect at the next renewal. These are the defaults of RevenueCat's own Paywalls.
+  - An Android app that sells subscriptions meant to be held together (separate subscription groups on iOS) can no longer sell them side by side: buying the second one replaces the first.
+  - Nothing is replaced when the user has more than one active Play Store subscription, or for a switch between base plans of the same subscription, which Google Play handles on its own.
+  - Until a downgrade takes effect, `PurchaseProduct()` returns the `Transaction` and customer info of the subscription being replaced.
+  - If the subscription being replaced was bought with a different Google account than the one on the device, the purchase fails with `PurchaseInvalidError`.
 </PackageReleaseNotes>
   </PropertyGroup>
 
