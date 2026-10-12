@@ -38,17 +38,17 @@ internal static class SubscriptionReplacementRules
     // monthly one every 5) and RevenueCat found Google compares the price per renewal minute there.
     internal static long? GetComparablePrice(long priceAmountMicros, double? periodInMonths, bool isSandbox)
     {
-        if (periodInMonths is not { } months)
+        if (periodInMonths is null)
         {
             return null;
         }
 
         if (isSandbox)
         {
-            return priceAmountMicros / GetSandboxRenewalMinutes(months);
+            return priceAmountMicros / GetSandboxRenewalMinutes(periodInMonths.Value);
         }
 
-        return (long)(priceAmountMicros / months);
+        return (long)(priceAmountMicros / periodInMonths.Value);
     }
 
     internal static bool IsUpgrade(long? oldComparablePrice, long? newComparablePrice)
