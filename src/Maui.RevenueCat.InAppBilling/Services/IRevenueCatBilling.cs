@@ -64,8 +64,8 @@ public interface IRevenueCatBilling
     /// wrapper names the active Google Play subscription as the one being replaced. An upgrade takes
     /// effect immediately, a downgrade at the next renewal. On Android, a downgrade returns the
     /// <c>Transaction</c> and customer info of the subscription being replaced, because the new one
-    /// only starts at that renewal. See the README for when Android does not replace the active
-    /// subscription.
+    /// only starts at that renewal. On Android, replacing is best effort: see the README for when the
+    /// active subscription is not replaced.
     /// </para>
     /// </remarks>
     Task<PurchaseResultDto> PurchaseProduct(PackageDto packageToPurchase, CancellationToken cancellationToken = default);

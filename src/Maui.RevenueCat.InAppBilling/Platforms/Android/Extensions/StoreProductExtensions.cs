@@ -9,4 +9,10 @@ internal static class StoreProductExtensions
         return SubscriptionReplacementRules.GetComparablePrice(
             storeProduct.Price.AmountMicros, storeProduct.Period?.ValueInMonths, isSandbox);
     }
+
+    // A purchase made from a Package buys the product's default option.
+    internal static bool IsDefaultOptionPrepaid(this IStoreProduct storeProduct)
+    {
+        return storeProduct.DefaultOption?.IsPrepaid == true;
+    }
 }

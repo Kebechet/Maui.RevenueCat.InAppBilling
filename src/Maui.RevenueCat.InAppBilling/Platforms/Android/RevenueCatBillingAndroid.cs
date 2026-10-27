@@ -165,7 +165,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         try
         {
             var subscriptionReplacement = await GetSubscriptionReplacement(packageToBuy.Product, cancellationToken);
-            purchaseSuccessInfo = await _purchases.PurchaseAsync(_currentActivityContext, packageToBuy, subscriptionReplacement, cancellationToken);
+
+            // The lookup above can take a network round trip, long enough for the activity checked earlier to go away.
+            var activity = _currentActivityContext
+                ?? throw new InvalidOperationException("Android Current Activity went away before the purchase started.");
+            purchaseSuccessInfo = await _purchases.PurchaseAsync(activity, packageToBuy, subscriptionReplacement, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -228,10 +232,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
         try
         {
-            // NotStaleCachedOrFetched rather than the cache RevenueCat's Paywalls read: a subscription the stale
-            // cache still reports as active makes RevenueCat fail the whole purchase with PurchaseInvalidError
-            // when Google Play no longer has it.
-            using var customerInfo = await _purchases.GetCustomerInfoAsync(CustomerInfoFetchPolicy.NotStaleCachedOrFetched, cancellationToken);
+            using var customerInfo = await GetCustomerInfoForSubscriptionReplacement(cancellationToken);
             var activePlayStoreSubscriptions = customerInfo.SubscriptionsByProductIdentifier.Values
                 .Where(subscription => subscription.IsActive && subscription.Store == Store.PlayStore)
                 .Select(subscription => subscription.ToActivePlayStoreSubscription())
@@ -243,27 +244,37 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 return null;
             }
 
-            var productsOfSubscriptionToReplace = await _purchases.GetSubscriptionProductsAsync([subscriptionToReplace.SubscriptionId], cancellationToken);
-            var productToReplace = productsOfSubscriptionToReplace
-                .Select(GoogleStoreProductKt.GetGoogleProduct)
-                .FirstOrDefault(product => product is not null
-                    && SubscriptionReplacementRules.IsProductOf(subscriptionToReplace, product.ProductId, product.BasePlanId));
+            var productsOfSubscriptionToReplace = await GetProductsOfSubscriptionToReplace(subscriptionToReplace, cancellationToken);
 
-            var isUpgrade = SubscriptionReplacementRules.IsUpgrade(
-                oldComparablePrice: productToReplace?.GetComparablePrice(subscriptionToReplace.IsSandbox),
-                newComparablePrice: productToBuy.GetComparablePrice(subscriptionToReplace.IsSandbox));
+            // Google Play lists no products for a subscription of another app in the same RevenueCat project.
+            // RevenueCat would not find it among this app's purchases and fail every purchase with
+            // PurchaseInvalidError, so it is left alone.
+            if (productsOfSubscriptionToReplace is not null && !productsOfSubscriptionToReplace.Any())
+            {
+                _logger.LogDebug(
+                    "The active subscription {subscriptionToReplace} is not a product of this app, so {productToBuy} does not replace it.",
+                    subscriptionToReplace.SubscriptionId,
+                    productToBuy.Id);
+                return null;
+            }
+
+            var productToReplace = productsOfSubscriptionToReplace?.FirstOrDefault(product =>
+                SubscriptionReplacementRules.IsProductOf(subscriptionToReplace, product.ProductId, product.BasePlanId));
 
             // The defaults of RevenueCat's Paywalls, which also match an App Store subscription group: an upgrade
             // takes effect immediately, a downgrade at the next renewal.
-            var replacementMode = isUpgrade ? StoreReplacementMode.ChargeProratedPrice : StoreReplacementMode.Deferred;
+            var replacementMode = SubscriptionReplacementRules.ChooseReplacementMode(
+                isNewPlanPrepaid: productToBuy.IsDefaultOptionPrepaid(),
+                oldComparablePrice: productToReplace?.GetComparablePrice(subscriptionToReplace.IsSandbox),
+                newComparablePrice: productToBuy.GetComparablePrice(subscriptionToReplace.IsSandbox));
 
             _logger.LogDebug(
-                "{productToBuy} replaces the active subscription {subscriptionToReplace} as an {productChange}.",
+                "{productToBuy} replaces the active subscription {subscriptionToReplace} with replacement mode {replacementMode}.",
                 productToBuy.Id,
                 subscriptionToReplace.SubscriptionId,
-                isUpgrade ? "upgrade" : "downgrade");
+                replacementMode);
 
-            return new SubscriptionReplacement(subscriptionToReplace.SubscriptionId, replacementMode);
+            return new SubscriptionReplacement(subscriptionToReplace.SubscriptionId, replacementMode.ToStoreReplacementMode());
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -274,6 +285,45 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return null;
         }
     }
+
+    private async Task<CustomerInfo> GetCustomerInfoForSubscriptionReplacement(CancellationToken cancellationToken)
+    {
+        try
+        {
+            // NotStaleCachedOrFetched rather than the cache RevenueCat's Paywalls read: a subscription the stale
+            // cache still reports as active makes RevenueCat fail the whole purchase with PurchaseInvalidError
+            // when Google Play no longer has it.
+            return await _purchases.GetCustomerInfoAsync(CustomerInfoFetchPolicy.NotStaleCachedOrFetched, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Still better than no customer info: a stale cache can fail the purchase with PurchaseInvalidError,
+            // which charges nothing, while a purchase without a replacement can charge for both subscriptions.
+            _logger.LogWarning(exception, "Could not fetch customer info, so the active subscriptions are read from the cache.");
+            return await _purchases.GetCustomerInfoAsync(CustomerInfoFetchPolicy.FromCacheOnly, cancellationToken);
+        }
+    }
+
+    // Null when the lookup fails. The subscription to replace is known by then, so it is still replaced, with the
+    // price of its plan unknown.
+    private async Task<List<GoogleStoreProduct>?> GetProductsOfSubscriptionToReplace(
+        ActivePlayStoreSubscription subscriptionToReplace, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var products = await _purchases.GetSubscriptionProductsAsync([subscriptionToReplace.SubscriptionId], cancellationToken);
+            return products.Select(GoogleStoreProductKt.GetGoogleProduct).OfType<GoogleStoreProduct>().ToList();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not read the products of {subscriptionToReplace}, so the price of its plan is unknown.",
+                subscriptionToReplace.SubscriptionId);
+            return null;
+        }
+    }
+
     public async partial Task<ProductIdentifiersResultDto> GetActiveSubscriptions(CancellationToken cancellationToken)
     {
         try

@@ -238,8 +238,8 @@ behave differently, the wrapper closes the gap internally so the call means the 
 Example: subscription upgrades/downgrades (https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/131).
 The App Store replaces a subscription within its group by itself; Google Play has no groups and would run
 both in parallel. So on Android, `PurchaseProduct` names the user's single active Play Store subscription
-via `PurchaseParams.Builder.OldProductId` + `.ReplacementMode`, the way RevenueCat's own Paywalls do
-(https://github.com/RevenueCat/purchases-android/pull/3062). The decision rules live in
-`Platforms/Android/SubscriptionReplacementRules.cs`, which must stay free of Android types:
+via `PurchaseParams.Builder.OldProductId` + `.ReplacementMode`, with the rules RevenueCat's own Paywalls
+use when a paywall has product changes enabled (https://github.com/RevenueCat/purchases-android/pull/3062).
+The decision rules live in `Platforms/Android/SubscriptionReplacementRules.cs`, which must stay free of Android types:
 `DemoHarness.Tests` compiles that file directly through a linked `<Compile>` item, because the test project
 cannot load the `net9.0-android` build.

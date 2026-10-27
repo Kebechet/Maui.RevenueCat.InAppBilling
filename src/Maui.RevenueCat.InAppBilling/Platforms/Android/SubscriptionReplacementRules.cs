@@ -2,9 +2,16 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.Android;
 
 internal sealed record ActivePlayStoreSubscription(string SubscriptionId, string? BasePlanId, bool IsSandbox);
 
+internal enum SubscriptionReplacementMode
+{
+    ChargeProratedPrice,
+    Deferred,
+    ChargeFullPrice,
+}
+
 // Google Play has no subscription groups, so a second subscription product bought without naming the one it
-// replaces runs in parallel and the user pays for both. These rules pick the replacement the way RevenueCat's
-// own Paywalls do:
+// replaces runs in parallel and the user pays for both. These are the rules RevenueCat's own Paywalls use to
+// pick the replacement when a paywall has product changes enabled:
 // https://github.com/RevenueCat/purchases-android/blob/10.16.1/ui/revenuecatui/src/main/kotlin/com/revenuecat/purchases/ui/revenuecatui/data/ProductChangeCalculator.kt
 // The reasoning behind them is in https://github.com/RevenueCat/purchases-android/pull/3062
 // Kept free of Android types so DemoHarness.Tests can compile and test it on plain .NET.
@@ -55,7 +62,22 @@ internal static class SubscriptionReplacementRules
     {
         return oldComparablePrice is not null
             && newComparablePrice is not null
-            && newComparablePrice > oldComparablePrice;
+            && newComparablePrice.Value > oldComparablePrice.Value;
+    }
+
+    internal static SubscriptionReplacementMode ChooseReplacementMode(
+        bool isNewPlanPrepaid, long? oldComparablePrice, long? newComparablePrice)
+    {
+        // Google Play fails a switch to a prepaid plan with any mode other than CHARGE_FULL_PRICE. RevenueCat's
+        // Paywalls don't handle this: https://developer.android.com/google/play/billing/subscriptions
+        if (isNewPlanPrepaid)
+        {
+            return SubscriptionReplacementMode.ChargeFullPrice;
+        }
+
+        return IsUpgrade(oldComparablePrice, newComparablePrice)
+            ? SubscriptionReplacementMode.ChargeProratedPrice
+            : SubscriptionReplacementMode.Deferred;
     }
 
     private static long GetSandboxRenewalMinutes(double periodInMonths)

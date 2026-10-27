@@ -38,8 +38,10 @@
 BREAKING
 - On Android, buying a subscription while the user has another Google Play subscription active now replaces it, the way the App Store handles a subscription group. Previously Google Play ran both in parallel and the user paid for both. There is no API change. https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/131
   - An upgrade (a higher price per month) takes effect immediately and charges the prorated difference. Anything else is a downgrade and takes effect at the next renewal. These are the defaults of RevenueCat's own Paywalls.
+  - A switch to a prepaid plan takes effect immediately at the full price of the new plan, the only replacement Google Play allows for prepaid plans.
   - An Android app that sells subscriptions meant to be held together (separate subscription groups on iOS) can no longer sell them side by side: buying the second one replaces the first.
-  - Nothing is replaced when the user has more than one active Play Store subscription, or for a switch between base plans of the same subscription, which Google Play handles on its own.
+  - Replacing is best effort: if the wrapper cannot read the user's subscriptions at all (RevenueCat unreachable and nothing cached), the purchase goes ahead without a replacement.
+  - Nothing is replaced when the user has more than one active Play Store subscription, for a subscription of another Android app in the same RevenueCat project, or for a switch between base plans of the same subscription, which Google Play handles on its own.
   - Until a downgrade takes effect, `PurchaseProduct()` returns the `Transaction` and customer info of the subscription being replaced.
   - If the subscription being replaced was bought with a different Google account than the one on the device, the purchase fails with `PurchaseInvalidError`.
 </PackageReleaseNotes>

@@ -67,6 +67,14 @@ public class SubscriptionReplacementRulesTests
     }
 
     [Fact]
+    public void IsProductOf_ProductWithoutBasePlan_DoesNotMatchKnownBasePlan()
+    {
+        var basicMonthly = new ActivePlayStoreSubscription("basic", "monthly", IsSandbox: false);
+
+        Assert.False(SubscriptionReplacementRules.IsProductOf(basicMonthly, "basic", basePlanId: null));
+    }
+
+    [Fact]
     public void GetComparablePrice_Production_ReturnsPricePerMonth()
     {
         var comparablePrice = SubscriptionReplacementRules.GetComparablePrice(_yearlyMicros, periodInMonths: 12, isSandbox: false);
@@ -121,5 +129,36 @@ public class SubscriptionReplacementRulesTests
     public void IsUpgrade_ComparesPrices(long? oldComparablePrice, long? newComparablePrice, bool expectedIsUpgrade)
     {
         Assert.Equal(expectedIsUpgrade, SubscriptionReplacementRules.IsUpgrade(oldComparablePrice, newComparablePrice));
+    }
+
+    [Theory]
+    [InlineData(10L, 20L)]
+    [InlineData(20L, 10L)]
+    [InlineData(null, null)]
+    public void ChooseReplacementMode_PrepaidPlan_ChargesFullPrice(long? oldComparablePrice, long? newComparablePrice)
+    {
+        var replacementMode = SubscriptionReplacementRules.ChooseReplacementMode(isNewPlanPrepaid: true, oldComparablePrice, newComparablePrice);
+
+        Assert.Equal(SubscriptionReplacementMode.ChargeFullPrice, replacementMode);
+    }
+
+    [Fact]
+    public void ChooseReplacementMode_Upgrade_ChargesProratedPrice()
+    {
+        var replacementMode = SubscriptionReplacementRules.ChooseReplacementMode(isNewPlanPrepaid: false, oldComparablePrice: 10, newComparablePrice: 20);
+
+        Assert.Equal(SubscriptionReplacementMode.ChargeProratedPrice, replacementMode);
+    }
+
+    [Theory]
+    [InlineData(20L, 10L)]
+    [InlineData(10L, 10L)]
+    [InlineData(null, 10L)]
+    [InlineData(10L, null)]
+    public void ChooseReplacementMode_NotAnUpgrade_Defers(long? oldComparablePrice, long? newComparablePrice)
+    {
+        var replacementMode = SubscriptionReplacementRules.ChooseReplacementMode(isNewPlanPrepaid: false, oldComparablePrice, newComparablePrice);
+
+        Assert.Equal(SubscriptionReplacementMode.Deferred, replacementMode);
     }
 }
