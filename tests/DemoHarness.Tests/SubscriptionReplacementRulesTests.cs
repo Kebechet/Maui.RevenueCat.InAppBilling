@@ -13,7 +13,7 @@ public class SubscriptionReplacementRulesTests
     {
         var basic = new ActivePlayStoreSubscription("basic", "monthly", IsSandbox: false);
 
-        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([basic], "premium");
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([basic], "premium", subscriptionIdsOfThisApp: ["basic", "premium"]);
 
         Assert.Equal(basic, subscriptionToReplace);
     }
@@ -21,7 +21,7 @@ public class SubscriptionReplacementRulesTests
     [Fact]
     public void FindSubscriptionToReplace_NoActiveSubscription_ReturnsNull()
     {
-        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([], "premium");
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([], "premium", subscriptionIdsOfThisApp: ["premium"]);
 
         Assert.Null(subscriptionToReplace);
     }
@@ -31,20 +31,70 @@ public class SubscriptionReplacementRulesTests
     {
         var premiumMonthly = new ActivePlayStoreSubscription("premium", "monthly", IsSandbox: false);
 
-        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([premiumMonthly], "premium");
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([premiumMonthly], "premium", subscriptionIdsOfThisApp: ["premium"]);
 
         Assert.Null(subscriptionToReplace);
     }
 
     [Fact]
-    public void FindSubscriptionToReplace_SeveralActiveSubscriptions_ReturnsNull()
+    public void FindSubscriptionToReplace_SeveralActiveSubscriptionsOfThisApp_ReturnsNull()
     {
         var basic = new ActivePlayStoreSubscription("basic", "monthly", IsSandbox: false);
         var storage = new ActivePlayStoreSubscription("storage", "monthly", IsSandbox: false);
 
-        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([basic, storage], "premium");
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace(
+            [basic, storage], "premium", subscriptionIdsOfThisApp: ["basic", "storage", "premium"]);
 
         Assert.Null(subscriptionToReplace);
+    }
+
+    [Fact]
+    public void FindSubscriptionToReplace_SeveralActiveSubscriptionsAndCatalogUnknown_ReturnsNull()
+    {
+        var basic = new ActivePlayStoreSubscription("basic", "monthly", IsSandbox: false);
+        var otherApp = new ActivePlayStoreSubscription("other_app", "monthly", IsSandbox: false);
+
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace(
+            [basic, otherApp], "premium", subscriptionIdsOfThisApp: null);
+
+        Assert.Null(subscriptionToReplace);
+    }
+
+    [Fact]
+    public void FindSubscriptionToReplace_OneOfSeveralActiveSubscriptionsIsOfThisApp_ReturnsIt()
+    {
+        var basic = new ActivePlayStoreSubscription("basic", "monthly", IsSandbox: false);
+        var otherApp = new ActivePlayStoreSubscription("other_app", "monthly", IsSandbox: false);
+
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace(
+            [basic, otherApp], "premium", subscriptionIdsOfThisApp: ["basic", "premium"]);
+
+        Assert.Equal(basic, subscriptionToReplace);
+    }
+
+    [Fact]
+    public void FindSubscriptionToReplace_OneOfSeveralActiveSubscriptionsIsOfThisAppAndSameProduct_ReturnsNull()
+    {
+        var premiumMonthly = new ActivePlayStoreSubscription("premium", "monthly", IsSandbox: false);
+        var otherApp = new ActivePlayStoreSubscription("other_app", "monthly", IsSandbox: false);
+
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace(
+            [premiumMonthly, otherApp], "premium", subscriptionIdsOfThisApp: ["premium"]);
+
+        Assert.Null(subscriptionToReplace);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void FindSubscriptionToReplace_OnlyActiveSubscriptionNotListedForThisApp_ReturnsIt(bool isCatalogKnown)
+    {
+        var legacy = new ActivePlayStoreSubscription("legacy", "monthly", IsSandbox: false);
+        string[]? subscriptionIdsOfThisApp = isCatalogKnown ? ["premium"] : null;
+
+        var subscriptionToReplace = SubscriptionReplacementRules.FindSubscriptionToReplace([legacy], "premium", subscriptionIdsOfThisApp);
+
+        Assert.Equal(legacy, subscriptionToReplace);
     }
 
     [Theory]
@@ -95,6 +145,35 @@ public class SubscriptionReplacementRulesTests
     }
 
     [Fact]
+    public void GetComparablePrice_ProductionWeekly_ReturnsPricePerMonth()
+    {
+        var comparablePrice = SubscriptionReplacementRules.GetComparablePrice(_monthlyMicros, periodInMonths: 0.25, isSandbox: false);
+
+        Assert.Equal(60_000_000, comparablePrice);
+    }
+
+    [Theory]
+    [InlineData(11.99, 8_000_000)]
+    [InlineData(5.99, 12_000_000)]
+    [InlineData(2.99, 24_000_000)]
+    public void GetComparablePrice_SandboxJustBelowThreshold_UsesShorterRenewal(double periodInMonths, long expectedComparablePrice)
+    {
+        var comparablePrice = SubscriptionReplacementRules.GetComparablePrice(_yearlyMicros, periodInMonths, isSandbox: true);
+
+        Assert.Equal(expectedComparablePrice, comparablePrice);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GetComparablePrice_ZeroLengthPeriod_ReturnsNull(bool isSandbox)
+    {
+        var comparablePrice = SubscriptionReplacementRules.GetComparablePrice(_yearlyMicros, periodInMonths: 0, isSandbox);
+
+        Assert.Null(comparablePrice);
+    }
+
+    [Fact]
     public void GetComparablePrice_NoPeriod_ReturnsNull()
     {
         var comparablePrice = SubscriptionReplacementRules.GetComparablePrice(_yearlyMicros, periodInMonths: null, isSandbox: false);
@@ -129,6 +208,17 @@ public class SubscriptionReplacementRulesTests
     public void IsUpgrade_ComparesPrices(long? oldComparablePrice, long? newComparablePrice, bool expectedIsUpgrade)
     {
         Assert.Equal(expectedIsUpgrade, SubscriptionReplacementRules.IsUpgrade(oldComparablePrice, newComparablePrice));
+    }
+
+    [Theory]
+    [InlineData("Couldn't find existing purchase for SKU: basic", true)]
+    [InlineData("Couldn't find existing purchase for SKU: ", true)]
+    [InlineData("Invalid replacement mode", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsNoExistingPurchaseMessage_MatchesRevenueCatMessage(string? underlyingErrorMessage, bool expectedIsNoExistingPurchase)
+    {
+        Assert.Equal(expectedIsNoExistingPurchase, SubscriptionReplacementRules.IsNoExistingPurchaseMessage(underlyingErrorMessage));
     }
 
     [Theory]

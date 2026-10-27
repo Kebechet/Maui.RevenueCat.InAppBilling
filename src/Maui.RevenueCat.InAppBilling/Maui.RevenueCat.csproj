@@ -41,9 +41,9 @@ BREAKING
   - A switch to a prepaid plan takes effect immediately at the full price of the new plan, the only replacement Google Play allows for prepaid plans.
   - An Android app that sells subscriptions meant to be held together (separate subscription groups on iOS) can no longer sell them side by side: buying the second one replaces the first.
   - Replacing is best effort: if the wrapper cannot read the user's subscriptions at all (RevenueCat unreachable and nothing cached), the purchase goes ahead without a replacement.
-  - Nothing is replaced when the user has more than one active Play Store subscription, for a subscription of another Android app in the same RevenueCat project, or for a switch between base plans of the same subscription, which Google Play handles on its own.
+  - Of several active Play Store subscriptions, only those this app sells count, and nothing is replaced if more than one is left. A switch between base plans of the same subscription is left to Google Play, which handles it on its own.
+  - If Google Play has no purchase of the subscription being replaced for this app and Google account (another app in the same RevenueCat project, a different Google account, or one that has just ended), the purchase goes ahead without a replacement.
   - Until a downgrade takes effect, `PurchaseProduct()` returns the `Transaction` and customer info of the subscription being replaced.
-  - If the subscription being replaced was bought with a different Google account than the one on the device, the purchase fails with `PurchaseInvalidError`.
 </PackageReleaseNotes>
   </PropertyGroup>
 
