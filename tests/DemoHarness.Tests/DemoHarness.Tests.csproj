@@ -18,4 +18,10 @@
         <ProjectReference Include="..\..\demo\DemoApp\DemoApp.Harness\DemoApp.Harness.csproj" />
     </ItemGroup>
 
+    <!-- The wrapper compiles this file only for net9.0-android, which this project cannot load. It has
+         no Android dependencies, so it is compiled here directly to test the replacement rules. -->
+    <ItemGroup>
+        <Compile Include="..\..\src\Maui.RevenueCat.InAppBilling\Platforms\Android\SubscriptionReplacementRules.cs" Link="Linked\SubscriptionReplacementRules.cs" />
+    </ItemGroup>
+
 </Project>
