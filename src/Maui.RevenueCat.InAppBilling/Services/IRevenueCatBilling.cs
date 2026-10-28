@@ -85,6 +85,11 @@ public interface IRevenueCatBilling
     /// <summary>
     /// Logs the current user out and returns to a fresh anonymous App User ID.
     /// </summary>
+    /// <remarks>
+    /// Idempotent: when the user is already anonymous (see <see cref="IsAnonymous"/>), nothing is logged out and it
+    /// succeeds with the current customer info. That includes a second call made while a first one is still in flight,
+    /// because RevenueCat switches to the new anonymous ID before the first call completes.
+    /// </remarks>
     Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken = default);
 
     /// <summary>
