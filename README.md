@@ -307,7 +307,7 @@ See [PurchaseErrorStatus](src/Maui.RevenueCat.InAppBilling/Enums/PurchaseErrorSt
 
 ## Contributing
 
-Feel free to create an issue or pull request. For major changes, please open an issue first to discuss your proposal - large PRs without prior discussion may be rejected.
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for what the repository accepts and how to build and test a change.
 
 ## License
 

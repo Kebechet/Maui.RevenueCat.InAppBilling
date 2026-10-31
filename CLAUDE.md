@@ -8,53 +8,11 @@ This is a .NET MAUI cross-platform wrapper library for RevenueCat in-app billing
 
 **Published as**: `Kebechet.Maui.RevenueCat.InAppBilling` on NuGet
 
-## Build Commands
+## Contributing Workflow
 
-### Build the main wrapper package
-```bash
-dotnet build src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj
-```
+Setup, build commands, testing (including the local NuGet feed for binding changes), versioning, code style and commit messages live in `CONTRIBUTING.md`, shared with human contributors and imported here:
 
-### Build in Release mode
-```bash
-dotnet build src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj -c Release
-```
-
-### Create NuGet package
-```bash
-dotnet pack src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj -o ./artifacts
-```
-
-### Restore NuGet packages
-```bash
-dotnet restore src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj --ignore-failed-sources
-```
-
-### Required workloads
-The project requires MAUI workloads for multi-platform targeting:
-```bash
-dotnet workload install maui-android maui-ios maui-maccatalyst maui-windows
-```
-
-### Solution layout
-Solutions are `.slnx` (XML format), not `.sln`:
-- `src/Maui.RevenueCat.InAppBilling.slnx` — main solution; the `/tests/` folder groups `BindingLinkerCheck` and `Postprocess.Tests`
-- `demo/DemoApp/DemoApp.slnx` — demo solution
-
-### Local NuGet feed for binding development
-`nuget.config` at repo root defines a `local` source mapped to `./local-nuget`. The `Kebechet.Maui.RevenueCat.*` family is mapped (via `packageSourceMapping`) to BOTH `local` and `nuget.org`, so a locally-packed version resolves from `local-nuget/` while everything else (and CI, which has no local packages) still restores from nuget.org. `local-nuget/` is `.gitignored`.
-
-To verify a binding change end-to-end before publishing — i.e. consumed as a real NuGet package through the wrapper and exercised in the demo, NOT a `ProjectReference` (which skips package restore and native jar/aar embedding):
-
-1. **Bump the binding `<Version>`** (e.g. `10.1.2.0` → `10.1.2.1`, the `<upstream>.<binding-fix>` scheme). A new version sidesteps the global package cache, so no `rm -rf ~/.nuget/packages/...` is needed.
-2. **Pack into the local feed:**
-   ```bash
-   dotnet pack src/Maui.RevenueCat.Android/Maui.RevenueCat.Android.csproj -c Release -o local-nuget
-   ```
-3. **Point the wrapper's `PackageReference` at the new version** (`src/Maui.RevenueCat.InAppBilling/Maui.RevenueCat.csproj`, in the per-TFM `ItemGroup`).
-4. **Rebuild + run the demo** (`demo/DemoApp`) on the target platform. The repo-root `nuget.config` is an ancestor of `demo/`, so the local feed is picked up automatically; the demo references the wrapper via `ProjectReference`. Inspect the packed `.nuspec` to confirm the intended dependency change (`unzip -p local-nuget/<pkg>.nupkg '*.nuspec'`).
-
-(Same-version re-pack is still possible by clearing `~/.nuget/packages/<lowercased.id>/<version>` to force re-extract, but bumping is cleaner.)
+@CONTRIBUTING.md
 
 ## Architecture
 
@@ -115,62 +73,6 @@ The iOS binding's `ApiDefinitions.cs` / `StructsAndEnums.cs` are generated autom
    - **iOS toolchain pin (non-obvious):** `generate-ios-bindings.yml` runs the post-processor on **.NET 10** (required for the file-based script) but pins the BindingLinkerCheck/binding build to **.NET 9.0.101 + Xcode 16.4** — the same pair `publish-ios.yml` uses. This is mandatory: the .NET 10 `ios` workload requires Xcode 26.5, which the GitHub macOS runners don't carry (newest is ~26.3). The pin is three things together: install both SDKs, `sudo xcode-select -s /Applications/Xcode_16.4.app`, and a `global.json` (created *after* the .NET 10 steps) plus `dotnet workload install ios maui-ios --version 9.0.101` — the `--version` is essential, without it the install resolves the latest manifest (`net9.0_26.5`, needs Xcode 26.5) even under the 9.0.101 SDK. The fresh sharpie output lives in `src/Maui.RevenueCat.iOS/RevenueCatBindingOutput/`, excluded from the binding project via `<DefaultItemExcludes>` so the default `**/*.cs` glob doesn't compile it a second time (`CS0101`).
 
 When bumping the binding to a new RevenueCat version: dispatch `generate-ios-bindings`, download the artifacts, drop `ApiDefinitions.cs` / `StructsAndEnums.cs` / `nativelib/RevenueCat.xcframework` into `src/Maui.RevenueCat.iOS/`, bump `<Version>` in the csproj. The version scheme is `<upstream>.<binding-fix>` (e.g. `5.72.0.0` = first binding for RevenueCat 5.72.0; `5.72.0.1` = first fix to that binding).
-
-## Code Style Guidelines
-
-### Comments
-Comments should only be used when something is used for a non-obvious reason or is hard to understand. Do not add comments for self-explaining code.
-
-### Empty Collections
-Use collection expression syntax `[]` instead of `new()` for empty collections:
-```csharp
-// Correct
-return [];
-
-// Incorrect
-return new();
-```
-
-### Emptiness Checks
-Prefer LINQ over `Count` comparisons — `.Any()` reads better and works on any `IEnumerable<T>`,
-not just types that expose a count:
-```csharp
-// Correct
-if (items.Any())
-if (!items.Any())
-
-// Incorrect
-if (items.Count != 0)
-if (items.Count == 0)
-```
-Inside `Maui.RevenueCat.InAppBilling` itself, prefer `IsNullOrEmpty()` from
-`Kebechet.Extensions.IsNullOrEmpty` (namespace `IsNullOrEmpty.Extensions`) when the check also
-covers null. That package is referenced with `<PrivateAssets>compile</PrivateAssets>`, so it does
-**not** flow to `DemoApp.Harness`, the demo app or the tests — use `.Any()` there.
-
-### Extension Methods
-Extract transformation logic to extension methods rather than inline:
-```csharp
-// Correct
-return storeTransaction.PurchaseTime.ToDateTime();
-
-// Incorrect
-var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-return epoch.AddMilliseconds(storeTransaction.PurchaseTime);
-```
-
-One file per source type — name it `{SourceTypeName}Extensions.cs` and put it under
-`Platforms/{Platform}/Extensions/`. A new mapping for a different native type goes in its
-own file; don't pile multiple unrelated converters into one file. Examples:
-`StoreExtensions.cs`, `PurchasesErrorCodeExtensions.cs`, `SubscriptionPeriodExtensions.cs`,
-`SubscriptionUnitExtensions.cs`.
-
-### Shared Constants
-Extract repeated values to static readonly fields:
-```csharp
-// Correct
-private static readonly DateTime _epoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-```
 
 ## Exception Handling Strategy
 
