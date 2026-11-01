@@ -289,7 +289,15 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
-    public async partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken)
+    public partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken)
+    {
+        return IdempotentLogout.Run(
+            IsAnonymous,
+            () => GetCustomerInfo(CustomerInfoFetchPolicy.CachedOrFetched, cancellationToken),
+            () => LogOutIdentifiedUser(cancellationToken),
+            _logger);
+    }
+    private async Task<CustomerInfoResultDto> LogOutIdentifiedUser(CancellationToken cancellationToken)
     {
         try
         {
@@ -299,7 +307,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         }
         catch (Exception ex)
         {
-            return new() { Error = LogAndMapError(ex), ErrorException = ex };
+            return new() { Error = LogAndMapError(ex, nameof(Logout)), ErrorException = ex };
         }
     }
     public async partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken)

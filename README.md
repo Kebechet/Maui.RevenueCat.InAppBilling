@@ -133,7 +133,7 @@ When offerings come back empty with a configuration error, the logs show which p
 | Method | Description |
 |--------|-------------|
 | `Login(string appUserId)` | Log in an identified user. `Value` is `CustomerInfoDto` |
-| `Logout()` | Log out and create anonymous user. `Value` is `CustomerInfoDto` |
+| `Logout()` | Log out and create anonymous user. `Value` is `CustomerInfoDto`. When the user is already anonymous, nothing is logged out and it succeeds with the current customer info, so calling it twice is safe |
 | `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CachedOrFetched)` | Get current customer info and entitlements. `Value` is `CustomerInfoDto`. The default may return stale cached data - see [Customer Info Caching](#customer-info-caching) |
 | `GetManagementSubscriptionUrl()` | Get URL for subscription management. `Value` is `string?`; null means no store-managed subscription |
 
