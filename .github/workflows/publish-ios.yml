@@ -19,6 +19,9 @@ env:
 
   ARTIFACT_FOLDER: ~/artifacts
 
+  # nuget.org profile name (not the email) that owns the trusted publishing policy
+  NUGET_USER: Kebechet
+
 jobs:
   build-ios:
     name: Build and publish iOS binary
@@ -26,6 +29,7 @@ jobs:
     permissions:
       packages: write
       contents: read
+      id-token: write
     steps:
       - name: Set Xcode Version
         run: sudo xcode-select -s /Applications/Xcode_${{env.XCODE_VERSION}}.app
@@ -97,10 +101,20 @@ jobs:
             ${{env.ARTIFACT_FOLDER}}/*.nupkg
             ${{env.ARTIFACT_FOLDER}}/*.snupkg
 
+      # Trusted publishing (https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): nuget.org
+      # trades this job's GitHub OIDC token for an API key that expires after an hour, so the login sits
+      # right before the push. The nuget.org policy names this repository and the file name
+      # publish-ios.yml - renaming this file stops publishing until the policy is updated to match.
+      - name: NuGet login (trusted publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ env.NUGET_USER }}
+
       - name: Publish Nuget
         run: >
           dotnet nuget push ${{env.ARTIFACT_FOLDER}}/*.nupkg 
-          --api-key ${{ secrets.NUGET_API_KEY }} 
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} 
           --source https://api.nuget.org/v3/index.json
 
       - name: Publish to GitHub Packages
