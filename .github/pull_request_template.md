@@ -19,7 +19,7 @@
 
 ## Checklist
 
-- [ ] `DemoHarness.Tests` and `Postprocess.Tests` pass
+- [ ] `DemoHarness.Tests`, `Postprocess.Tests` and `BumpScripts.Tests` pass
 - [ ] README updated if the public API changed
 - [ ] `<Version>` and `<PackageReleaseNotes>` left unchanged
 - [ ] Commit messages follow Conventional Commits

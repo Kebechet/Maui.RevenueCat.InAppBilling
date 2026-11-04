@@ -4,6 +4,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="../tests/BindingLinkerCheck/BindingLinkerCheck.csproj" />
+    <Project Path="../tests/BumpScripts.Tests/BumpScripts.Tests.csproj" />
     <Project Path="../tests/DemoHarness.Tests/DemoHarness.Tests.csproj" />
     <Project Path="../tests/Postprocess.Tests/Postprocess.Tests.csproj" />
   </Folder>

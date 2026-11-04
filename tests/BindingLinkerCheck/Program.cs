@@ -27,6 +27,11 @@ public static class Program
         // alive, which makes the iOS registrar emit `_OBJC_CLASS_$_X`
         // references in registrar.o. The native linker then has to resolve
         // each one against RevenueCat.framework's symbol table.
+        //
+        // The block between the markers is generated from the built binding by
+        // `dotnet run .github/scripts/bump.cs -- linker-check-types`, which
+        // .github/scripts/build-ios-binding.sh runs on every bump.
+        // <binding-types>
         _ = typeof(RCAdDisplayed);
         _ = typeof(RCAdFailedToLoad);
         _ = typeof(RCAdFormat);
@@ -36,6 +41,7 @@ public static class Program
         _ = typeof(RCAdRevenuePrecision);
         _ = typeof(RCAdTracker);
         _ = typeof(RCAttribution);
+        _ = typeof(RCBillingPlanType);
         _ = typeof(RCConfiguration);
         _ = typeof(RCConfigurationBuilder);
         _ = typeof(RCCustomPaywallImpressionParams);
@@ -43,6 +49,7 @@ public static class Program
         _ = typeof(RCDangerousSettings);
         _ = typeof(RCEntitlementInfo);
         _ = typeof(RCEntitlementInfos);
+        _ = typeof(RCInstallmentsInfo);
         _ = typeof(RCIntroEligibility);
         _ = typeof(RCMediatorName);
         _ = typeof(RCNonSubscriptionTransaction);
@@ -59,6 +66,7 @@ public static class Program
         _ = typeof(RCPurchases);
         _ = typeof(RCPurchasesDelegate);
         _ = typeof(RCPurchasesDiagnostics);
+        _ = typeof(RCRevocationReason);
         _ = typeof(RCStoreProduct);
         _ = typeof(RCStoreProductDiscount);
         _ = typeof(RCStoreTransaction);
@@ -70,6 +78,7 @@ public static class Program
         _ = typeof(RCVirtualCurrency);
         _ = typeof(RCWebPurchaseRedemption);
         _ = typeof(RCWinBackOffer);
+        // </binding-types>
     }
 }
 

@@ -6,7 +6,7 @@
       resolve every ObjC class symbol the binding declares. Built (not
       run) by CI against ios-arm64 and maccatalyst-arm64 — see
       .github/workflows/publish-ios.yml and
-      .github/workflows/generate-ios-bindings.yml.
+      .github/scripts/build-ios-binding.sh (run by try-bump-ios.yml).
 
       If the binding declares a `[Register("X")]` whose underlying ObjC class
       isn't exported by RevenueCat.framework, this build fails with

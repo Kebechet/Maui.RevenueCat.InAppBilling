@@ -25,7 +25,7 @@ The versioning scheme of `Maui.RevenueCat.iOS` is derived from the versioning of
 # Binding creation
 
 > [!IMPORTANT]
-> **The canonical way to regenerate this binding is the `.github/workflows/generate-ios-bindings.yml` workflow** (manual dispatch), not the manual steps below. The workflow builds `RevenueCat.xcframework` **from source with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` flag** so Test Store (`test_…`) keys work on iOS — see [Test Store API key support](#test-store-api-key-support-bypass_simulated_store_release_check) and [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116). The manual steps in this section download the **pre-built** `RevenueCat.xcframework.zip` instead, which is always Release-configured and does **NOT** include that bypass — following them would reintroduce the force-close on Test Store keys. They are kept for historical context and to explain the cleanups the workflow's post-processor automates.
+> **The canonical way to regenerate this binding is the `.github/workflows/try-bump-ios.yml` workflow** (daily, or dispatched with a version), not the manual steps below. The workflow builds `RevenueCat.xcframework` **from source with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` flag** so Test Store (`test_…`) keys work on iOS — see [Test Store API key support](#test-store-api-key-support-bypass_simulated_store_release_check) and [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116). The manual steps in this section download the **pre-built** `RevenueCat.xcframework.zip` instead, which is always Release-configured and does **NOT** include that bypass — following them would reintroduce the force-close on Test Store keys. They are kept for historical context and to explain the cleanups the workflow's post-processor automates.
 
 ## Porting old xamarin library ios to .NET MAUI
 First version of our Maui binding was just changed `Xamarin.RevenueCat.iOS` binding working for .NET MAUI. It was binding around `RevenueCat ios 4.9.0`, but this native library contained bitcode which is no longer accepted by AppStore.
@@ -59,7 +59,7 @@ Because of a problem with bitcode I have decided to create completely new bindin
 
 ### Test Store API key support (`BYPASS_SIMULATED_STORE_RELEASE_CHECK`)
 - The pre-built `RevenueCat.xcframework.zip` release asset published by `RevenueCat/purchases-ios` is always **Release-configured**. Its `Sources/Purchasing/Configuration.swift` contains the guard `#if !DEBUG && !BYPASS_SIMULATED_STORE_RELEASE_CHECK` which calls `checkForSimulatedStoreAPIKeyInRelease(...)` and force-closes any consumer app initialised with a Test Store API key (`test_…`) — even in DEBUG, because the *framework* itself was built Release.
-- To make Test Store keys usable for development without an App Store setup, the bundled `nativelib/RevenueCat.xcframework` is built **from source** by `.github/workflows/generate-ios-bindings.yml` with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` Swift compilation flag set via `Local.xcconfig`:
+- To make Test Store keys usable for development without an App Store setup, the bundled `nativelib/RevenueCat.xcframework` is built **from source** by `.github/workflows/try-bump-ios.yml` with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` Swift compilation flag set via `Local.xcconfig`:
   ```
   SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) BYPASS_SIMULATED_STORE_RELEASE_CHECK
   ```

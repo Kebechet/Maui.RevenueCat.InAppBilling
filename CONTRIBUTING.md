@@ -18,7 +18,7 @@ RevenueCat's UI module (RevenueCatUI: paywalls, Customer Center) is out of scope
 
 - **Bug fixes and small improvements:** open a pull request directly.
 - **Bigger changes** (new or changed public API, a behaviour change, anything breaking): opening an issue first is highly recommended, though not required. It settles whether the change fits before you spend time on it. A large pull request without prior discussion may be declined.
-- **Updating to a new RevenueCat SDK version:** open an issue asking for it. The maintainer runs the update, because the iOS bindings are generated in CI with a pinned Xcode and Objective Sharpie, and all three packages are published by workflows that use the repository's secrets. Please don't send bindings you generated locally.
+- **Updating to a new RevenueCat SDK version:** nothing to do. `try-bump-android.yml` and `try-bump-ios.yml` check for a new RevenueCat release every day and open a pull request for it (`bump/<platform>-<version>`), with the iOS bindings generated in CI with a pinned Xcode and Objective Sharpie. The maintainer reviews it and publishes the packages with workflows that use the repository's secrets. Please don't send bindings you generated locally.
 
 ## Pull requests
 
@@ -74,12 +74,15 @@ The binding projects document how they were created in their own READMEs ([Andro
 
 ### Unit tests
 
-CI runs both on every pull request:
+CI runs all three on every pull request:
 
 ```bash
 dotnet test tests/DemoHarness.Tests/DemoHarness.Tests.csproj -c Release
 dotnet test tests/Postprocess.Tests/Postprocess.Tests.csproj -c Release
+dotnet test tests/BumpScripts.Tests/BumpScripts.Tests.csproj -c Release
 ```
+
+`BumpScripts.Tests` covers `.github/scripts/bump.cs`, which the bump bot uses to edit the binding csproj files and write their release notes.
 
 `DemoHarness.Tests` restores the binding versions the wrapper references. When one of them is not on nuget.org yet, pack the bindings into the local feed first (see below), as CI does.
 
@@ -128,7 +131,7 @@ Contributors: leave the version changes from steps 2 and 4 out of the pull reque
 
 - **Bindings** follow the RevenueCat SDK they wrap, as `<upstream>.<binding-fix>`: `10.16.1.0` is the first binding of RevenueCat 10.16.1, `10.16.1.1` the first fix to it.
 - **The wrapper** uses semantic versioning: a breaking change bumps the major version.
-- **`<Version>` and `<PackageReleaseNotes>`** are set by the maintainer in a `release:` commit when publishing, and `publish-wrapper.yml` turns the release notes into the GitHub release. Leave both unchanged in a pull request and describe user-visible changes in its description instead.
+- **`<Version>` and `<PackageReleaseNotes>`** are set by the maintainer in a `release:` commit when publishing, and `publish-wrapper.yml` turns the release notes into the GitHub release. Leave both unchanged in a pull request and describe user-visible changes in its description instead. The one exception is a binding bump pull request from the bump bot, which sets the binding's own `<Version>` and release notes from RevenueCat's changelog.
 
 ## Code style
 

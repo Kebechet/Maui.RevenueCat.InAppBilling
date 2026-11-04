@@ -28,6 +28,10 @@ indent_size = 4
 [*.{json}]
 indent_size = 4
 
+# Shell scripts run on Linux and macOS runners, where CRLF breaks them
+[*.sh]
+end_of_line = lf
+
 [*.cs]
 csharp_style_namespace_declarations = file_scoped:warning
 
