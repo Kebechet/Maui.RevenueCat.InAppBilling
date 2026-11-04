@@ -1,0 +1,528 @@
+name: TryBumpIOS
+
+# Produces ONE standalone pull request that moves the iOS binding onto a newer native
+# RevenueCat SDK and is ready to merge when it opens: an xcframework built from source with
+# BYPASS_SIMULATED_STORE_RELEASE_CHECK (issue #116), freshly generated and post-processed
+# Sharpie bindings, correct <Version>, release notes with RevenueCat's changelog, the
+# binding builds AND links for both slices, the wrapper compiles against the packed result,
+# and a report of the native API the bump adds, removes or deprecates. Nothing is merged or
+# published here.
+#
+#   detect  target = dispatch input, else the newest stable RevenueCat/purchases-ios
+#           release; compared with the native part of the binding <Version>. Equal ->
+#           nothing to do.
+#   bump    build RevenueCat.xcframework from source, Sharpie, post-process (the steps
+#           generate-ios-bindings.yml used to leave as artifacts), then
+#           .github/scripts/bump-ios.sh puts it all in place, and
+#           .github/scripts/build-ios-binding.sh builds and links it. If that fails and a
+#           Claude OAuth token is configured, Claude Code repairs ApiDefinitions.cs /
+#           StructsAndEnums.cs or extends the post-processor (edits outside that allow-list
+#           are discarded) and a deterministic rebuild decides. Then pack, compile the
+#           wrapper against the pack from a local feed, write the API report, and
+#           .github/scripts/open-bump-pr.sh opens or refreshes bump/ios-<version>:
+#             everything passed -> ready-for-review PR
+#             otherwise        -> DRAFT PR labelled binding-broken / wrapper-broken /
+#                                 min-os-raised / upstream-breaking, and this job fails,
+#                                 so the run shows red.
+#
+# The wrapper csproj is asserted byte-identical before anything is committed.
+
+on:
+  schedule:
+    - cron: '10 6 * * *'   # 06:10 UTC daily, offset from TryBumpAndroid
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'RevenueCat iOS SDK version to pin (blank = newest stable release)'
+        type: string
+        required: false
+      dry_run:
+        description: 'Run everything but print the PR instead of pushing and opening it'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+# A second run mid-flight would race the same bump branch and PR.
+concurrency:
+  group: try-bump-ios
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  BUILD_CONFIGURATION: Release
+  BINDING_PROJECT: src/Maui.RevenueCat.iOS/Maui.RevenueCat.iOS.csproj
+  BINDING_DIR: src/Maui.RevenueCat.iOS
+  # publish-ios.yml's proven pair. The .NET 10 `ios` workload needs a newer Xcode than
+  # Objective Sharpie can work with, and 5.83.1 was archived with exactly this Xcode
+  # (DTXcode 1640 in the shipped framework's Info.plist).
+  XCODE_VERSION: '16.4'
+  DOTNET_BUILD_SDK: 9.0.101
+  DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+
+jobs:
+  detect:
+    name: Detect
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      target:  ${{ steps.resolve.outputs.target }}
+      current: ${{ steps.resolve.outputs.current }}
+      needed:  ${{ steps.resolve.outputs.needed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - id: resolve
+        name: purchases-ios newest release vs pinned
+        # Via env, not inline ${{ }}: a dispatch input interpolated straight into the
+        # script body would be a shell-injection vector.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Binding version is <native>.<binding-rev>; strip the revision.
+          BINDING=$(dotnet run .github/scripts/bump.cs -- get-version "$BINDING_PROJECT")
+          CURRENT="${BINDING%.*}"
+
+          TARGET="$INPUT_VERSION"
+          if [[ -z "$TARGET" ]]; then
+            TARGET=$(dotnet run .github/scripts/bump.cs -- latest-native ios)
+          fi
+          # The version ends up in URLs, a branch name, a git ref to check out and a PR
+          # title. Anything but a plain dotted number would fail later, further from the cause.
+          if [[ ! "$TARGET" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]]; then
+            echo "ERROR: '$TARGET' is not a plain version number such as 5.102.0" >&2
+            exit 1
+          fi
+
+          if [[ "$CURRENT" != "$TARGET" ]]; then NEEDED=true; else NEEDED=false; fi
+          echo "pinned: $CURRENT / target: $TARGET / bump needed: $NEEDED"
+          {
+            echo "current=$CURRENT"
+            echo "target=$TARGET"
+            echo "needed=$NEEDED"
+          } >> "$GITHUB_OUTPUT"
+          if [[ "$NEEDED" == "false" ]]; then
+            echo "### iOS: nothing to do - pinned \`$CURRENT\` is already the target" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  bump:
+    name: iOS ${{ needs.detect.outputs.target }}
+    needs: detect
+    if: needs.detect.outputs.needed == 'true'
+    # Pinned, never macos-latest: the macOS 26 image carries only iOS 26 SDKs, which
+    # Objective Sharpie's bundled clang cannot parse, and no Xcode 16.4.
+    runs-on: macos-15
+    defaults:
+      run:
+        shell: bash
+    env:
+      PLATFORM: ios
+      TARGET:   ${{ needs.detect.outputs.target }}
+      PREVIOUS: ${{ needs.detect.outputs.current }}
+      HAS_CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+    steps:
+      # A GitHub App token rather than GITHUB_TOKEN: pushes made with the default token
+      # raise no events, so the bump PR would never run unit-tests.yml. A dry run pushes
+      # nothing and gets by with the default token.
+      - id: app-token
+        if: env.DRY_RUN != '1'
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BUMP_BOT_APP_ID }}
+          private-key: ${{ secrets.BUMP_BOT_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token || github.token }}
+          fetch-depth: 0
+
+      - name: Select Xcode ${{ env.XCODE_VERSION }}
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+          xcodebuild -version
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            ${{ env.DOTNET_BUILD_SDK }}
+            10.0.x
+
+      # The repository root keeps no global.json, so the file-based scripts run on .NET 10.
+      # Every iOS build runs from this directory instead, whose global.json picks 9.0.101.
+      - name: Pin .NET ${{ env.DOTNET_BUILD_SDK }} for the iOS builds
+        run: |
+          SDK9_DIR="$RUNNER_TEMP/sdk9"
+          mkdir -p "$SDK9_DIR"
+          echo "{\"sdk\":{\"version\":\"${DOTNET_BUILD_SDK}\",\"rollForward\":\"latestFeature\"}}" > "$SDK9_DIR/global.json"
+          echo "SDK9_DIR=$SDK9_DIR" >> "$GITHUB_ENV"
+          echo "IOS_BUMP_DIR=$RUNNER_TEMP/ios-bump" >> "$GITHUB_ENV"
+          echo "SHARPIE_RAW_DIR=$RUNNER_TEMP/ios-bump/sharpie" >> "$GITHUB_ENV"
+
+      - name: Run post-processor tests
+        # Fail fast if the post-processor regressed before spending ~20 minutes on the build.
+        run: dotnet test tests/Postprocess.Tests/Postprocess.Tests.csproj --nologo
+
+      - name: Install Objective Sharpie
+        run: |
+          brew install --cask objectivesharpie || echo "Objective Sharpie may already be installed"
+          sharpie -v
+
+      - name: Detect iOS SDK
+        run: |
+          sharpie xcode -sdks
+          IOS_SDK=$(sharpie xcode -sdks 2>&1 | grep -i iphoneos | grep -o 'iphoneos[0-9.]*' | tail -1)
+          if [[ -z "$IOS_SDK" ]]; then
+            echo "ERROR: could not detect an iOS SDK" >&2
+            exit 1
+          fi
+          echo "IOS_SDK=$IOS_SDK" >> "$GITHUB_ENV"
+
+      - name: Checkout RevenueCat/purchases-ios at ${{ env.TARGET }}
+        uses: actions/checkout@v4
+        with:
+          repository: RevenueCat/purchases-ios
+          ref: ${{ env.TARGET }}
+          path: purchases-ios-src
+          submodules: recursive
+
+      - name: Keep the upstream checkout out of git status
+        run: echo "purchases-ios-src/" >> .git/info/exclude
+
+      - name: Write Local.xcconfig with BYPASS_SIMULATED_STORE_RELEASE_CHECK
+        # The pre-built RevenueCat.xcframework.zip release asset is Release-configured, so its
+        # `#if !DEBUG && !BYPASS_SIMULATED_STORE_RELEASE_CHECK` guard force-closes any app
+        # initialised with a Test Store key (issue #116). Local.xcconfig is read by
+        # RevenueCat.xcodeproj through Global.xcconfig's `#include? "Local.xcconfig"`.
+        # Mirrors RevenueCat/purchases-kmp's kn-core/build.gradle.kts.
+        run: |
+          cat > purchases-ios-src/Local.xcconfig <<'XCCONFIG'
+          // Generated by .github/workflows/try-bump-ios.yml - see issue #116 and
+          // https://github.com/RevenueCat/purchases-kmp/issues/823
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) BYPASS_SIMULATED_STORE_RELEASE_CHECK
+          XCCONFIG
+
+      - name: Verify BYPASS_SIMULATED_STORE_RELEASE_CHECK is active
+        # A positive check on the resolved build setting, before the long archive. Grepping
+        # the built binary for an absent symbol could pass for the wrong reason: the guarded
+        # method is internal Swift and need not be in the symbol table at all.
+        run: |
+          cd purchases-ios-src
+          SETTINGS=$(xcodebuild -project RevenueCat.xcodeproj \
+            -scheme RevenueCat \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -showBuildSettings 2>/dev/null) || true
+          RESOLVED=$(echo "$SETTINGS" | grep -E '^[[:space:]]*SWIFT_ACTIVE_COMPILATION_CONDITIONS' | head -1 || true)
+          echo "Resolved: $RESOLVED"
+          if ! echo "$RESOLVED" | grep -q 'BYPASS_SIMULATED_STORE_RELEASE_CHECK'; then
+            echo "ERROR: BYPASS_SIMULATED_STORE_RELEASE_CHECK is absent from the resolved SWIFT_ACTIVE_COMPILATION_CONDITIONS" >&2
+            exit 1
+          fi
+
+      - name: Build RevenueCat.xcframework from source
+        # Device, simulator and Mac Catalyst slices, combined. BUILD_LIBRARY_FOR_DISTRIBUTION
+        # emits the stable module interface, SKIP_INSTALL=NO puts the framework where
+        # -create-xcframework finds it.
+        run: |
+          cd purchases-ios-src
+          ARCHIVES_DIR="$RUNNER_TEMP/xcframework-archives"
+          mkdir -p "$ARCHIVES_DIR" "$IOS_BUMP_DIR"
+
+          for slice in "iphoneos|generic/platform=iOS" \
+                       "iphonesimulator|generic/platform=iOS Simulator" \
+                       "maccatalyst|generic/platform=macOS,variant=Mac Catalyst"; do
+            name="${slice%%|*}"
+            destination="${slice#*|}"
+            echo "==> archiving RevenueCat for $name"
+            xcodebuild archive \
+              -project RevenueCat.xcodeproj \
+              -scheme RevenueCat \
+              -configuration Release \
+              -destination "$destination" \
+              -archivePath "$ARCHIVES_DIR/RevenueCat-$name.xcarchive" \
+              SKIP_INSTALL=NO \
+              BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+          done
+
+          FRAMEWORK_ARGS=()
+          for name in iphoneos iphonesimulator maccatalyst; do
+            FRAMEWORK_ARGS+=(
+              -framework "$ARCHIVES_DIR/RevenueCat-$name.xcarchive/Products/Library/Frameworks/RevenueCat.framework"
+              -debug-symbols "$ARCHIVES_DIR/RevenueCat-$name.xcarchive/dSYMs/RevenueCat.framework.dSYM")
+          done
+          xcodebuild -create-xcframework "${FRAMEWORK_ARGS[@]}" -output "$IOS_BUMP_DIR/RevenueCat.xcframework"
+
+      - name: Clean the xcframework (strip swiftmodule / dSYM)
+        # Long .swiftmodule paths break the Windows build path, and the plist's
+        # DebugSymbolsPath entries make `dotnet pack` warn NU5123 even once the dSYM
+        # directories are gone.
+        run: |
+          FRAMEWORK_DIR="$IOS_BUMP_DIR/RevenueCat.xcframework"
+          find "$FRAMEWORK_DIR" -type d -name "*.swiftmodule" -exec rm -rf {} + 2>/dev/null || true
+          find "$FRAMEWORK_DIR" -type d -name "*.dSYM" -exec rm -rf {} + 2>/dev/null || true
+          find "$FRAMEWORK_DIR" -type d -name "dSYMs" -exec rm -rf {} + 2>/dev/null || true
+          python3 - "$FRAMEWORK_DIR/Info.plist" <<'PY'
+          import plistlib, sys
+          path = sys.argv[1]
+          with open(path, "rb") as f:
+              data = plistlib.load(f)
+          for lib in data.get("AvailableLibraries", []):
+              lib.pop("DebugSymbolsPath", None)
+          with open(path, "wb") as f:
+              plistlib.dump(data, f)
+          PY
+
+      - name: Verify framework structure
+        run: |
+          FRAMEWORK_DIR="$IOS_BUMP_DIR/RevenueCat.xcframework"
+          HEADERS="$FRAMEWORK_DIR/ios-arm64/RevenueCat.framework/Headers"
+          for h in "$HEADERS/RevenueCat.h" "$HEADERS/RevenueCat-Swift.h"; do
+            if [[ ! -f "$h" ]]; then
+              echo "ERROR: required header not found at $h" >&2
+              exit 1
+            fi
+          done
+          # The Catalyst slice uses the macOS framework-bundle layout (Versions/A + symlinks).
+          if [[ ! -f "$FRAMEWORK_DIR/ios-arm64_x86_64-maccatalyst/RevenueCat.framework/Versions/A/RevenueCat" ]]; then
+            echo "ERROR: Mac Catalyst slice binary not found" >&2
+            exit 1
+          fi
+          if ! grep -q "ios-arm64_x86_64-maccatalyst" "$FRAMEWORK_DIR/Info.plist"; then
+            echo "ERROR: the xcframework Info.plist does not list the Mac Catalyst slice" >&2
+            exit 1
+          fi
+
+      - name: Generate bindings with Objective Sharpie
+        # Framework mode goes through the umbrella header, so both RevenueCat.h and
+        # RevenueCat-Swift.h are bound.
+        run: |
+          FRAMEWORK_PATH="$IOS_BUMP_DIR/RevenueCat.xcframework/ios-arm64/RevenueCat.framework"
+          sharpie bind \
+            -framework "$FRAMEWORK_PATH" \
+            -sdk "$IOS_SDK" \
+            -scope "$FRAMEWORK_PATH/Headers" \
+            -output "$SHARPIE_RAW_DIR" \
+            -namespace "Maui.RevenueCat.iOS"
+
+      - name: Post-process the bindings
+        run: |
+          GENERATED="$IOS_BUMP_DIR/generated"
+          mkdir -p "$GENERATED"
+          cp "$SHARPIE_RAW_DIR/ApiDefinitions.cs" "$SHARPIE_RAW_DIR/StructsAndEnums.cs" "$GENERATED/"
+          dotnet run .github/scripts/postprocess_ios_bindings.cs -- \
+            "$GENERATED/ApiDefinitions.cs" "$GENERATED/StructsAndEnums.cs" \
+            --report "$GITHUB_WORKSPACE/manual_review.md"
+
+      - name: Install iOS workloads for .NET ${{ env.DOTNET_BUILD_SDK }}
+        # --version pins the workload manifest to the 9.0.1xx band; without it the install
+        # resolves the newest manifest, which needs a newer Xcode than the one selected.
+        working-directory: ${{ env.SDK9_DIR }}
+        run: dotnet workload install ios maccatalyst maui-ios maui-maccatalyst --version "$DOTNET_BUILD_SDK" --ignore-failed-sources
+
+      - id: bump
+        name: Bump the binding
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+        run: |
+          chmod +x .github/scripts/*.sh
+          .github/scripts/bump-ios.sh "$TARGET" "$IOS_BUMP_DIR/generated" "$IOS_BUMP_DIR/RevenueCat.xcframework"
+
+      - id: build
+        name: Build and link the binding
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          .github/scripts/build-ios-binding.sh 2>&1 | tee binding-build.log
+
+      - name: Snapshot the bump before any repair
+        if: steps.build.outcome != 'success'
+        run: |
+          git status --porcelain --untracked-files=all | cut -c4- > "$RUNNER_TEMP/after-bump.txt"
+          shasum -a 256 "$BINDING_DIR/ApiDefinitions.cs" "$BINDING_DIR/StructsAndEnums.cs" \
+            .github/scripts/postprocess_ios_bindings.cs tests/Postprocess.Tests/*.cs > "$RUNNER_TEMP/allow-before.txt"
+          shasum -a 256 .github/scripts/postprocess_ios_bindings.cs tests/Postprocess.Tests/*.cs > "$RUNNER_TEMP/postprocessor-before.txt"
+
+      - id: claude
+        name: Repair the binding with Claude Code
+        if: steps.build.outcome != 'success' && env.HAS_CLAUDE_TOKEN == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token || github.token }}
+          prompt: |
+            The iOS binding in this repository does not build or link against RevenueCat iOS SDK ${{ env.TARGET }}.
+            Read `.github/prompts/fix-ios-binding.md` and follow it exactly.
+            The failing build log is `binding-build.log` and the post-processor's report is `manual_review.md`, both in the repository root.
+          claude_args: >-
+            --max-turns 60
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(.github/scripts/build-ios-binding.sh:*),Bash(.github/scripts/regenerate-ios-binding.sh:*),Bash(dotnet test tests/Postprocess.Tests/Postprocess.Tests.csproj:*),Bash(cat:*),Bash(grep:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*)"
+
+      - name: Repair skipped - no CLAUDE_CODE_OAUTH_TOKEN
+        if: steps.build.outcome != 'success' && env.HAS_CLAUDE_TOKEN != 'true'
+        run: echo "::warning::The binding does not build and CLAUDE_CODE_OAUTH_TOKEN is not configured, so no repair was attempted (run 'claude setup-token' and add the secret)."
+
+      - name: Keep only allowed repair edits
+        if: steps.build.outcome != 'success'
+        run: |
+          .github/scripts/keep-only-allowed-changes.sh "$RUNNER_TEMP/after-bump.txt" \
+            '^(src/Maui\.RevenueCat\.iOS/(ApiDefinitions|StructsAndEnums)\.cs|\.github/scripts/postprocess_ios_bindings\.cs|tests/Postprocess\.Tests/[^/]+\.cs|fix-summary\.md)$'
+
+      - id: rebuild
+        name: Rebuild the binding after repair
+        if: steps.build.outcome != 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          # A changed post-processor has to keep passing its own tests, or the next bump
+          # starts from a broken generator.
+          if ! shasum -a 256 -c --status "$RUNNER_TEMP/postprocessor-before.txt"; then
+            echo "===== post-processor tests after repair =====" | tee -a binding-build.log
+            dotnet test tests/Postprocess.Tests/Postprocess.Tests.csproj --nologo 2>&1 | tee -a binding-build.log
+          fi
+          echo "===== rebuild after repair =====" | tee -a binding-build.log
+          .github/scripts/build-ios-binding.sh 2>&1 | tee -a binding-build.log
+
+      - id: verdict
+        name: Binding verdict
+        env:
+          BUILD_OUTCOME:   ${{ steps.build.outcome }}
+          REBUILD_OUTCOME: ${{ steps.rebuild.outcome }}
+        run: |
+          REPAIRED=false
+          if [[ -f "$RUNNER_TEMP/allow-before.txt" ]] && ! shasum -a 256 -c --status "$RUNNER_TEMP/allow-before.txt"; then
+            REPAIRED=true
+          fi
+          if [[ "$BUILD_OUTCOME" == "success" ]]; then
+            BINDING_OK=true; CLAUDE_FIXED=false
+          elif [[ "$REBUILD_OUTCOME" == "success" ]]; then
+            BINDING_OK=true; CLAUDE_FIXED=$REPAIRED
+          else
+            BINDING_OK=false; CLAUDE_FIXED=false
+          fi
+          echo "binding_ok=$BINDING_OK / claude_fixed=$CLAUDE_FIXED"
+          { echo "binding_ok=$BINDING_OK"; echo "claude_fixed=$CLAUDE_FIXED"; } >> "$GITHUB_OUTPUT"
+
+      - id: pack
+        name: Pack the binding into a local feed
+        if: steps.verdict.outputs.binding_ok == 'true'
+        working-directory: ${{ env.SDK9_DIR }}
+        run: dotnet pack "$GITHUB_WORKSPACE/$BINDING_PROJECT" -c "$BUILD_CONFIGURATION" --no-build --no-restore -o "$RUNNER_TEMP/bump-feed"
+
+      - id: wrapper
+        name: Compile the wrapper against the packed binding
+        if: steps.verdict.outputs.binding_ok == 'true'
+        continue-on-error: true
+        env:
+          DOTNET_BUILD_DIR: ${{ env.SDK9_DIR }}
+        run: |
+          set -o pipefail
+          .github/scripts/build-wrapper-against.sh ios "$RUNNER_TEMP/bump-feed" "${{ steps.bump.outputs.binding_version }}" 2>&1 | tee wrapper-build.log
+          echo "wrapper_dll=$(tail -1 wrapper-build.log)" >> "$GITHUB_OUTPUT"
+
+      - id: api
+        name: Report the native API changes
+        if: steps.verdict.outputs.binding_ok == 'true'
+        continue-on-error: true
+        env:
+          WRAPPER_DLL: ${{ steps.wrapper.outputs.wrapper_dll || '-' }}
+        run: |
+          dotnet run .github/scripts/bump.cs -- api-report ios \
+            "$BINDING_DIR/bin/$BUILD_CONFIGURATION/net9.0-ios/Maui.RevenueCat.iOS.dll" \
+            "$WRAPPER_DLL" api-report.md api-report-full.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: binding-build-log-ios
+          path: |
+            binding-build.log
+            manual_review.md
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wrapper-build-log-ios
+          path: wrapper-build.log
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-report-ios
+          path: api-report-full.md
+          if-no-files-found: ignore
+
+      - id: pr
+        name: Open or refresh the pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          BINDING_VERSION: ${{ steps.bump.outputs.binding_version }}
+          CHANGELOG_EXCERPT: ${{ steps.bump.outputs.changelog_excerpt }}
+          NOTE_FROM: ${{ steps.bump.outputs.note_from }}
+          BASE_BRANCH: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CLAUDE_FIXED: ${{ steps.verdict.outputs.claude_fixed }}
+          FIX_SUMMARY_FILE: fix-summary.md
+          API_REPORT_FILE: api-report.md
+          # A repair may extend the post-processor and its tests; those are part of the fix.
+          COMMIT_PATHS: src/Maui.RevenueCat.iOS .github/scripts/postprocess_ios_bindings.cs tests/Postprocess.Tests
+          BINDING_OK: ${{ steps.verdict.outputs.binding_ok }}
+          WRAPPER_OUTCOME: ${{ steps.wrapper.outcome }}
+          MIN_OS_RAISED: ${{ steps.bump.outputs.min_os_raised }}
+          MIN_OS_PREVIOUS: ${{ steps.bump.outputs.min_os_previous }}
+          MIN_OS_CURRENT: ${{ steps.bump.outputs.min_os_current }}
+          UPSTREAM_BREAKING: ${{ steps.bump.outputs.upstream_breaking }}
+        run: |
+          if [[ "$BINDING_OK" != "true" ]]; then
+            STATUS=binding-broken
+          elif [[ "$MIN_OS_RAISED" == "true" ]]; then
+            STATUS=min-os-raised
+          elif [[ "$WRAPPER_OUTCOME" != "success" ]]; then
+            STATUS=wrapper-broken
+          elif [[ "$UPSTREAM_BREAKING" == "true" ]]; then
+            STATUS=upstream-breaking
+          else
+            STATUS=green
+          fi
+          if [[ "$WRAPPER_OUTCOME" == "success" ]]; then WRAPPER_OK=true; else WRAPPER_OK=false; fi
+          export WRAPPER_OK
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          STATUS="$STATUS" .github/scripts/open-bump-pr.sh
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### iOS ${PREVIOUS} -> ${TARGET}: ${{ steps.pr.outputs.status || 'no PR opened' }}"
+            echo ""
+            echo "- Binding version: \`${{ steps.bump.outputs.binding_version }}\`"
+            echo "- PR: ${{ steps.pr.outputs.pr_url || 'none' }}"
+            echo "- Claude repaired the binding: ${{ steps.verdict.outputs.claude_fixed || 'n/a' }}"
+            echo "- Minimum OS: ${{ steps.bump.outputs.min_os_current || 'n/a' }} (raised: ${{ steps.bump.outputs.min_os_raised || 'n/a' }})"
+            echo "- Native API: +${{ steps.api.outputs.api_added || '?' }} / -${{ steps.api.outputs.api_removed || '?' }}, wrapper affected: ${{ steps.api.outputs.api_wrapper_affected || '?' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -s api-report.md ]]; then
+            { echo ""; cat api-report.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Fail the run when the PR is not green
+        if: steps.pr.outputs.status != 'green'
+        run: |
+          echo "::error::iOS bump to ${TARGET} is '${{ steps.pr.outputs.status }}'; the PR was left as a draft"
+          exit 1

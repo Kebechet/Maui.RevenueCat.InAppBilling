@@ -1,0 +1,363 @@
+name: TryBumpAndroid
+
+# Produces ONE standalone pull request that moves the Android binding onto a newer native
+# RevenueCat SDK and is ready to merge when it opens: new <AndroidMavenLibrary> pin, the
+# ignored Java dependencies on the POM's versions, correct <Version>, release notes with
+# RevenueCat's changelog, the binding builds (the POM-driven Java dependency verification
+# included), the wrapper compiles against the packed result, and a report of the native API
+# the bump adds, removes or deprecates. Nothing is merged or published here.
+#
+#   detect  target = dispatch input, else the newest stable RevenueCat/purchases-android
+#           release; compared with the <AndroidMavenLibrary> pin. Equal -> nothing to do.
+#   bump    .github/scripts/bump-android.sh, then build the binding. If that fails and a
+#           Claude OAuth token is configured, Claude Code repairs the binding (Transforms,
+#           Additions and the csproj's dependency list; anything else is discarded, and
+#           so is a csproj edit that touches what the bump itself set) and a deterministic
+#           rebuild decides. Then pack, compile the wrapper against the pack from a local
+#           feed, write the API report, and .github/scripts/open-bump-pr.sh opens or
+#           refreshes bump/android-<version>:
+#             everything passed -> ready-for-review PR
+#             otherwise        -> DRAFT PR labelled binding-broken / wrapper-broken /
+#                                 min-os-raised / upstream-breaking, and this job fails,
+#                                 so the run shows red.
+#
+# The wrapper csproj is asserted byte-identical before anything is committed.
+
+on:
+  schedule:
+    - cron: '30 5 * * *'   # 05:30 UTC daily, offset from TryBumpIOS
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'RevenueCat Android SDK version to pin (blank = newest stable release)'
+        type: string
+        required: false
+      dry_run:
+        description: 'Run everything but print the PR instead of pushing and opening it'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+# A second run mid-flight would race the same bump branch and PR.
+concurrency:
+  group: try-bump-android
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  BUILD_CONFIGURATION: Release
+  BINDING_PROJECT: src/Maui.RevenueCat.Android/Maui.RevenueCat.Android.csproj
+  BINDING_DIR: src/Maui.RevenueCat.Android
+  DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+
+jobs:
+  detect:
+    name: Detect
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      target:  ${{ steps.resolve.outputs.target }}
+      current: ${{ steps.resolve.outputs.current }}
+      needed:  ${{ steps.resolve.outputs.needed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - id: resolve
+        name: purchases-android newest release vs pinned
+        # Via env, not inline ${{ }}: a dispatch input interpolated straight into the
+        # script body would be a shell-injection vector.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          # The releases API is rate-limited per IP when anonymous; the default token is enough here.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT=$(dotnet run .github/scripts/bump.cs -- get-maven-pin "$BINDING_PROJECT")
+
+          TARGET="$INPUT_VERSION"
+          if [[ -z "$TARGET" ]]; then
+            # The highest stable version, not GitHub's "latest" flag: RevenueCat keeps
+            # shipping maintenance releases of the previous major (10.30.1 after 11.0.1).
+            TARGET=$(dotnet run .github/scripts/bump.cs -- latest-native android)
+          fi
+          # Whether it came from the dispatch input or from upstream metadata, the version
+          # ends up in URLs, a branch name and a PR title. Anything but a plain dotted
+          # number would fail later, further from the cause.
+          if [[ ! "$TARGET" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]]; then
+            echo "ERROR: '$TARGET' is not a plain version number such as 11.1.0" >&2
+            exit 1
+          fi
+
+          if [[ "$CURRENT" != "$TARGET" ]]; then NEEDED=true; else NEEDED=false; fi
+          echo "pinned: $CURRENT / target: $TARGET / bump needed: $NEEDED"
+          {
+            echo "current=$CURRENT"
+            echo "target=$TARGET"
+            echo "needed=$NEEDED"
+          } >> "$GITHUB_OUTPUT"
+          if [[ "$NEEDED" == "false" ]]; then
+            echo "### Android: nothing to do - pinned \`$CURRENT\` is already the target" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  bump:
+    name: Android ${{ needs.detect.outputs.target }}
+    needs: detect
+    if: needs.detect.outputs.needed == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      PLATFORM: android
+      TARGET:   ${{ needs.detect.outputs.target }}
+      PREVIOUS: ${{ needs.detect.outputs.current }}
+      # Secrets cannot be tested in `if:` directly; an env flag derived from one can.
+      HAS_CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+    steps:
+      # A GitHub App token rather than GITHUB_TOKEN: pushes made with the default token
+      # raise no events, so the bump PR would never run unit-tests.yml. A dry run pushes
+      # nothing and gets by with the default token.
+      - id: app-token
+        if: env.DRY_RUN != '1'
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BUMP_BOT_APP_ID }}
+          private-key: ${{ secrets.BUMP_BOT_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token || github.token }}
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+
+      # The same SDK and workload band unit-tests.yml packs the binding with.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install workloads
+        run: dotnet workload install android maui-android --ignore-failed-sources
+
+      - id: bump
+        name: Bump the binding
+        env:
+          # Authenticates the RevenueCat/purchases-android releases lookup; unauthenticated
+          # it shares the runner IP's hourly budget.
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+        run: |
+          chmod +x .github/scripts/*.sh
+          .github/scripts/bump-android.sh "$TARGET"
+
+      - id: build
+        name: Build the binding
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          dotnet restore "$BINDING_PROJECT" 2>&1 | tee binding-build.log
+          dotnet build   "$BINDING_PROJECT" -c "$BUILD_CONFIGURATION" --no-restore 2>&1 | tee -a binding-build.log
+
+      # What the bump set is snapshotted before the repair: the csproj is on the repair's
+      # allow-list for its dependency list, but its pin, version, notes and floor belong to
+      # the bump, and a repair that "fixes" the build by moving them is no repair.
+      - name: Snapshot the bump before any repair
+        if: steps.build.outcome != 'success'
+        run: |
+          git status --porcelain --untracked-files=all | cut -c4- > "$RUNNER_TEMP/after-bump.txt"
+          cp "$BINDING_PROJECT" "$RUNNER_TEMP/csproj-after-bump"
+          bump_owned() {
+            for command in get-maven-pin get-version get-min-os get-release-note; do
+              dotnet run .github/scripts/bump.cs -- "$command" "$BINDING_PROJECT"
+            done
+            grep -o 'AndroidIgnoredJavaDependency Include="[^"]*"' "$BINDING_PROJECT" || true
+          }
+          bump_owned > "$RUNNER_TEMP/bump-owned-before.txt"
+          sha256sum "$BINDING_PROJECT" "$BINDING_DIR"/Transforms/*.xml > "$RUNNER_TEMP/allow-before.txt"
+
+      - id: claude
+        name: Repair the binding with Claude Code
+        if: steps.build.outcome != 'success' && env.HAS_CLAUDE_TOKEN == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token || github.token }}
+          prompt: |
+            The Android binding in this repository does not build against RevenueCat Android SDK ${{ env.TARGET }}.
+            Read `.github/prompts/fix-android-binding.md` and follow it exactly.
+            The failing build log is `binding-build.log` in the repository root.
+          claude_args: >-
+            --max-turns 60
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(dotnet build:*),Bash(dotnet restore:*),Bash(curl -s https://api.nuget.org/:*),Bash(cat:*),Bash(grep:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*)"
+
+      - name: Repair skipped - no CLAUDE_CODE_OAUTH_TOKEN
+        if: steps.build.outcome != 'success' && env.HAS_CLAUDE_TOKEN != 'true'
+        run: echo "::warning::The binding does not build and CLAUDE_CODE_OAUTH_TOKEN is not configured, so no repair was attempted (run 'claude setup-token' and add the secret)."
+
+      - name: Keep only allowed repair edits
+        if: steps.build.outcome != 'success'
+        run: |
+          .github/scripts/keep-only-allowed-changes.sh "$RUNNER_TEMP/after-bump.txt" \
+            '^(src/Maui\.RevenueCat\.Android/(Transforms/[^/]+\.xml|Additions/.+|Maui\.RevenueCat\.Android\.csproj)|fix-summary\.md)$'
+
+          bump_owned() {
+            for command in get-maven-pin get-version get-min-os get-release-note; do
+              dotnet run .github/scripts/bump.cs -- "$command" "$BINDING_PROJECT"
+            done
+            grep -o 'AndroidIgnoredJavaDependency Include="[^"]*"' "$BINDING_PROJECT" || true
+          }
+          if ! bump_owned | cmp -s - "$RUNNER_TEMP/bump-owned-before.txt"; then
+            echo "::warning::The repair changed what the bump set in the csproj (pin, version, notes, floor or ignored dependencies); its csproj edits are discarded."
+            cp "$RUNNER_TEMP/csproj-after-bump" "$BINDING_PROJECT"
+          fi
+
+      - id: rebuild
+        name: Rebuild the binding after repair
+        if: steps.build.outcome != 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          echo "===== rebuild after repair =====" | tee -a binding-build.log
+          dotnet restore "$BINDING_PROJECT" 2>&1 | tee -a binding-build.log
+          dotnet build   "$BINDING_PROJECT" -c "$BUILD_CONFIGURATION" --no-restore 2>&1 | tee -a binding-build.log
+
+      - id: verdict
+        name: Binding verdict
+        env:
+          BUILD_OUTCOME:   ${{ steps.build.outcome }}
+          REBUILD_OUTCOME: ${{ steps.rebuild.outcome }}
+        run: |
+          REPAIRED=false
+          if [[ -f "$RUNNER_TEMP/allow-before.txt" ]] && ! sha256sum -c --status "$RUNNER_TEMP/allow-before.txt"; then
+            REPAIRED=true
+          fi
+          if [[ "$BUILD_OUTCOME" == "success" ]]; then
+            BINDING_OK=true; CLAUDE_FIXED=false
+          elif [[ "$REBUILD_OUTCOME" == "success" ]]; then
+            BINDING_OK=true; CLAUDE_FIXED=$REPAIRED
+          else
+            BINDING_OK=false; CLAUDE_FIXED=false
+          fi
+          echo "binding_ok=$BINDING_OK / claude_fixed=$CLAUDE_FIXED"
+          { echo "binding_ok=$BINDING_OK"; echo "claude_fixed=$CLAUDE_FIXED"; } >> "$GITHUB_OUTPUT"
+
+      - id: pack
+        name: Pack the binding into a local feed
+        if: steps.verdict.outputs.binding_ok == 'true'
+        run: dotnet pack "$BINDING_PROJECT" -c "$BUILD_CONFIGURATION" --no-build --no-restore -o "$RUNNER_TEMP/bump-feed"
+
+      - id: wrapper
+        name: Compile the wrapper against the packed binding
+        if: steps.verdict.outputs.binding_ok == 'true'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          .github/scripts/build-wrapper-against.sh android "$RUNNER_TEMP/bump-feed" "${{ steps.bump.outputs.binding_version }}" 2>&1 | tee wrapper-build.log
+          echo "wrapper_dll=$(tail -1 wrapper-build.log)" >> "$GITHUB_OUTPUT"
+
+      - id: api
+        name: Report the native API changes
+        if: steps.verdict.outputs.binding_ok == 'true'
+        continue-on-error: true
+        env:
+          WRAPPER_DLL: ${{ steps.wrapper.outputs.wrapper_dll || '-' }}
+        run: |
+          dotnet run .github/scripts/bump.cs -- api-report android \
+            "$BINDING_DIR/bin/$BUILD_CONFIGURATION/net9.0-android/Maui.RevenueCat.Android.dll" \
+            "$WRAPPER_DLL" api-report.md api-report-full.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: binding-build-log-android
+          path: binding-build.log
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wrapper-build-log-android
+          path: wrapper-build.log
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-report-android
+          path: api-report-full.md
+          if-no-files-found: ignore
+
+      - id: pr
+        name: Open or refresh the pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          BINDING_VERSION: ${{ steps.bump.outputs.binding_version }}
+          CHANGELOG_EXCERPT: ${{ steps.bump.outputs.changelog_excerpt }}
+          NOTE_FROM: ${{ steps.bump.outputs.note_from }}
+          BASE_BRANCH: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CLAUDE_FIXED: ${{ steps.verdict.outputs.claude_fixed }}
+          FIX_SUMMARY_FILE: fix-summary.md
+          API_REPORT_FILE: api-report.md
+          BINDING_OK: ${{ steps.verdict.outputs.binding_ok }}
+          WRAPPER_OUTCOME: ${{ steps.wrapper.outcome }}
+          MIN_OS_RAISED: ${{ steps.bump.outputs.min_os_raised }}
+          MIN_OS_PREVIOUS: ${{ steps.bump.outputs.min_os_previous }}
+          MIN_OS_CURRENT: ${{ steps.bump.outputs.min_os_current }}
+          UPSTREAM_BREAKING: ${{ steps.bump.outputs.upstream_breaking }}
+        run: |
+          # A raised OS floor is checked before the wrapper result: it is the likely
+          # cause of a wrapper failure (NuGet will not serve a higher-platform asset to a
+          # lower-platform project) and names the actual decision to make.
+          if [[ "$BINDING_OK" != "true" ]]; then
+            STATUS=binding-broken
+          elif [[ "$MIN_OS_RAISED" == "true" ]]; then
+            STATUS=min-os-raised
+          elif [[ "$WRAPPER_OUTCOME" != "success" ]]; then
+            STATUS=wrapper-broken
+          elif [[ "$UPSTREAM_BREAKING" == "true" ]]; then
+            STATUS=upstream-breaking
+          else
+            STATUS=green
+          fi
+          if [[ "$WRAPPER_OUTCOME" == "success" ]]; then WRAPPER_OK=true; else WRAPPER_OK=false; fi
+          export WRAPPER_OK
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          STATUS="$STATUS" .github/scripts/open-bump-pr.sh
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Android ${PREVIOUS} -> ${TARGET}: ${{ steps.pr.outputs.status || 'no PR opened' }}"
+            echo ""
+            echo "- Binding version: \`${{ steps.bump.outputs.binding_version }}\`"
+            echo "- PR: ${{ steps.pr.outputs.pr_url || 'none' }}"
+            echo "- Claude repaired the binding: ${{ steps.verdict.outputs.claude_fixed || 'n/a' }}"
+            echo "- Minimum OS: ${{ steps.bump.outputs.min_os_current || 'n/a' }} (raised: ${{ steps.bump.outputs.min_os_raised || 'n/a' }})"
+            echo "- Native API: +${{ steps.api.outputs.api_added || '?' }} / -${{ steps.api.outputs.api_removed || '?' }}, wrapper affected: ${{ steps.api.outputs.api_wrapper_affected || '?' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -s api-report.md ]]; then
+            { echo ""; cat api-report.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Fail the run when the PR is not green
+        if: steps.pr.outputs.status != 'green'
+        run: |
+          echo "::error::Android bump to ${TARGET} is '${{ steps.pr.outputs.status }}'; the PR was left as a draft"
+          exit 1

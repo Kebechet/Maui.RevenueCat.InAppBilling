@@ -3,3 +3,7 @@
 # line-ending normalization to them — a CRLF round-trip on a Windows
 # checkout would alter the bundled headers/plists/signature.
 src/Maui.RevenueCat.iOS/nativelib/RevenueCat.xcframework/** -text
+
+# Shell scripts run on Linux and macOS runners; a CRLF checkout breaks them with
+# "$'\r': command not found".
+*.sh text eol=lf
