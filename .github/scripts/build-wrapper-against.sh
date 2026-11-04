@@ -97,4 +97,6 @@ echo "==> Building the wrapper ($TFM)"
   -p:TargetFrameworks="$TFM" -p:GeneratePackageOnBuild=false)
 
 echo "==> the wrapper compiles against $PACKAGE_ID $VERSION"
-echo "$REPO_ROOT/src/Maui.RevenueCat.InAppBilling/bin/$CONFIGURATION/$TFM/Maui.RevenueCat.dll"
+# Looked up, not spelled out: on macOS the iOS SDK puts a platform segment into the output
+# path (bin/ios/Release/net9.0-ios).
+find "$REPO_ROOT/src/Maui.RevenueCat.InAppBilling/bin" -path "*/$CONFIGURATION/$TFM/Maui.RevenueCat.dll" | head -1

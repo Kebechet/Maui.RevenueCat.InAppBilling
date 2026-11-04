@@ -28,6 +28,7 @@
 //   api-report <android|ios> <new-dll> <wrapper-dll|-> <out-md> <out-full-md>
 //                                                       native API added/removed/obsoleted since the published
 //                                                       binding, and which of it the wrapper touches
+//   linker-check-types <binding-dll> <Program.cs>       rewrite BindingLinkerCheck's typeof() list from the binding
 
 using System.Collections.Immutable;
 using System.Globalization;
@@ -68,6 +69,7 @@ try
         "changelog-range" => Print(await Upstream.ChangelogRange(Arg(1), Arg(2), Arg(3))),
         "release-note-items" => Print(string.Join("\n", ReleaseNotes.CoreSdkItems(File.ReadAllText(Arg(1))))),
         "api-report" => await ApiReport.Run(Arg(1), Arg(2), Arg(3), Arg(4), Arg(5)),
+        "linker-check-types" => LinkerCheck.WriteTypeList(Arg(1), Arg(2)),
         var other => Cli.Fail($"unknown command '{other}'"),
     };
 }
@@ -1109,6 +1111,61 @@ sealed record ApiDiff(List<ApiMember> Added, List<ApiMember> Removed, List<ApiMe
         return member.Kind == 'T'
             ? usage.TypeNames.Contains(member.DeclaringType)
             : member.AccessorKeys.Any(usage.MemberKeys.Contains);
+    }
+}
+
+// tests/BindingLinkerCheck references every bound class so the native linker has to resolve
+// each one against the framework. A hand-kept list goes stale with the first bump: the 5.72
+// list never gained the three classes 5.83.1 added, and 5.102.0 removed nine it named, which
+// broke the check's compile before it could link anything. So the list is the binding's own:
+// every public class carrying [Register], read from the built assembly.
+static class LinkerCheck
+{
+    private const string BeginMarker = "// <binding-types>";
+    private const string EndMarker = "// </binding-types>";
+    private const string RegisterAttributeName = "RegisterAttribute";
+
+    public static int WriteTypeList(string bindingDllPath, string programPath)
+    {
+        using var pe = new PEReader(ImmutableArray.Create(File.ReadAllBytes(bindingDllPath)));
+        var reader = pe.GetMetadataReader();
+        var registeredClassNames = reader.TypeDefinitions
+            .Select(reader.GetTypeDefinition)
+            .Where(x => (x.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.Public &&
+                (x.Attributes & TypeAttributes.Interface) == 0 &&
+                HasRegisterAttribute(reader, x))
+            .Select(x => reader.GetString(x.Name))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        if (!registeredClassNames.Any())
+        {
+            return Cli.Fail($"{bindingDllPath} has no public [Register] class - is it the binding assembly?");
+        }
+
+        var (bom, eol, text) = TextFile.Read(programPath);
+        var lines = text.Split(eol).ToList();
+        var begin = lines.FindIndex(x => x.Trim() == BeginMarker);
+        var end = lines.FindIndex(x => x.Trim() == EndMarker);
+        if (begin < 0 || end < begin)
+        {
+            return Cli.Fail($"{programPath} has no {BeginMarker} ... {EndMarker} block");
+        }
+
+        var indent = lines[begin][..^lines[begin].TrimStart().Length];
+        lines.RemoveRange(begin + 1, end - begin - 1);
+        lines.InsertRange(begin + 1, registeredClassNames.Select(x => $"{indent}_ = typeof({x});"));
+        TextFile.Write(programPath, bom, string.Join(eol, lines));
+        Console.Error.WriteLine($"==> {programPath}: {registeredClassNames.Count} binding classes");
+        return 0;
+    }
+
+    private static bool HasRegisterAttribute(MetadataReader reader, TypeDefinition type)
+    {
+        return type.GetCustomAttributes()
+            .Select(reader.GetCustomAttribute)
+            .Any(x => x.Constructor.Kind == HandleKind.MemberReference &&
+                reader.GetMemberReference((MemberReferenceHandle)x.Constructor).Parent is { Kind: HandleKind.TypeReference } parent &&
+                reader.GetString(reader.GetTypeReference((TypeReferenceHandle)parent).Name) == RegisterAttributeName);
     }
 }
 

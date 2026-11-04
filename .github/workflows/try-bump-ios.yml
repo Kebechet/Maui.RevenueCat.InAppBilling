@@ -441,9 +441,9 @@ jobs:
         env:
           WRAPPER_DLL: ${{ steps.wrapper.outputs.wrapper_dll || '-' }}
         run: |
-          dotnet run .github/scripts/bump.cs -- api-report ios \
-            "$BINDING_DIR/bin/$BUILD_CONFIGURATION/net9.0-ios/Maui.RevenueCat.iOS.dll" \
-            "$WRAPPER_DLL" api-report.md api-report-full.md
+          # bin/ios/Release/net9.0-ios on macOS, so looked up rather than spelled out.
+          BINDING_DLL=$(find "$BINDING_DIR/bin" -path "*/$BUILD_CONFIGURATION/net9.0-ios/Maui.RevenueCat.iOS.dll" | head -1)
+          dotnet run .github/scripts/bump.cs -- api-report ios "$BINDING_DLL" "$WRAPPER_DLL" api-report.md api-report-full.md
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -480,8 +480,9 @@ jobs:
           CLAUDE_FIXED: ${{ steps.verdict.outputs.claude_fixed }}
           FIX_SUMMARY_FILE: fix-summary.md
           API_REPORT_FILE: api-report.md
-          # A repair may extend the post-processor and its tests; those are part of the fix.
-          COMMIT_PATHS: src/Maui.RevenueCat.iOS .github/scripts/postprocess_ios_bindings.cs tests/Postprocess.Tests
+          # A repair may extend the post-processor and its tests; those are part of the fix. The
+          # linker check's typeof() list is regenerated from every new binding.
+          COMMIT_PATHS: src/Maui.RevenueCat.iOS .github/scripts/postprocess_ios_bindings.cs tests/Postprocess.Tests tests/BindingLinkerCheck/Program.cs
           BINDING_OK: ${{ steps.verdict.outputs.binding_ok }}
           WRAPPER_OUTCOME: ${{ steps.wrapper.outcome }}
           MIN_OS_RAISED: ${{ steps.bump.outputs.min_os_raised }}

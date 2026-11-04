@@ -277,9 +277,8 @@ jobs:
         env:
           WRAPPER_DLL: ${{ steps.wrapper.outputs.wrapper_dll || '-' }}
         run: |
-          dotnet run .github/scripts/bump.cs -- api-report android \
-            "$BINDING_DIR/bin/$BUILD_CONFIGURATION/net9.0-android/Maui.RevenueCat.Android.dll" \
-            "$WRAPPER_DLL" api-report.md api-report-full.md
+          BINDING_DLL=$(find "$BINDING_DIR/bin" -path "*/$BUILD_CONFIGURATION/net9.0-android/Maui.RevenueCat.Android.dll" | head -1)
+          dotnet run .github/scripts/bump.cs -- api-report android "$BINDING_DLL" "$WRAPPER_DLL" api-report.md api-report-full.md
 
       - uses: actions/upload-artifact@v4
         if: always()
