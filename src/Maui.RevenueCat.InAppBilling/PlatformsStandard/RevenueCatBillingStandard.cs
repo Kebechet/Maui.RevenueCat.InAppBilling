@@ -51,6 +51,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         return new();
     }
+    public async partial Task<ManageSubscriptionsResultDto> ShowManageSubscriptions(CancellationToken cancellationToken)
+    {
+        return new();
+    }
     public async partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken)
     {
         return new() { Value = CreateEmptyCustomerInfo() };

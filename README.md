@@ -136,6 +136,7 @@ When offerings come back empty with a configuration error, the logs show which p
 | `Logout()` | Log out and create anonymous user. `Value` is `CustomerInfoDto` |
 | `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CachedOrFetched)` | Get current customer info and entitlements. `Value` is `CustomerInfoDto`. The default may return stale cached data - see [Customer Info Caching](#customer-info-caching) |
 | `GetManagementSubscriptionUrl()` | Get URL for subscription management. `Value` is `string?`; null means no store-managed subscription |
+| `ShowManageSubscriptions()` | Show the store's own subscription management screen: the App Store's sheet on iOS and Mac Catalyst, the subscription's Google Play page on Android. The result carries no `Value`. On Android it fails with `UnsupportedError` when the user has no store-managed subscription, including every Test Store subscription |
 
 ### Customer Info Caching
 
@@ -276,6 +277,7 @@ own payload:
 | `ProductIdentifiersResultDto` | `List<string>` | `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()` |
 | `PurchaseDateResultDto` | `DateTime?` | `GetPurchaseDateForProductIdentifier()` |
 | `ManagementUrlResultDto` | `string?` | `GetManagementSubscriptionUrl()` |
+| `ManageSubscriptionsResultDto` | none (a `Result<PurchaseErrorStatus>`) | `ShowManageSubscriptions()` |
 | `StorefrontResultDto` | `string?` | `GetStorefrontCountryCode()` - empty string when the storefront is not yet known |
 | `CustomerInfoResultDto` | `CustomerInfoDto` | `Login()`, `Logout()`, `RestoreTransactions()`, `GetCustomerInfo()` |
 | `PurchaseResultDto` | `CustomerInfoDto` | `PurchaseProduct()` - carries the same payload as `CustomerInfoResultDto` plus a `Transaction`, but is a sibling of it, not a subclass |

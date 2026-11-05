@@ -76,6 +76,7 @@
             </Grid>
             <Button Text="Logout" Clicked="Logout" />
             <Button Text="Open management URL" Clicked="OpenManagementUrl" />
+            <Button Text="Show manage subscriptions" Clicked="ShowManageSubscriptions" />
 
             <Grid ColumnDefinitions="*,Auto">
                 <Label Text="Log" FontAttributes="Bold" FontSize="16" VerticalOptions="Center" />

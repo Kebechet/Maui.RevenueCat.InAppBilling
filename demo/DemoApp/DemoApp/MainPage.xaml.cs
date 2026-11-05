@@ -274,6 +274,24 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private async void ShowManageSubscriptions(object sender, EventArgs e)
+    {
+        try
+        {
+            _harnessLog.Add($"Calling {nameof(IRevenueCatBilling.ShowManageSubscriptions)}");
+            // Called from a background thread like the purchase: the wrapper has to get the
+            // store's screen onto the main thread itself.
+            var manageSubscriptionsResult = await Task.Run(() => _revenueCatBilling.ShowManageSubscriptions());
+            _harnessLog.Add(manageSubscriptionsResult.IsSuccess
+                ? $"PASS {nameof(IRevenueCatBilling.ShowManageSubscriptions)}"
+                : $"FAIL {nameof(IRevenueCatBilling.ShowManageSubscriptions)}: {HarnessFormatter.FormatError(manageSubscriptionsResult)}");
+        }
+        catch (Exception exception)
+        {
+            _harnessLog.Add($"FAIL {nameof(IRevenueCatBilling.ShowManageSubscriptions)}: {exception.Message}");
+        }
+    }
+
     private async void CopyLog(object sender, EventArgs e)
     {
         await Clipboard.SetTextAsync(_harnessLog.AsText());

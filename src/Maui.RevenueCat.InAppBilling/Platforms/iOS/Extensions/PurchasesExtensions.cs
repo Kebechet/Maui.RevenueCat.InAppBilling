@@ -97,6 +97,25 @@ internal static class PurchasesExtensions
         return tcs.Task;
     }
 
+    internal static Task<bool> ShowManageSubscriptionsAsync(this RCPurchases purchases,
+        CancellationToken cancellationToken = default)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        cancellationToken.Register(() => tcs.TrySetCanceled());
+        purchases.ShowManageSubscriptionsWithCompletion((NSError error) =>
+        {
+            if (error != null)
+            {
+                tcs.TrySetException(new PurchasesErrorException(error, false));
+            }
+            else
+            {
+                tcs.TrySetResult(true);
+            }
+        });
+        return tcs.Task;
+    }
+
     internal static Task<RCCustomerInfo> RestorePurchasesAsync(this RCPurchases purchases,
         CancellationToken cancellationToken = default)
     {

@@ -39,6 +39,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial Task<ProductIdentifiersResultDto> GetAllPurchasedIdentifiers(CancellationToken cancellationToken);
     public partial Task<PurchaseDateResultDto> GetPurchaseDateForProductIdentifier(string productIdentifier, CancellationToken cancellationToken);
     public partial Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken);
+    public partial Task<ManageSubscriptionsResultDto> ShowManageSubscriptions(CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> Logout(CancellationToken cancellationToken);
     public partial Task<CustomerInfoResultDto> RestoreTransactions(CancellationToken cancellationToken);

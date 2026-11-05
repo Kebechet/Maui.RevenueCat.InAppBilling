@@ -276,6 +276,24 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
+    public async partial Task<ManageSubscriptionsResultDto> ShowManageSubscriptions(CancellationToken cancellationToken)
+    {
+        if (_currentActivityContext is null)
+        {
+            throw new Exception("Android Current Activity can't be null.");
+        }
+
+        try
+        {
+            await Purchases.SharedInstance.ShowManageSubscriptionsAsync(_currentActivityContext, cancellationToken);
+
+            return new();
+        }
+        catch (Exception ex)
+        {
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
+        }
+    }
     public async partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken)
     {
         try
