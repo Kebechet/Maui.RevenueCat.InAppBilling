@@ -12,6 +12,16 @@ internal static class BumpScript
 
     public static string Run(params string[] arguments)
     {
+        var (exitCode, stdout, stderr) = RunForExitCode(arguments);
+        if (exitCode != 0)
+        {
+            throw new InvalidOperationException($"bump.cs exited {exitCode}.\nstdout:\n{stdout}\nstderr:\n{stderr}");
+        }
+        return stdout;
+    }
+
+    public static (int ExitCode, string Stdout, string Stderr) RunForExitCode(params string[] arguments)
+    {
         var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
@@ -32,11 +42,7 @@ internal static class BumpScript
         var stdout = process.StandardOutput.ReadToEnd();
         var stderr = process.StandardError.ReadToEnd();
         process.WaitForExit();
-        if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException($"bump.cs exited {process.ExitCode}.\nstdout:\n{stdout}\nstderr:\n{stderr}");
-        }
-        return stdout.TrimEnd('\r', '\n');
+        return (process.ExitCode, stdout.TrimEnd('\r', '\n'), stderr.TrimEnd('\r', '\n'));
     }
 
     public static string WriteTempFile(string content, string extension)

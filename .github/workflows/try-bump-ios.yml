@@ -478,6 +478,7 @@ jobs:
           BASE_BRANCH: ${{ github.ref_name }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           CLAUDE_FIXED: ${{ steps.verdict.outputs.claude_fixed }}
+          REPAIR_ATTEMPTED: ${{ steps.claude.outcome == 'success' || steps.claude.outcome == 'failure' }}
           FIX_SUMMARY_FILE: fix-summary.md
           API_REPORT_FILE: api-report.md
           # A repair may extend the post-processor and its tests; those are part of the fix. The
@@ -527,3 +528,15 @@ jobs:
         run: |
           echo "::error::iOS bump to ${TARGET} is '${{ steps.pr.outputs.status }}'; the PR was left as a draft"
           exit 1
+
+      # claude-code-action hides the transcript from the log, so a repair that changed
+      # nothing could only be diagnosed by re-running it locally. It holds every tool result
+      # Claude saw and this repository is public, hence the short retention and the last
+      # position: the job's post steps revoke the app token seconds after this upload.
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.claude.outputs.execution_file != ''
+        with:
+          name: claude-repair-transcript-ios
+          path: ${{ steps.claude.outputs.execution_file }}
+          retention-days: 7
+          if-no-files-found: ignore
