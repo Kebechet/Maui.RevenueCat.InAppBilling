@@ -68,11 +68,11 @@ ADDED
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-ios' Or '$(TargetFramework)' == 'net9.0-maccatalyst'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="5.83.1" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.iOS" Version="5.102.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
-    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="10.16.1" />
+    <PackageReference Include="Kebechet.Maui.RevenueCat.Android" Version="11.1.0" />
   </ItemGroup>
 
   <!-- Mac Catalyst reuses the iOS RevenueCat implementation. RevenueCat's purchases-ios SDK
