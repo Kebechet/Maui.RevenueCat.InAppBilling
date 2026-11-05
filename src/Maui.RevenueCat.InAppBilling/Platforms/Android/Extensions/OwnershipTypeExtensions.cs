@@ -8,6 +8,7 @@ internal static class OwnershipTypeExtensions
     {
         if (ownershipType == OwnershipTypeNative.FamilyShared) return OwnershipType.FamilyShared;
         if (ownershipType == OwnershipTypeNative.Purchased) return OwnershipType.Purchased;
+        if (ownershipType == OwnershipTypeNative.Assigned) return OwnershipType.Assigned;
         return OwnershipType.Unknown;
     }
 }

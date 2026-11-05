@@ -12,6 +12,8 @@ internal static class OwnershipTypeExtensions
                 return OwnershipType.FamilyShared;
             case RCPurchaseOwnershipType.Purchased:
                 return OwnershipType.Purchased;
+            case RCPurchaseOwnershipType.Assigned:
+                return OwnershipType.Assigned;
             default:
                 return OwnershipType.Unknown;
         }
