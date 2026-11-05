@@ -32,26 +32,29 @@ public static class Program
         // `dotnet run .github/scripts/bump.cs -- linker-check-types`, which
         // .github/scripts/build-ios-binding.sh runs on every bump.
         // <binding-types>
-        _ = typeof(RCAdDisplayed);
-        _ = typeof(RCAdFailedToLoad);
-        _ = typeof(RCAdFormat);
-        _ = typeof(RCAdLoaded);
-        _ = typeof(RCAdOpened);
-        _ = typeof(RCAdRevenue);
-        _ = typeof(RCAdRevenuePrecision);
-        _ = typeof(RCAdTracker);
+        _ = typeof(AdDisplayed);
+        _ = typeof(AdFailedToLoad);
+        _ = typeof(AdFormat);
+        _ = typeof(AdLoaded);
+        _ = typeof(AdOpened);
+        _ = typeof(AdRevenue);
+        _ = typeof(AdRewardPromptAccepted);
+        _ = typeof(AdRewardPromptShown);
+        _ = typeof(MediatorName);
         _ = typeof(RCAttribution);
         _ = typeof(RCBillingPlanType);
         _ = typeof(RCConfiguration);
         _ = typeof(RCConfigurationBuilder);
         _ = typeof(RCCustomPaywallImpressionParams);
+        _ = typeof(RCCustomerAttribute);
         _ = typeof(RCCustomerInfo);
         _ = typeof(RCDangerousSettings);
         _ = typeof(RCEntitlementInfo);
         _ = typeof(RCEntitlementInfos);
+        _ = typeof(RCIdentity);
+        _ = typeof(RCIdentitySource);
         _ = typeof(RCInstallmentsInfo);
         _ = typeof(RCIntroEligibility);
-        _ = typeof(RCMediatorName);
         _ = typeof(RCNonSubscriptionTransaction);
         _ = typeof(RCOffering);
         _ = typeof(RCOfferings);
@@ -64,6 +67,8 @@ public static class Program
         _ = typeof(RCPurchaseParams);
         _ = typeof(RCPurchaseParamsBuilder);
         _ = typeof(RCPurchases);
+        _ = typeof(RCPurchasesAuthentication);
+        _ = typeof(RCPurchasesAuthenticationDelegate);
         _ = typeof(RCPurchasesDelegate);
         _ = typeof(RCPurchasesDiagnostics);
         _ = typeof(RCRevocationReason);

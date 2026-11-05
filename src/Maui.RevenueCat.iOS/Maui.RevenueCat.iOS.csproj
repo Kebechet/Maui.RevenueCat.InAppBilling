@@ -20,8 +20,35 @@
       <PackageIcon>icon.png</PackageIcon>
       <SymbolPackageFormat>snupkg</SymbolPackageFormat>
       <EmbedAllSources>true</EmbedAllSources>
-      <Version>5.83.1.0</Version>
-      <PackageReleaseNotes>5.83.1.0: RevenueCat iOS SDK updated from 5.72.0 to 5.83.1. Binding surface gains RCBillingPlanType and RCInstallmentsInfo (Billing Plans support) and RCRevocationReason (revocationDate/revocationReason on StoreTransaction); nothing was removed. Notable upstream fixes: Test Store free-trial support, Test Store no longer logs misleading App Store/StoreKit messages, and a T-SAN memory-alignment crash under Xcode 27. Full changelog: https://github.com/RevenueCat/purchases-ios/releases. The xcframework is still built from source with BYPASS_SIMULATED_STORE_RELEASE_CHECK across all three slices. 5.72.0.3: add net9.0-maccatalyst target with a Mac Catalyst slice in the xcframework, built from source with the same BYPASS_SIMULATED_STORE_RELEASE_CHECK flag so Test Store test_ API keys work in Release on Catalyst too. 5.72.0.2: RevenueCat Test Store API keys (test_…) no longer force-close consumer apps in Release builds (issue #116); xcframework built from source via .github/workflows/generate-ios-bindings.yml with the BYPASS_SIMULATED_STORE_RELEASE_CHECK Swift compilation flag, mirroring RevenueCat/purchases-kmp. 5.72.0.1: link-time crash from unexported native classes (StoreKit2PromotionalOfferPurchaseOptions, RedirectLoggerSessionDelegate) and bgen failure from combined platform-availability attributes ([Watch, TV, Mac, iOS]).</PackageReleaseNotes>
+      <Version>5.102.0.0</Version>
+      <PackageReleaseNotes>5.102.0.0: RevenueCat iOS SDK updated from 5.83.1 to 5.102.0. The xcframework is built from source with BYPASS_SIMULATED_STORE_RELEASE_CHECK, so Test Store keys work in Release. RevenueCat SDK changes per version (RevenueCatUI is not bound):
+5.83.2: fix(remote-config): Fix misleading ui_config warnings for projects without paywalls.
+5.84.0: feat(ads): add optional tracking metadata to pollRewardVerification. fix(paywalls): Resolve bundled fonts by name before downloading. fix(paywalls): tolerate duplicate font names when registering.
+5.85.0: feat(ads): admob adapter support for reward tracking. fix: order queue receipt post after in-flight purchase post.
+5.86.0: feat: add confirmInScene and confirmInWindow purchase params. feat: Expose displayName and originalPurchaseDate on NonSubscriptionTransaction. Track checkpoint hits through the analytics events pipeline.
+5.87.0: feat(singular) add $singularDeviceId subscriber attribute for Singular V2.
+5.87.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
+5.88.0: Surface attribute sync errors when fetching offerings. Fall back to "en" when a workflow screen omits default_locale. Cache web purchase redemption CustomerInfo for the initiating App User ID.
+5.89.0: feat(ads): ad tracking and rewarded ad grants beta. Fix Paywall V2 rendering when components are provided by an offering. fix: send X-Is-Sandbox header when using a Test Store API key. Fix URL-open publishing on a background thread.
+5.90.0: fix: preserve errors when Result's Success is inferred as optional.
+5.90.1: Do not apply a previous user's CustomerInfo after an identity change.
+5.90.2: Fix fallback config signature verification for 304 responses.
+5.91.0: Prevent subscriber attribute sync before CustomerInfo is available.
+5.92.0: refactor(ads): rename rewarded ad prompt types to AdRewardPrompt*. feat(ads): track rewarded ad prompt shown and accepted events. Allow opting in to external purchase custom links (experimental). fix(customerinfo): notify observers when active entitlements change.
+5.93.0: feat(paywalls): prewarm videos for current locale. feat(paywalls): implement support for localized videos on iOS. fix(paywalls): use video size for thumbnail overlay.
+5.94.0: fix(paywalls): videos with fit width not rendering.
+5.95.0: feat(ads): allow manual rewarded ad earned tracking. Render lifetime period variables on Paywalls V2. Checkpoints: fix(checkpoints): Prevent duplicate workflow error alerts when an error presenter is configured. Paywallsv2: Open the in-app web checkout from the purchase button.
+5.96.0: feat(ads): add revenuecat mediator type. fix(test-store): Forward Test Store purchase attribution context. fix(billing plans): use product.id in log messages. Checkpoints: fix(checkpoints): suppress callbacks for terminal checkpoint errors. Checkpoints: fix(checkpoints): respect preferred locale override in local rules.
+5.96.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
+5.97.0: Load configured ad rewards from remote config. Add configured ad rewards API. Storekit 2: feat: parse OwnershipType.assigned.
+5.98.0: Share one product cache between offerings and intro eligibility. Fix product cache invalidation and shared request results. Handle re-login as the same user.
+5.99.0: (Experimental) Allow configuring intro eligibility warm-up task priority. Share StoreKit 2 intro eligibility checks by subscription group.
+5.99.1: Coordinate overlapping intro eligibility cache warm-ups.
+5.99.2: fix(flows) share in-flight flow prewarming decodes.
+5.100.0: feat(checkpoints): ad checkpoint presenter. Avoid repeated rejected SK2 observer-mode history submissions.
+5.101.0: feat(ads): AdMob interstitial checkpoint presenter. Fix diagnostics timestamp overflow on 32-bit watchOS.
+5.102.0: feat(ads): dispatch checkpoint ad presentation by format. feat(ads): extend admob presenter with rewarded support. fix: preserve workflow attribution in custom paywall impressions. Paywallsv2: fix: Reduce CPU usage when downloading large assets.
+Full changelog: https://github.com/RevenueCat/purchases-ios/releases</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
