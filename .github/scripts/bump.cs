@@ -23,6 +23,9 @@
 //   compare-versions <a> <b>                            print -1, 0 or 1 (dotted numeric)
 //   latest-native <android|ios>                         newest stable RevenueCat SDK version
 //   last-published-native <pkgId>                       native version behind the newest nuget.org release
+//   nuget-versions <pkgId> <target-framework>           every listed stable version of a package, the Java
+//                                                       artifact it binds and the dependency group that
+//                                                       framework gets (the binding repair's only lookup)
 //   changelog-range <android|ios> <after> <through>     RevenueCat's notes for (after, through], one line per version
 //   release-note-items <body.md>                        the items changelog-range keeps from one release body
 //   api-report <android|ios> <new-dll> <wrapper-dll|-> <out-md> <out-full-md>
@@ -66,6 +69,7 @@ try
         "compare-versions" => Print(Versions.Compare(Arg(1), Arg(2)).ToString(CultureInfo.InvariantCulture)),
         "latest-native" => Print(await Upstream.LatestNative(Arg(1))),
         "last-published-native" => Print(await NuGetFeed.LastPublishedNative(Arg(1))),
+        "nuget-versions" => Print(await NuGetFeed.DescribeVersions(Arg(1), Arg(2))),
         "changelog-range" => Print(await Upstream.ChangelogRange(Arg(1), Arg(2), Arg(3))),
         "release-note-items" => Print(string.Join("\n", ReleaseNotes.CoreSdkItems(File.ReadAllText(Arg(1))))),
         "api-report" => await ApiReport.Run(Arg(1), Arg(2), Arg(3), Arg(4), Arg(5)),
@@ -347,7 +351,11 @@ static class Http
 {
     public static HttpClient Create()
     {
-        var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        // nuget.org serves its registration index gzip-compressed only.
+        var http = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All })
+        {
+            Timeout = TimeSpan.FromSeconds(60),
+        };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("Kebechet.Maui.RevenueCat-bump/1.0");
         return http;
     }
@@ -414,6 +422,188 @@ static class NuGetFeed
         return parts.Length >= 4
             ? string.Join('.', parts.Take(3))
             : newest;
+    }
+
+    // The one lookup the Claude repair is allowed, in place of curl: a fixed host, an id
+    // that cannot carry a path, and the two facts a dependency fix turns on. Those are the
+    // Java artifact a version binds (its artifact_versioned tag) and the dependency group
+    // the binding's framework resolves to; a version whose newest group is net10.0-android
+    // cannot satisfy a net9.0-android binding at all. The registration index carries both
+    // for every version, where the flat container needs one nuspec request per version.
+    public static async Task<string> DescribeVersions(string packageId, string targetFramework)
+    {
+        if (!Regex.IsMatch(packageId, @"^[A-Za-z0-9][A-Za-z0-9._-]*$"))
+        {
+            throw new UsageException($"'{packageId}' is not a NuGet package id");
+        }
+        var target = AndroidDotnetVersion(targetFramework)
+            ?? throw new UsageException($"'{targetFramework}' is not a .NET Android target framework such as net9.0-android");
+
+        using var http = Http.Create();
+        var url = $"https://api.nuget.org/v3/registration5-gz-semver2/{packageId.ToLowerInvariant()}/index.json";
+        using var index = await ReadJson(http, url, packageId);
+        if (index is null)
+        {
+            throw new UsageException($"{packageId} is not on nuget.org");
+        }
+
+        var packageVersions = new List<PackageVersion>();
+        foreach (var page in index.RootElement.GetProperty("items").EnumerateArray())
+        {
+            // nuget.org inlines the pages of a small package and only links those of a big one.
+            if (page.TryGetProperty("items", out var inlineLeaves))
+            {
+                packageVersions.AddRange(inlineLeaves.EnumerateArray().Select(PackageVersion.FromLeaf));
+                continue;
+            }
+
+            using var linkedPage = await ReadJson(http, page.GetProperty("@id").GetString()!, packageId)
+                ?? throw new SourceUnavailableException($"nuget.org lists a registration page for {packageId} that it does not serve");
+            packageVersions.AddRange(linkedPage.RootElement.GetProperty("items").EnumerateArray().Select(PackageVersion.FromLeaf));
+        }
+
+        var lines = new List<string>
+        {
+            $"{packageId}: listed stable versions on nuget.org, oldest first.",
+            $"Each line: version | Java artifact it binds | the dependency group a {targetFramework} project resolves to.",
+        };
+        var listedStableVersions = packageVersions
+            .Where(x => x.IsListed && Versions.IsStable(x.Version))
+            .OrderBy(x => x.Version, Versions.Comparer);
+        foreach (var packageVersion in listedStableVersions)
+        {
+            lines.Add($"{packageVersion.Version} | {packageVersion.JavaArtifact ?? "no artifact_versioned tag"} | {DescribeNearestGroup(packageVersion, target, targetFramework)}");
+        }
+        return string.Join("\n", lines);
+    }
+
+    private static string DescribeNearestGroup(PackageVersion packageVersion, Version target, string targetFramework)
+    {
+        if (!packageVersion.DependencyGroups.Any())
+        {
+            return "no dependency groups";
+        }
+
+        var nearestGroup = packageVersion.DependencyGroups
+            .Select(x => (Group: x, Preference: GroupPreference(x.Framework, target)))
+            .Where(x => x.Preference is not null)
+            .OrderBy(x => x.Preference!.Value.Tier)
+            .ThenBy(x => x.Preference!.Value.Version)
+            .Select(x => x.Group)
+            .LastOrDefault();
+        if (nearestGroup is null)
+        {
+            var frameworks = string.Join(", ", packageVersion.DependencyGroups.Select(x => x.Framework));
+            return $"NOT usable from {targetFramework} (groups: {frameworks})";
+        }
+
+        var dependencies = nearestGroup.Dependencies.Any()
+            ? string.Join(", ", nearestGroup.Dependencies)
+            : "no dependencies";
+        return $"{nearestGroup.Framework}: {dependencies}";
+    }
+
+    private static async Task<JsonDocument?> ReadJson(HttpClient http, string url, string packageId)
+    {
+        using var response = await Http.Get(http, url, "nuget.org");
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new SourceUnavailableException($"nuget.org returned {(int)response.StatusCode} for {packageId}");
+        }
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+    }
+
+    // net9.0-android, net9.0-android35.0 -> 9.0; anything that is not .NET for Android -> null.
+    private static Version? AndroidDotnetVersion(string framework)
+    {
+        return MatchVersion(framework, @"^net(\d+)\.(\d+)-android");
+    }
+
+    // The order NuGet prefers dependency groups in for a .NET for Android project: the newest
+    // Android group not above the project's .NET version, then a platform-neutral one, then
+    // .NET Standard, then a group with no framework. Null = never chosen for that project.
+    private static (int Tier, Version Version)? GroupPreference(string framework, Version target)
+    {
+        if (AndroidDotnetVersion(framework) is Version android)
+        {
+            return android <= target
+                ? (3, android)
+                : null;
+        }
+        if (MatchVersion(framework, @"^net(\d+)\.(\d+)$") is Version neutral)
+        {
+            return neutral <= target
+                ? (2, neutral)
+                : null;
+        }
+        if (MatchVersion(framework, @"^\.NETStandard(\d+)\.(\d+)$") is Version standard)
+        {
+            return (1, standard);
+        }
+        return framework == "any"
+            ? (0, new Version(0, 0))
+            : null;
+    }
+
+    private static Version? MatchVersion(string framework, string pattern)
+    {
+        var match = Regex.Match(framework, pattern, RegexOptions.IgnoreCase);
+        return match.Success
+            ? new Version(int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture))
+            : null;
+    }
+
+    private sealed record DependencyGroup(string Framework, List<string> Dependencies);
+
+    private sealed record PackageVersion(string Version, bool IsListed, string? JavaArtifact, List<DependencyGroup> DependencyGroups)
+    {
+        public static PackageVersion FromLeaf(JsonElement leaf)
+        {
+            var catalogEntry = leaf.GetProperty("catalogEntry");
+            var isListed = !catalogEntry.TryGetProperty("listed", out var listed) || listed.GetBoolean();
+
+            const string ArtifactTagPrefix = "artifact_versioned=";
+            var javaArtifact = catalogEntry.TryGetProperty("tags", out var tags) && tags.ValueKind == JsonValueKind.Array
+                ? tags.EnumerateArray()
+                    .Select(x => x.GetString() ?? string.Empty)
+                    .Where(x => x.StartsWith(ArtifactTagPrefix, StringComparison.Ordinal))
+                    .Select(x => x[ArtifactTagPrefix.Length..])
+                    .FirstOrDefault()
+                : null;
+
+            var dependencyGroups = new List<DependencyGroup>();
+            if (catalogEntry.TryGetProperty("dependencyGroups", out var groups))
+            {
+                foreach (var group in groups.EnumerateArray())
+                {
+                    var framework = group.TryGetProperty("targetFramework", out var targetFramework)
+                        ? targetFramework.GetString() ?? "any"
+                        : "any";
+                    var dependencies = group.TryGetProperty("dependencies", out var entries)
+                        ? entries.EnumerateArray().Select(DescribeDependency).ToList()
+                        : [];
+                    dependencyGroups.Add(new DependencyGroup(framework, dependencies));
+                }
+            }
+            return new PackageVersion(catalogEntry.GetProperty("version").GetString()!, isListed, javaArtifact, dependencyGroups);
+        }
+
+        // "[2.2.21.1, )" is how nuget.org writes a plain minimum; anything else stays verbatim.
+        private static string DescribeDependency(JsonElement dependency)
+        {
+            var id = dependency.GetProperty("id").GetString();
+            var range = dependency.TryGetProperty("range", out var value)
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
+            var minimum = Regex.Match(range, @"^\[\s*([^,\s]+)\s*,\s*\)$");
+            return minimum.Success
+                ? $"{id} >= {minimum.Groups[1].Value}"
+                : $"{id} {range}".TrimEnd();
+        }
     }
 
     public static async Task<byte[]> DownloadAssembly(string packageId, string version, string tfmPrefix, string assemblyFileName)

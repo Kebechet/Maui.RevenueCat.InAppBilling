@@ -23,6 +23,7 @@
 #                     nuget.org, which is not PREVIOUS once a bump merges unpublished
 #   API_REPORT_FILE   optional markdown from bump.cs api-report
 #   CLAUDE_FIXED      true when the Claude repair step changed sources that then built
+#   REPAIR_ATTEMPTED  true when the Claude repair step ran, whatever it achieved
 #   FIX_SUMMARY_FILE  optional markdown written by the repair step
 #   RUN_URL           link to the workflow run (build logs are attached there)
 #   GH_TOKEN          token for gh (the bump-bot app token, so pushes raise events)
@@ -41,6 +42,7 @@ MIN_OS_CURRENT="${MIN_OS_CURRENT:-}"
 WRAPPER_OK="${WRAPPER_OK:-true}"
 API_REPORT_FILE="${API_REPORT_FILE:-}"
 CLAUDE_FIXED="${CLAUDE_FIXED:-false}"
+REPAIR_ATTEMPTED="${REPAIR_ATTEMPTED:-false}"
 FIX_SUMMARY_FILE="${FIX_SUMMARY_FILE:-}"
 RUN_URL="${RUN_URL:-}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -187,13 +189,18 @@ else
   API_BLOCK="⚠️ _Not produced - the report step failed; see its log on the run._"
 fi
 
+FIX_SUMMARY="_(the repair step wrote no summary)_"
+if [[ -n "$FIX_SUMMARY_FILE" && -s "$FIX_SUMMARY_FILE" ]]; then
+  FIX_SUMMARY="$(cat "$FIX_SUMMARY_FILE")"
+fi
 if [[ "$CLAUDE_FIXED" == "true" ]]; then
-  FIX_BLOCK="🤖 **Claude Code repaired the binding sources** so they compile against ${TARGET}. Review those edits with the same care as a hand-written change."$'\n\n'
-  if [[ -n "$FIX_SUMMARY_FILE" && -s "$FIX_SUMMARY_FILE" ]]; then
-    FIX_BLOCK+="$(cat "$FIX_SUMMARY_FILE")"
-  else
-    FIX_BLOCK+="_(the repair step wrote no summary)_"
-  fi
+  FIX_BLOCK="🤖 **Claude Code repaired the binding sources** so they compile against ${TARGET}. Review those edits with the same care as a hand-written change."$'\n\n'"${FIX_SUMMARY}"
+elif [[ "$STATUS" == "binding-broken" && "$REPAIR_ATTEMPTED" == "true" ]]; then
+  # The repair writes its summary whether or not it succeeded, and a failed attempt is
+  # where a reviewer needs it most: it says what was tried and why it stopped.
+  FIX_BLOCK="🛑 **The Claude Code repair ran, and the binding still does not build.** Its own account follows; the full transcript is the \`claude-repair-transcript-${PLATFORM}\` artifact on the run (kept 7 days)."$'\n\n'"${FIX_SUMMARY}"
+elif [[ "$STATUS" == "binding-broken" ]]; then
+  FIX_BLOCK="⚠️ No repair was attempted: \`CLAUDE_CODE_OAUTH_TOKEN\` is not configured."
 else
   FIX_BLOCK="No binding source changes were needed beyond the bump itself."
 fi
@@ -272,6 +279,19 @@ gh label create binding-broken    --color B60205 --description "The binding does
 gh label create wrapper-broken    --color B60205 --description "The wrapper does not compile against the new binding" --force >/dev/null
 gh label create min-os-raised     --color D93F0B --description "The native SDK raised the minimum OS version - breaking for consumers" --force >/dev/null
 gh label create upstream-breaking --color D93F0B --description "RevenueCat marked a breaking change in this range, or it is a new major" --force >/dev/null
+
+# The platform and dependencies labels are shared with people and Dependabot, so they are
+# only created when missing, never overwritten. gh pr create fails on a missing label.
+EXISTING_LABELS=$(gh label list --limit 1000 --json name --jq '.[].name')
+create_missing_label() {
+  # GitHub label names are case-insensitive: an existing "Android" blocks creating "android".
+  if ! grep -qixF "$1" <<< "$EXISTING_LABELS"; then
+    gh label create "$1" --color "$2" --description "$3" >/dev/null
+  fi
+}
+create_missing_label android      EDEDED "Android binding"
+create_missing_label ios          EDEDED "iOS binding"
+create_missing_label dependencies 0366D6 "Pull requests that update a dependency file"
 
 LABEL_ARGS=()
 for label in "${LABELS[@]}"; do LABEL_ARGS+=(--label "$label"); done

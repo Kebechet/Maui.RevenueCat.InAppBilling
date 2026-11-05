@@ -37,20 +37,37 @@ Do not run git; do not create branches or commits. The workflow commits for you.
 - **`XA4242`** "Java dependency 'g:a:v' is not satisfied. Microsoft maintains the NuGet
   package 'X'": add `<PackageReference Include="X" ... />`. For the version, prefer the one
   already resolved transitively (`grep '"X/' src/Maui.RevenueCat.Android/obj/project.assets.json`);
-  otherwise the lowest version whose nuspec tag `artifact_versioned=g:a:<v>` is at least the
-  required version.
+  otherwise the lowest version whose Java artifact (second column of `nuget-versions`) is at
+  least the required version.
 - **`XA4241`** "Java dependency 'g:a:v' is not satisfied" with no package named: a package
-  the csproj already references provides `g:a` but at a lower version. Find it (its nuspec
-  carries `artifact=g:a`) and raise it to the lowest version that satisfies `v`.
+  the csproj already references provides `g:a` but at a lower version. Find it (run
+  `nuget-versions` on the references whose names match `g:a`; the second column shows which
+  artifact each binds) and raise it to the lowest version that satisfies `v`.
+- A version's dependency group lists the minimum versions it pulls in. When a raise needs a
+  dependency above what the csproj pins, that pin has to move too (see `NU1605` below), so
+  read the group before you choose.
 - **`NU1605`** "Detected package downgrade: X from A to B": raise the direct reference to X to
-  exactly A. Keep a family aligned when you move one member: every
-  `Xamarin.AndroidX.Lifecycle.*` on one version, `Xamarin.Kotlin.StdLib` and
-  `Xamarin.Kotlin.Parcelize.Runtime` on one version, `Xamarin.KotlinX.Coroutines.Core` and
-  `.Android` on one version, `Xamarin.AndroidX.Fragment` and `.Fragment.Ktx` on one version.
-- Look versions up with read-only requests, for example
-  `curl -s https://api.nuget.org/v3-flatcontainer/<lowercase-id>/index.json` and
-  `curl -s https://api.nuget.org/v3-flatcontainer/<id>/<version>/<id>.nuspec`. Check that the
-  chosen version has a `net9.0-android` dependency group: the binding targets `net9.0-android`.
+  exactly A.
+- **`NU1608`** "Detected package version outside of dependency constraint: Y requires X
+  (>= a && < b) but version X c was resolved": a warning, but it means a family is split.
+  Raise Y (or add it as a reference) to the version whose group matches X `c`; do not finish
+  with an `NU1608` you caused.
+- **Keep every family on one version, on every raise, including one an `XA` error forced:**
+  every `Xamarin.AndroidX.Lifecycle.*`, `Xamarin.Kotlin.StdLib` with
+  `Xamarin.Kotlin.Parcelize.Runtime`, `Xamarin.KotlinX.Coroutines.Core` with `.Android`,
+  `Xamarin.AndroidX.Fragment` with `.Fragment.Ktx`, and any `X` with its `X.Ktx`. When an
+  error needs one member at version v and another member must move higher, the whole family
+  goes to the higher one. This rule wins over "lowest version" below.
+- Look versions up with
+  `dotnet run .github/scripts/bump.cs -- nuget-versions <package-id> net9.0-android`, one
+  package per call. It is the only way to reach nuget.org from here: `curl` and every other
+  network command are blocked, and so are shell loops, so do not try them. It prints one line
+  per listed stable version, oldest first: the version, the Java artifact it binds
+  (`g:a:v`, what `XA4241`/`XA4242` compare against) and the dependency group a
+  `net9.0-android` project resolves to, with that group's minimum dependency versions. A
+  version marked `NOT usable from net9.0-android` ships only for a newer .NET: never pick it,
+  however close its Java version is. The output is long for big packages; append
+  `| tail -20` to see the newest versions only.
 - Raise versions only as far as an error demands. Every raise reaches every app that uses
   this binding, so the smallest version that builds is the right one.
 - Keep the existing XML comments in the csproj; they record why a reference exists
