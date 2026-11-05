@@ -33,17 +33,18 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>10.0.0</Version>
+    <Version>10.1.0</Version>
     <PackageReleaseNotes>
-BREAKING
-- `GetCustomerInfo()` takes a `CustomerInfoFetchPolicy` before its `CancellationToken`: `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CustomerInfoFetchPolicy.CachedOrFetched, CancellationToken cancellationToken = default)`. `GetCustomerInfo()` with no arguments compiles and behaves as before, but a call that passes only the token, `GetCustomerInfo(cancellationToken)`, no longer compiles - pass a policy first or name the argument (`GetCustomerInfo(cancellationToken: cancellationToken)`). Implementations of `IRevenueCatBilling` and mock setups such as `GetCustomerInfo(Arg.Any&lt;CancellationToken&gt;())` need the new parameter too.
-
 ADDED
-- `CustomerInfoFetchPolicy` controls whether `GetCustomerInfo()` answers from the customer info the RevenueCat SDK caches on the device, which it treats as stale after 5 minutes in the foreground and after 25 hours in the background. Previously the wrapper always used the SDK default, which returns the cache even when stale, so a change made outside the app (a web purchase, a grant from the RevenueCat dashboard) could not be read on demand. https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/128
-  - `CachedOrFetched` (default) returns the cache even when stale and waits for a fetch only when nothing is cached. A stale cache is also refreshed in the background.
-  - `FetchCurrent` always fetches from RevenueCat.
-  - `NotStaleCachedOrFetched` returns the cache while it is fresh, otherwise fetches, and fails rather than returning stale data.
-  - `FromCacheOnly` never fetches, and fails with `CustomerInfoError` when nothing is cached.
+- `ShowManageSubscriptions()` shows the store's own subscription management screen: the App Store's sheet inside the app on iOS and Mac Catalyst, the subscription's Google Play page on Android. RevenueCat Android only gained it in 10.18.0, so the wrapper could not offer it on both platforms before. On Android it needs a store-managed subscription and fails with `UnsupportedError` otherwise, which includes every Test Store subscription.
+- `OwnershipType.Assigned` for a purchase the user has through an organization (StoreKit's `assigned` ownership). It was reported as `OwnershipType.Unknown` before.
+
+CHANGED
+- Android uses RevenueCat Android SDK 11.1.0 (binding `Kebechet.Maui.RevenueCat.Android` 11.1.0, was 10.16.1), built on Google Play Billing Library 9.1. Apps now resolve at least `Xamarin.Android.Google.BillingClient` 9.1.0, `Xamarin.AndroidX.Core` 1.19.0, `Xamarin.AndroidX.Activity` 1.13.0, `Xamarin.Kotlin.StdLib` 2.4.0 and `Xamarin.KotlinX.Coroutines.Core` 1.11.0; an app that pins one of them lower has to raise it (NU1605).
+- iOS and Mac Catalyst use RevenueCat iOS SDK 5.102.1 (binding `Kebechet.Maui.RevenueCat.iOS` 5.102.1, was 5.83.1).
+
+NOTE
+- Apart from the additions above, `IRevenueCatBilling` and its DTOs are unchanged. The RevenueCat changes in each range are in the binding release notes: https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.Android/11.1.0 and https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.iOS/5.102.1
 </PackageReleaseNotes>
   </PropertyGroup>
 
