@@ -879,6 +879,127 @@ public class PassTests
         Assert.Equal(once, twice);
     }
 
+    // ──────────────────────── overloads and constructors ─────────────────
+
+    [Fact]
+    public void DuplicateMethodOverload_IsRenamedFromItsSelectorTail()
+    {
+        const string input = """
+            namespace T
+            {
+                [BaseType (typeof(NSObject))]
+                interface RCPurchases
+                {
+                    [Export ("logIn:completion:")]
+                    void LogIn (string appUserID, Action<NSError> completion);
+
+                    [Export ("logIn:completionHandler:")]
+                    void LogIn (string appUserID, Action<NSError> completionHandler);
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.Contains("void LogIn (string appUserID, Action<NSError> completion);", output);
+        Assert.Contains("void LogInCompletionHandler (string appUserID, Action<NSError> completionHandler);", output);
+    }
+
+    // RevenueCat 5.102.1 added a second (bool, bool) initializer ahead of the published one.
+    // Renaming it like a method left `new RCDangerousSettings(bool, bool)` setting the new
+    // option, and turned the published initializer into a plain method that sends init to an
+    // object that already exists.
+    [Fact]
+    public void Regression_CollidingConstructors_PublishedSelectorKeepsTheConstructor()
+    {
+        const string published = """
+            namespace T;
+
+            [BaseType (typeof(NSObject))]
+            interface RCDangerousSettings
+            {
+                [Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
+                NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
+            }
+            """;
+        const string input = """
+            namespace T
+            {
+                [BaseType (typeof(NSObject))]
+                interface RCDangerousSettings
+                {
+                    [Export ("initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:")]
+                    NativeHandle Constructor (bool autoSyncPurchases, bool forceAllowTestStoreInReleaseBuilds);
+
+                    [Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
+                    NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input, published);
+        Assert.Contains(
+            """
+                [Export ("initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:")]
+                [Internal]
+                NativeHandle _InitWithAutoSyncPurchasesForceAllowTestStoreInReleaseBuilds (bool autoSyncPurchases, bool forceAllowTestStoreInReleaseBuilds);
+            """,
+            output);
+        Assert.Contains(
+            """
+                [Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
+                NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
+            """,
+            output);
+        Assert.Equal(1, Substrings.Count(output, "NativeHandle Constructor ("));
+    }
+
+    [Fact]
+    public void CollidingConstructors_NothingPublished_FirstInHeaderKeepsTheConstructor()
+    {
+        const string input = """
+            namespace T
+            {
+                [BaseType (typeof(NSObject))]
+                interface RCDangerousSettings
+                {
+                    [Export ("initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:")]
+                    NativeHandle Constructor (bool autoSyncPurchases, bool forceAllowTestStoreInReleaseBuilds);
+
+                    [Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
+                    NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.Contains("NativeHandle Constructor (bool autoSyncPurchases, bool forceAllowTestStoreInReleaseBuilds);", output);
+        Assert.Contains(
+            """
+                [Internal]
+                NativeHandle _InitWithAutoSyncPurchasesCustomEntitlementComputation (bool autoSyncPurchases, bool customEntitlementComputation);
+            """,
+            output);
+    }
+
+    [Fact]
+    public void ConstructorsWithDifferentParameterTypes_AreLeftAlone()
+    {
+        const string input = """
+            namespace T
+            {
+                [BaseType (typeof(NSObject))]
+                interface RCDangerousSettings
+                {
+                    [Export ("initWithAutoSyncPurchases:")]
+                    NativeHandle Constructor (bool autoSyncPurchases);
+
+                    [Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
+                    NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
+                }
+            }
+            """;
+        var output = ScriptRunner.Run(input);
+        Assert.Equal(2, Substrings.Count(output, "NativeHandle Constructor ("));
+        Assert.DoesNotContain("[Internal]", output);
+    }
+
     // ──────────────────────── helpers ────────────────────────────────────
 
     /// <summary>

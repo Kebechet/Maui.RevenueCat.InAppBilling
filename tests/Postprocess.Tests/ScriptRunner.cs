@@ -13,11 +13,21 @@ internal static class ScriptRunner
 {
     private static readonly string ScriptPath = LocateScript();
 
-    public static string Run(string input)
+    /// <param name="published">
+    /// The ApiDefinitions.cs the output replaces, passed as <c>--published</c>; null runs
+    /// the script as if nothing were published yet.
+    /// </param>
+    public static string Run(string input, string? published = null)
     {
         var tempFile = Path.Combine(Path.GetTempPath(),
             $"postprocess_test_{Guid.NewGuid():N}.cs");
         File.WriteAllText(tempFile, input);
+        var publishedFile = Path.Combine(Path.GetTempPath(),
+            $"postprocess_test_published_{Guid.NewGuid():N}.cs");
+        if (published is not null)
+        {
+            File.WriteAllText(publishedFile, published);
+        }
         try
         {
             var psi = new ProcessStartInfo
@@ -32,6 +42,11 @@ internal static class ScriptRunner
             psi.ArgumentList.Add(ScriptPath);
             psi.ArgumentList.Add("--");
             psi.ArgumentList.Add(tempFile);
+            if (published is not null)
+            {
+                psi.ArgumentList.Add("--published");
+                psi.ArgumentList.Add(publishedFile);
+            }
 
             using var p = Process.Start(psi)!;
             var stdout = p.StandardOutput.ReadToEnd();
@@ -47,6 +62,7 @@ internal static class ScriptRunner
         finally
         {
             try { File.Delete(tempFile); } catch { /* ignore */ }
+            try { File.Delete(publishedFile); } catch { /* ignore */ }
         }
     }
 

@@ -319,13 +319,16 @@ jobs:
             -namespace "Maui.RevenueCat.iOS"
 
       - name: Post-process the bindings
+        # --published keeps every published constructor on the selector it binds today when a
+        # new initializer arrives with the same C# signature.
         run: |
           GENERATED="$IOS_BUMP_DIR/generated"
           mkdir -p "$GENERATED"
           cp "$SHARPIE_RAW_DIR/ApiDefinitions.cs" "$SHARPIE_RAW_DIR/StructsAndEnums.cs" "$GENERATED/"
           dotnet run .github/scripts/postprocess_ios_bindings.cs -- \
             "$GENERATED/ApiDefinitions.cs" "$GENERATED/StructsAndEnums.cs" \
-            --report "$GITHUB_WORKSPACE/manual_review.md"
+            --report "$GITHUB_WORKSPACE/manual_review.md" \
+            --published "$BINDING_DIR/ApiDefinitions.cs"
 
       - name: Install iOS workloads for .NET ${{ env.DOTNET_BUILD_SDK }}
         # --version pins the workload manifest to the 9.0.1xx band; without it the install
@@ -490,6 +493,7 @@ jobs:
           MIN_OS_PREVIOUS: ${{ steps.bump.outputs.min_os_previous }}
           MIN_OS_CURRENT: ${{ steps.bump.outputs.min_os_current }}
           UPSTREAM_BREAKING: ${{ steps.bump.outputs.upstream_breaking }}
+          API_REBOUND: ${{ steps.api.outputs.api_rebound || '0' }}
         run: |
           if [[ "$BINDING_OK" != "true" ]]; then
             STATUS=binding-broken
@@ -497,6 +501,8 @@ jobs:
             STATUS=min-os-raised
           elif [[ "$WRAPPER_OUTCOME" != "success" ]]; then
             STATUS=wrapper-broken
+          elif [[ "$API_REBOUND" != "0" ]]; then
+            STATUS=api-rebound
           elif [[ "$UPSTREAM_BREAKING" == "true" ]]; then
             STATUS=upstream-breaking
           else
@@ -517,7 +523,7 @@ jobs:
             echo "- PR: ${{ steps.pr.outputs.pr_url || 'none' }}"
             echo "- Claude repaired the binding: ${{ steps.verdict.outputs.claude_fixed || 'n/a' }}"
             echo "- Minimum OS: ${{ steps.bump.outputs.min_os_current || 'n/a' }} (raised: ${{ steps.bump.outputs.min_os_raised || 'n/a' }})"
-            echo "- Native API: +${{ steps.api.outputs.api_added || '?' }} / -${{ steps.api.outputs.api_removed || '?' }}, wrapper affected: ${{ steps.api.outputs.api_wrapper_affected || '?' }}"
+            echo "- Native API: +${{ steps.api.outputs.api_added || '?' }} / -${{ steps.api.outputs.api_removed || '?' }}, rebound: ${{ steps.api.outputs.api_rebound || '?' }}, wrapper affected: ${{ steps.api.outputs.api_wrapper_affected || '?' }}"
           } >> "$GITHUB_STEP_SUMMARY"
           if [[ -s api-report.md ]]; then
             { echo ""; cat api-report.md; } >> "$GITHUB_STEP_SUMMARY"

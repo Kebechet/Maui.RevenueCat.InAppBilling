@@ -12,7 +12,7 @@
 #   PREVIOUS, TARGET  native SDK versions
 #   BINDING_VERSION   <native>.<binding-rev>
 #   BASE_BRANCH       branch the PR targets (main on the schedule; the dispatched ref otherwise)
-#   STATUS            green | binding-broken | wrapper-broken | min-os-raised | upstream-breaking
+#   STATUS            green | binding-broken | wrapper-broken | min-os-raised | api-rebound | upstream-breaking
 #   COMMIT_PATHS      optional, space-separated pathspecs to commit (default: the binding dir).
 #                     iOS adds the post-processor and its tests, which a repair may extend.
 #   MIN_OS_RAISED, MIN_OS_PREVIOUS, MIN_OS_CURRENT
@@ -143,6 +143,10 @@ elif [[ "$STATUS" == "min-os-raised" ]]; then
     # is lower, so this fails until the wrapper's floor moves too.
     WRAPPER_LINE="❌ Wrapper does NOT compile against it - expected while the wrapper's own floor is below \`${MIN_OS_CURRENT}\`; see the \`wrapper-build-log-${PLATFORM}\` artifact"
   fi
+elif [[ "$STATUS" == "api-rebound" ]]; then
+  STATUS_LINE="🛑 **DRAFT - binding members keep their C# signature but now call a different native method** (the 🛑 list under Native API changes). Code written against the published binding still compiles and silently does something else. Make each one bind what it bound before (the iOS post-processor's \`--published\` rule, or a new name for the new native member), or accept the change on purpose, then mark the PR ready."
+  BUILD_LINE="✅ Binding builds (\`dotnet build -c Release\`)"
+  WRAPPER_LINE="✅ Wrapper compiles against the packed binding (\`${TFM}\`, wrapper csproj untouched)"
 elif [[ "$STATUS" == "upstream-breaking" ]]; then
   STATUS_LINE="🛑 **DRAFT - RevenueCat marked a breaking change in this range (or it is a new major).** Everything builds and the binding's own minimum OS version is unchanged, but read the \`BREAKING:\` and \`WARNING:\` lines above before merging: the break can be a build requirement for consumers (Android 11 requires compiling against API 35) rather than anything visible in the API. Mark the PR ready once you have decided it is safe for consumers."
   BUILD_LINE="✅ Binding builds (\`dotnet build -c Release\`)"
@@ -278,6 +282,7 @@ gh label create claude-fixed      --color 5319E7 --description "Binding sources 
 gh label create binding-broken    --color B60205 --description "The binding does not build against the new native SDK" --force >/dev/null
 gh label create wrapper-broken    --color B60205 --description "The wrapper does not compile against the new binding" --force >/dev/null
 gh label create min-os-raised     --color D93F0B --description "The native SDK raised the minimum OS version - breaking for consumers" --force >/dev/null
+gh label create api-rebound       --color B60205 --description "A binding member keeps its C# signature but calls a different native method" --force >/dev/null
 gh label create upstream-breaking --color D93F0B --description "RevenueCat marked a breaking change in this range, or it is a new major" --force >/dev/null
 
 # The platform and dependencies labels are shared with people and Dependabot, so they are
@@ -313,7 +318,7 @@ else
   echo "==> refreshing existing PR #$NUM"
   gh pr edit "$NUM" --title "$TITLE" --body-file "$BODY_FILE" \
     --remove-label claude-fixed --remove-label binding-broken --remove-label wrapper-broken \
-    --remove-label min-os-raised --remove-label upstream-breaking >/dev/null || true
+    --remove-label min-os-raised --remove-label api-rebound --remove-label upstream-breaking >/dev/null || true
   gh pr edit "$NUM" "${ADD_LABEL_ARGS[@]}" >/dev/null
   if [[ "$STATUS" == "green" ]]; then
     gh pr ready "$NUM" || true

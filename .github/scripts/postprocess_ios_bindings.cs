@@ -11,7 +11,12 @@
 //
 // Run as a .NET 10 file-based script:
 //     dotnet run .github/scripts/postprocess_ios_bindings.cs -- \
-//         ApiDefinitions.cs StructsAndEnums.cs --report manual_review.md
+//         ApiDefinitions.cs StructsAndEnums.cs --report manual_review.md \
+//         --published src/Maui.RevenueCat.iOS/ApiDefinitions.cs
+//
+// --published is the ApiDefinitions.cs this output replaces. It decides which of two
+// initializers with the same C# signature keeps the constructor (see
+// BindCollidingConstructors), so that choice never depends on header order.
 
 using System.Text;
 using System.Text.RegularExpressions;
@@ -19,11 +24,12 @@ using System.Text.RegularExpressions;
 if (!args.Any())
 {
     Console.Error.WriteLine(
-        "usage: dotnet run postprocess_ios_bindings.cs -- <file>... [--report <path>]");
+        "usage: dotnet run postprocess_ios_bindings.cs -- <file>... [--report <path>] [--published <ApiDefinitions.cs>]");
     return 1;
 }
 
 string? reportPath = null;
+string? publishedPath = null;
 var files = new List<string>();
 for (var i = 0; i < args.Length; i++)
 {
@@ -31,11 +37,24 @@ for (var i = 0; i < args.Length; i++)
     {
         reportPath = args[++i];
     }
+    else if (args[i] == "--published" && i + 1 < args.Length)
+    {
+        publishedPath = args[++i];
+    }
     else
     {
         files.Add(args[i]);
     }
 }
+
+if (publishedPath is not null && !File.Exists(publishedPath))
+{
+    Console.Error.WriteLine($"ERROR: --published {publishedPath} not found");
+    return 1;
+}
+var published = publishedPath is null
+    ? PublishedConstructors.Empty
+    : PublishedConstructors.Read(File.ReadAllText(publishedPath));
 
 var results = new List<FileResult>();
 foreach (var file in files)
@@ -46,7 +65,7 @@ foreach (var file in files)
         continue;
     }
     Console.WriteLine($"Processing {file}");
-    var r = Postprocess.ProcessFile(file);
+    var r = Postprocess.ProcessFile(file, published);
     results.Add(r);
     foreach (var (name, delta) in r.PassStats)
     {
@@ -74,6 +93,33 @@ sealed record FileResult(
     int FinalChars,
     List<(string Name, int Delta)> PassStats,
     Dictionary<string, List<string>> Findings);
+
+
+// The selector each `Constructor` of the published binding binds, by interface and C#
+// parameter types.
+sealed record PublishedConstructors(Dictionary<(string Interface, string ParameterTypes), string> SelectorsBySignature)
+{
+    public static PublishedConstructors Empty { get; } = new(new Dictionary<(string, string), string>());
+
+    public static PublishedConstructors Read(string apiDefinitions)
+    {
+        var selectorsBySignature = new Dictionary<(string, string), string>();
+        foreach (var (interfaceName, constructor) in Postprocess.Constructors(apiDefinitions.Replace("\r\n", "\n")))
+        {
+            var selector = Postprocess.ExportSelector(constructor);
+            if (selector is not null)
+            {
+                selectorsBySignature.TryAdd((interfaceName, Postprocess.NormalizeParamTypes(constructor.Groups["params"].Value)), selector);
+            }
+        }
+        return new PublishedConstructors(selectorsBySignature);
+    }
+
+    public string? SelectorOf(string interfaceName, string parameterTypes)
+    {
+        return SelectorsBySignature.GetValueOrDefault((interfaceName, parameterTypes));
+    }
+}
 
 
 static class Postprocess
@@ -104,6 +150,19 @@ static class Postprocess
         @"(?<bases>(?:[ \t]*:[ \t]*[^\n{]+)?)[ \t]*\n)" +
         @"(?<body>[ \t]*\{(?<inner>(?:[^{}]|\{[^{}]*\})*)\}[ \t]*\n?)",
         RegexOptions.Multiline | RegexOptions.Compiled);
+
+    // A member block inside an interface body: zero+ comment lines, one+
+    // attribute lines, then a method signature line ending with `;`.
+    private static readonly Regex MemberBlockRe = new(
+        @"(?<attrs>(?:^[ \t]*//[^\n]*\n)*(?:^[ \t]*\[[^\]]+\][ \t]*\n)+)" +
+        @"(?<sigLine>^[ \t]*[^\n]*?\b(?<name>[A-Za-z_]\w*)[ \t]*\((?<params>[^;]*)\)[ \t]*;[ \t]*\n)",
+        RegexOptions.Multiline | RegexOptions.Compiled);
+
+    private static readonly Regex ExportSelectorRe = new(
+        @"\bExport[ \t]*\([ \t]*""(?<sel>[^""]+)""", RegexOptions.Compiled);
+
+    // bgen binds an initializer as a constructor only when the member is named exactly this.
+    private const string ConstructorName = "Constructor";
 
     // Symbols the README flags as causing "Undefined symbols for architecture
     // arm64" at link time. Reported, not auto-deleted, because the right
@@ -737,6 +796,144 @@ static class Postprocess
         });
     }
 
+    // Keep `Constructor` on one initializer per C# signature and bind the rest
+    // [Internal].
+    //
+    // bgen treats only a member named `Constructor` as a constructor, so two
+    // initializers whose C# parameter types collide cannot both be one, and
+    // renaming the second like an overloaded method turns it into an ordinary
+    // instance method that sends `init...` to an already initialised object.
+    // Which one keeps the constructor must not depend on header order either:
+    // RevenueCat 5.102.1 added `initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:`
+    // ahead of the published `initWithAutoSyncPurchases:customEntitlementComputation:`,
+    // so `new RCDangerousSettings(bool, bool)` would have silently switched to
+    // setting the other option.
+    //
+    // The initializer the published binding binds as `Constructor` keeps it; with
+    // nothing published, the first one in the header does. Every other one is
+    // bound [Internal] under a name spelled from its whole selector, which stays
+    // the same across regenerations, so a static factory in a hand-written partial
+    // class can expose it (README). dotnet/macios binds VNVector's colliding
+    // `initWithR:theta:` the same way:
+    // https://github.com/dotnet/macios/blob/main/src/Vision/VNVector.cs
+    //
+    // Example, published `initWithAutoSyncPurchases:customEntitlementComputation:`:
+    //     [Export ("initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:")]
+    //     [Internal]
+    //     NativeHandle _InitWithAutoSyncPurchasesForceAllowTestStoreInReleaseBuilds (bool autoSyncPurchases, bool forceAllowTestStoreInReleaseBuilds);
+    //     [Export ("initWithAutoSyncPurchases:customEntitlementComputation:")]
+    //     NativeHandle Constructor (bool autoSyncPurchases, bool customEntitlementComputation);
+    private static string BindCollidingConstructors(string text, PublishedConstructors published)
+    {
+        return InterfaceBlockRe.Replace(text, m =>
+        {
+            var interfaceName = m.Groups["name"].Value;
+            var inner = m.Groups["inner"].Value;
+            var collidingConstructorGroups = MemberBlockRe.Matches(inner)
+                .Where(x => x.Groups["name"].Value == ConstructorName)
+                .GroupBy(x => NormalizeParamTypes(x.Groups["params"].Value))
+                .Where(x => x.Count() > 1)
+                .ToList();
+            if (!collidingConstructorGroups.Any()) return m.Value;
+
+            var edits = new List<(int Start, int End, string Replacement)>();
+            foreach (var collidingConstructors in collidingConstructorGroups)
+            {
+                var publishedSelector = published.SelectorOf(interfaceName, collidingConstructors.Key);
+                var keptConstructor = collidingConstructors.FirstOrDefault(x => publishedSelector is not null && ExportSelector(x) == publishedSelector) ??
+                    collidingConstructors.First();
+                foreach (var collidingConstructor in collidingConstructors.Where(x => x != keptConstructor))
+                {
+                    var selector = ExportSelector(collidingConstructor);
+                    if (selector is null) continue;
+
+                    var sigLine = collidingConstructor.Groups["sigLine"].Value;
+                    var indent = sigLine[..(sigLine.Length - sigLine.TrimStart().Length)];
+                    var renamed = new Regex($@"\b{ConstructorName}\b[ \t]*\(")
+                        .Replace(sigLine, InternalInitializerName(selector) + " (", 1);
+                    var sigStart = collidingConstructor.Index + collidingConstructor.Groups["attrs"].Length;
+                    edits.Add((sigStart, sigStart + sigLine.Length, $"{indent}[Internal]\n{renamed}"));
+                }
+            }
+
+            var innerStart = m.Groups["inner"].Index - m.Index;
+            return m.Value[..innerStart] + ApplyEdits(inner, edits) + m.Value[(innerStart + inner.Length)..];
+        });
+    }
+
+    // "initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:" ->
+    // "_InitWithAutoSyncPurchasesForceAllowTestStoreInReleaseBuilds" (the leading
+    // underscore is dotnet/macios's convention for an internal raw initializer)
+    private static string InternalInitializerName(string selector) =>
+        "_" + string.Concat(selector
+            .Split(':', StringSplitOptions.RemoveEmptyEntries)
+            .Select(Capitalize));
+
+    public static IEnumerable<(string Interface, Match Constructor)> Constructors(string text)
+    {
+        foreach (Match interfaceBlock in InterfaceBlockRe.Matches(text))
+        {
+            foreach (Match member in MemberBlockRe.Matches(interfaceBlock.Groups["inner"].Value))
+            {
+                if (member.Groups["name"].Value == ConstructorName)
+                {
+                    yield return (interfaceBlock.Groups["name"].Value, member);
+                }
+            }
+        }
+    }
+
+    public static string? ExportSelector(Match member)
+    {
+        var export = ExportSelectorRe.Match(member.Groups["attrs"].Value);
+        return export.Success
+            ? export.Groups["sel"].Value
+            : null;
+    }
+
+    // Walk the parameter list, splitting on commas at top-level (don't split
+    // inside <>, [], or ()). For each part, drop leading [Attribute]
+    // decorations and the trailing parameter name, leaving just the type.
+    public static string NormalizeParamTypes(string list)
+    {
+        var parts = new List<string>();
+        var depth = 0;
+        var start = 0;
+        for (var i = 0; i < list.Length; i++)
+        {
+            var c = list[i];
+            if (c is '<' or '(' or '[') depth++;
+            else if (c is '>' or ')' or ']') depth--;
+            else if (c == ',' && depth == 0)
+            {
+                parts.Add(list[start..i]);
+                start = i + 1;
+            }
+        }
+        parts.Add(list[start..]);
+
+        for (var i = 0; i < parts.Count; i++)
+        {
+            var p = parts[i].Trim();
+            p = Regex.Replace(p, @"\[[^\]]+\][ \t]*", "");
+            var lastWs = p.LastIndexOfAny(new[] { ' ', '\t' });
+            if (lastWs > 0) p = p[..lastWs].TrimEnd();
+            parts[i] = p;
+        }
+        return string.Join(",", parts);
+    }
+
+    // Applies non-overlapping (start, end, replacement) edits back to front, so
+    // earlier offsets stay valid.
+    private static string ApplyEdits(string body, List<(int Start, int End, string Replacement)> edits)
+    {
+        foreach (var (start, end, replacement) in edits.OrderByDescending(x => x.Start))
+        {
+            body = body[..start] + replacement + body[end..];
+        }
+        return body;
+    }
+
     // Rename C# methods that share a signature within the same interface but
     // bind different ObjC selectors.
     //
@@ -755,6 +952,10 @@ static class Postprocess
     //
     // After this pass the second becomes `void LogInCompletionHandler(...)`.
     // Matches the rename pattern in the v5.34.0.1 hand-cleaned binding.
+    //
+    // Constructors are never renamed: a renamed `Constructor` is no longer a
+    // constructor to bgen. BindCollidingConstructors handles them before this
+    // pass runs.
     private static string DeduplicateOverloadedMethods(string text)
     {
         // Re-evaluate per interface so signatures from one interface don't
@@ -768,18 +969,12 @@ static class Postprocess
 
             static string DedupeBody(string body)
             {
-                // A member block: zero+ comment lines, one+ attribute lines,
-                // then a signature line ending with `;`. Capture each block.
-                var memberRe = new Regex(
-                    @"(?<attrs>(?:^[ \t]*//[^\n]*\n)*(?:^[ \t]*\[[^\]]+\][ \t]*\n)+)" +
-                    @"(?<sigLine>^[ \t]*[^\n]*?\b(?<name>[A-Za-z_]\w*)[ \t]*\((?<params>[^;]*)\)[ \t]*;[ \t]*\n)",
-                    RegexOptions.Multiline);
-
                 var seen = new HashSet<string>();
                 var edits = new List<(int Start, int End, string Replacement)>();
-                foreach (Match mm in memberRe.Matches(body))
+                foreach (Match mm in MemberBlockRe.Matches(body))
                 {
                     var methodName = mm.Groups["name"].Value;
+                    if (methodName == ConstructorName) continue;
                     // Skip property declarations (no parentheses, but `[A-Za-z_]\w*` + `(` won't match them anyway).
                     var paramTypes = NormalizeParamTypes(mm.Groups["params"].Value);
                     var key = methodName + "(" + paramTypes + ")";
@@ -806,46 +1001,7 @@ static class Postprocess
                     edits.Add((sigStart, sigStart + sigLine.Length, renamed));
                 }
 
-                if (!edits.Any()) return body;
-                edits.Sort((a, b) => b.Start.CompareTo(a.Start));
-                foreach (var (start, end, replacement) in edits)
-                {
-                    body = body[..start] + replacement + body[end..];
-                }
-                return body;
-            }
-
-            static string NormalizeParamTypes(string list)
-            {
-                // Walk the parameter list, splitting on commas at top-level
-                // (don't split inside <>, [], or ()). For each part, drop
-                // leading [Attribute] decorations and the trailing parameter
-                // name, leaving just the type.
-                var parts = new List<string>();
-                var depth = 0;
-                var start = 0;
-                for (var i = 0; i < list.Length; i++)
-                {
-                    var c = list[i];
-                    if (c is '<' or '(' or '[') depth++;
-                    else if (c is '>' or ')' or ']') depth--;
-                    else if (c == ',' && depth == 0)
-                    {
-                        parts.Add(list[start..i]);
-                        start = i + 1;
-                    }
-                }
-                parts.Add(list[start..]);
-
-                for (var i = 0; i < parts.Count; i++)
-                {
-                    var p = parts[i].Trim();
-                    p = Regex.Replace(p, @"\[[^\]]+\][ \t]*", "");
-                    var lastWs = p.LastIndexOfAny(new[] { ' ', '\t' });
-                    if (lastWs > 0) p = p[..lastWs].TrimEnd();
-                    parts[i] = p;
-                }
-                return string.Join(",", parts);
+                return ApplyEdits(body, edits);
             }
 
             static string SelectorTailToPascal(string selector, string methodName)
@@ -1061,6 +1217,27 @@ static class Postprocess
         return hits;
     }
 
+    private static List<string> DetectInternalInitializers(string text)
+    {
+        var hits = new List<string>();
+        foreach (Match interfaceBlock in InterfaceBlockRe.Matches(text))
+        {
+            foreach (Match member in MemberBlockRe.Matches(interfaceBlock.Groups["inner"].Value))
+            {
+                var selector = ExportSelector(member);
+                if (selector is null || !selector.StartsWith("init") || !member.Groups["attrs"].Value.Contains("[Internal]"))
+                {
+                    continue;
+                }
+                hits.Add(
+                    $"`{interfaceBlock.Groups["name"].Value}.{member.Groups["name"].Value}` binds `{selector}` as [Internal]: " +
+                    "its C# signature is taken by the constructor the published binding keeps. " +
+                    "Expose it through a static factory in a partial class if consumers need it (README).");
+            }
+        }
+        return hits;
+    }
+
     private static List<string> DetectRemainingVerify(string text) =>
         Regex.IsMatch(text, @"\[Verify[ \t]*\(")
             ? new List<string> { "At least one `[Verify(...)]` attribute survived stripping - inspect." }
@@ -1087,8 +1264,8 @@ static class Postprocess
     //   3. Strip remaining platform attrs.
     //   4. Merge swift-suffix interfaces, then prune any interfaces left empty.
     //   5. Cross-reference passes (INativeObject, unused delegates) last.
-    private static readonly (string Name, Func<string, string> Fn)[] Passes =
-    {
+    private static (string Name, Func<string, string> Fn)[] Passes(PublishedConstructors published) =>
+    [
         ("strip [Verify(...)]",                       StripVerifyAttributes),
         ("collapse multi-line // doc comments",       CollapseMultilineDocComments),
         ("comment (AutoGeneratedName = true)",        CommentAutoGeneratedName),
@@ -1107,20 +1284,22 @@ static class Postprocess
         ("merge _RevenueCat_Swift_NNNN interfaces",   MergeSwiftSuffixInterfaces),
         ("remove empty interfaces",                   RemoveEmptyInterfaces),
         ("add INativeObject for NSDictionary values", AddInativeObjectForDictValues),
+        ("bind colliding constructors [Internal]",    x => BindCollidingConstructors(x, published)),
         ("rename duplicate method overloads",         DeduplicateOverloadedMethods),
         ("remove unused top-level delegates",         RemoveUnusedDelegates),
         ("convert block namespace to file-scoped",    UseFileScopedNamespace),
         ("extract nested block-callback delegates",   ExtractNestedBlockCallbacks),
-    };
+    ];
 
     private static readonly (string Label, Func<string, List<string>> Fn)[] Detectors =
     {
         ("Inline `[BlockCallback] Action<>` / `Func<>` parameters", DetectBlockCallbackActions),
+        ("Initializers bound `[Internal]` (same C# signature as a constructor)", DetectInternalInitializers),
         ("Surviving `[Verify]` attributes",                         DetectRemainingVerify),
         ("`Name = \"...\"` attribute arguments",                    DetectNameAttributes),
     };
 
-    public static FileResult ProcessFile(string path)
+    public static FileResult ProcessFile(string path, PublishedConstructors published)
     {
         var original = File.ReadAllText(path);
         // Normalize CRLF -> LF for regex compatibility; restore on write so
@@ -1129,7 +1308,7 @@ static class Postprocess
         var hadCrLf = original.Contains("\r\n");
         var text = hadCrLf ? original.Replace("\r\n", "\n") : original;
         var stats = new List<(string Name, int Delta)>();
-        foreach (var (name, fn) in Passes)
+        foreach (var (name, fn) in Passes(published))
         {
             var before = text.Length;
             text = fn(text);
