@@ -28,9 +28,10 @@
 //                                                       framework gets (the binding repair's only lookup)
 //   changelog-range <android|ios> <after> <through>     RevenueCat's notes for (after, through], one line per version
 //   release-note-items <body.md>                        the items changelog-range keeps from one release body
-//   api-report <android|ios> <new-dll> <wrapper-dll|-> <out-md> <out-full-md>
+//   api-report <android|ios> <new-dll> <wrapper-dll|-> <out-md> <out-full-md> [baseline-dll]
 //                                                       native API added/removed/obsoleted since the published
-//                                                       binding, and which of it the wrapper touches
+//                                                       binding (or baseline-dll), members that now call a
+//                                                       different native method, and which of it the wrapper touches
 //   linker-check-types <binding-dll> <Program.cs>       rewrite BindingLinkerCheck's typeof() list from the binding
 
 using System.Collections.Immutable;
@@ -72,7 +73,7 @@ try
         "nuget-versions" => Print(await NuGetFeed.DescribeVersions(Arg(1), Arg(2))),
         "changelog-range" => Print(await Upstream.ChangelogRange(Arg(1), Arg(2), Arg(3))),
         "release-note-items" => Print(string.Join("\n", ReleaseNotes.CoreSdkItems(File.ReadAllText(Arg(1))))),
-        "api-report" => await ApiReport.Run(Arg(1), Arg(2), Arg(3), Arg(4), Arg(5)),
+        "api-report" => await ApiReport.Run(Arg(1), Arg(2), Arg(3), Arg(4), Arg(5), OptionalArg(6)),
         "linker-check-types" => LinkerCheck.WriteTypeList(Arg(1), Arg(2)),
         var other => Cli.Fail($"unknown command '{other}'"),
     };
@@ -96,6 +97,13 @@ string Arg(int index)
     return index < args.Length
         ? args[index]
         : throw new UsageException($"'{args[0]}' is missing argument {index}");
+}
+
+string? OptionalArg(int index)
+{
+    return index < args.Length
+        ? args[index]
+        : null;
 }
 
 static int Print(string value)
@@ -855,7 +863,7 @@ static class ApiReport
     // deprecate. Both bindings are generated, so the generated assembly IS the native API
     // surface: diffing it against the published binding answers the first half, and the
     // wrapper's own member references answer the second.
-    public static async Task<int> Run(string platform, string newDllPath, string wrapperDllPath, string outPath, string fullOutPath)
+    public static async Task<int> Run(string platform, string newDllPath, string wrapperDllPath, string outPath, string fullOutPath, string? baselineDllPath)
     {
         var (packageId, tfmPrefix, assemblyFileName) = platform switch
         {
@@ -865,10 +873,23 @@ static class ApiReport
         };
 
         var newSurface = ApiSurface.Read(File.ReadAllBytes(newDllPath));
-        var publishedVersion = await NuGetFeed.LastPublishedVersion(packageId);
-        var oldSurface = publishedVersion is null
-            ? ApiSurface.Empty
-            : ApiSurface.Read(await NuGetFeed.DownloadAssembly(packageId, publishedVersion, tfmPrefix, assemblyFileName));
+        string baseline;
+        ApiSurface oldSurface;
+        if (baselineDllPath is not null)
+        {
+            oldSurface = ApiSurface.Read(File.ReadAllBytes(baselineDllPath));
+            baseline = $"`{Path.GetFileName(baselineDllPath)}`";
+        }
+        else
+        {
+            var publishedVersion = await NuGetFeed.LastPublishedVersion(packageId);
+            oldSurface = publishedVersion is null
+                ? ApiSurface.Empty
+                : ApiSurface.Read(await NuGetFeed.DownloadAssembly(packageId, publishedVersion, tfmPrefix, assemblyFileName));
+            baseline = publishedVersion is null
+                ? "nothing published yet"
+                : $"`{publishedVersion}` on nuget.org";
+        }
 
         var wrapperSource = "the wrapper built against this binding";
         byte[] wrapperBytes;
@@ -888,15 +909,13 @@ static class ApiReport
         var usage = WrapperUsage.Read(wrapperBytes, Path.GetFileNameWithoutExtension(assemblyFileName));
 
         var diff = ApiDiff.Compute(oldSurface, newSurface, usage);
-        var baseline = publishedVersion is null
-            ? "nothing published yet"
-            : $"`{publishedVersion}` on nuget.org";
 
         File.WriteAllText(outPath, Render(diff, baseline, wrapperSource, SectionLineLimit));
         File.WriteAllText(fullOutPath, Render(diff, baseline, wrapperSource, int.MaxValue));
 
         GitHubOutput.Emit("api_added", diff.Added.Count.ToString(CultureInfo.InvariantCulture));
         GitHubOutput.Emit("api_removed", diff.Removed.Count.ToString(CultureInfo.InvariantCulture));
+        GitHubOutput.Emit("api_rebound", diff.Rebound.Count.ToString(CultureInfo.InvariantCulture));
         GitHubOutput.Emit("api_wrapper_affected", diff.WrapperAffected.Count.ToString(CultureInfo.InvariantCulture));
         return 0;
     }
@@ -913,9 +932,18 @@ static class ApiReport
         markdown.AppendLine($"| Newly obsolete | {diff.NewlyObsolete.Count(x => x.Kind == 'T')} | {diff.NewlyObsolete.Count(x => x.Kind != 'T')} |");
         markdown.AppendLine();
 
+        // Listed whether or not the wrapper uses them: code written against the binding
+        // still compiles and silently calls something else.
+        if (diff.Rebound.Any())
+        {
+            markdown.AppendLine($"#### 🛑 {diff.Rebound.Count} member(s) keep their C# signature but now call a different native method");
+            AppendGrouped(markdown, diff.Rebound, lineLimit, x => x.Note);
+            markdown.AppendLine();
+        }
+
         if (diff.WrapperAffected.Any())
         {
-            markdown.AppendLine($"#### ⚠️ The wrapper uses {diff.WrapperAffected.Count} API(s) this bump removes or deprecates");
+            markdown.AppendLine($"#### ⚠️ The wrapper uses {diff.WrapperAffected.Count} API(s) this bump removes, deprecates or rebinds");
             AppendGrouped(markdown, diff.WrapperAffected, lineLimit, x => x.Note);
         }
         else
@@ -1004,12 +1032,20 @@ static class ApiReport
 sealed record ApiMember(char Kind, string Key, string DeclaringType, string Display, bool IsObsolete, ImmutableArray<string> AccessorKeys)
 {
     public string? Note { get; init; }
+
+    /// <summary>
+    /// The native member this binding member calls: the Objective-C selector of its
+    /// [Export] on iOS, the Java name and JNI signature of its [Register] on Android.
+    /// </summary>
+    public string? NativeName { get; init; }
 }
 
 sealed record ApiSurface(Dictionary<string, ApiMember> MembersByKey)
 {
     private const string KotlinEnumEntriesProperty = "Entries";
     private const string KotlinEnumEntriesType = "Kotlin.Enums.IEnumEntries";
+    private const string ExportAttributeName = "Foundation.ExportAttribute";
+    private const string RegisterAttributeName = "Android.Runtime.RegisterAttribute";
 
     public static ApiSurface Empty { get; } = new(new Dictionary<string, ApiMember>());
 
@@ -1067,7 +1103,12 @@ sealed record ApiSurface(Dictionary<string, ApiMember> MembersByKey)
                     IsObsolete(reader, property.GetCustomAttributes()) ||
                     visibleMethods.Any(x => IsObsolete(reader, x.GetCustomAttributes()));
                 var accessorKeys = methods.Select(x => MethodKey(reader, typeName, x, fullNames)).ToImmutableArray();
-                Add(new ApiMember('P', $"P:{typeName}.{name}{indexer}", typeName, $"{name}{shortIndexer} : {shortSignature.ReturnType}", isObsolete, accessorKeys));
+                // bgen and the Android generator put [Export] / [Register] on the accessors.
+                var nativeName = NativeName(reader, property.GetCustomAttributes()) ??
+                    methods
+                        .Select(x => NativeName(reader, reader.GetMethodDefinition(x).GetCustomAttributes()))
+                        .FirstOrDefault(x => x is not null);
+                Add(new ApiMember('P', $"P:{typeName}.{name}{indexer}", typeName, $"{name}{shortIndexer} : {shortSignature.ReturnType}", isObsolete, accessorKeys) { NativeName = nativeName });
             }
 
             foreach (var eventHandle in type.GetEvents())
@@ -1106,7 +1147,7 @@ sealed record ApiSurface(Dictionary<string, ApiMember> MembersByKey)
                 }
                 var isObsolete = isTypeObsolete || IsObsolete(reader, method.GetCustomAttributes());
                 var key = MethodKey(reader, typeName, methodHandle, fullNames);
-                Add(new ApiMember('M', key, typeName, display, isObsolete, [key]));
+                Add(new ApiMember('M', key, typeName, display, isObsolete, [key]) { NativeName = NativeName(reader, method.GetCustomAttributes()) });
             }
 
             foreach (var fieldHandle in type.GetFields())
@@ -1167,23 +1208,57 @@ sealed record ApiSurface(Dictionary<string, ApiMember> MembersByKey)
 
     private static bool IsObsolete(MetadataReader reader, CustomAttributeHandleCollection attributes)
     {
+        return attributes
+            .Select(reader.GetCustomAttribute)
+            .Any(x => AttributeTypeName(reader, x) == "System.ObsoleteAttribute");
+    }
+
+    private static string? NativeName(MetadataReader reader, CustomAttributeHandleCollection attributes)
+    {
         foreach (var attributeHandle in attributes)
         {
             var attribute = reader.GetCustomAttribute(attributeHandle);
-            var typeName = attribute.Constructor.Kind switch
+            // [Export (selector)] / [Export (selector, ArgumentSemantic)];
+            // [Register (javaName)] / [Register (javaName, jniSignature, connector)].
+            var nameArgumentCount = AttributeTypeName(reader, attribute) switch
             {
-                HandleKind.MemberReference => reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor).Parent is { Kind: HandleKind.TypeReference } parent
-                    ? TypeNameProvider.ReferenceName(reader, (TypeReferenceHandle)parent)
-                    : string.Empty,
-                HandleKind.MethodDefinition => TypeNameProvider.DefinitionName(reader, reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor).GetDeclaringType()),
-                _ => string.Empty,
+                ExportAttributeName => 1,
+                RegisterAttributeName => 2,
+                _ => 0,
             };
-            if (typeName == "System.ObsoleteAttribute")
+            if (nameArgumentCount == 0)
             {
-                return true;
+                continue;
             }
+
+            var signature = reader.GetBlobReader(attribute.Constructor.Kind == HandleKind.MemberReference
+                ? reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor).Signature
+                : reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor).Signature);
+            signature.ReadSignatureHeader();
+            var parameterCount = signature.ReadCompressedInteger();
+
+            var value = reader.GetBlobReader(attribute.Value);
+            value.ReadUInt16();
+            var nameArguments = new List<string?>();
+            for (var i = 0; i < Math.Min(nameArgumentCount, parameterCount); i++)
+            {
+                nameArguments.Add(value.ReadSerializedString());
+            }
+            return string.Join(" ", nameArguments);
         }
-        return false;
+        return null;
+    }
+
+    private static string AttributeTypeName(MetadataReader reader, CustomAttribute attribute)
+    {
+        return attribute.Constructor.Kind switch
+        {
+            HandleKind.MemberReference => reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor).Parent is { Kind: HandleKind.TypeReference } parent
+                ? TypeNameProvider.ReferenceName(reader, (TypeReferenceHandle)parent)
+                : string.Empty,
+            HandleKind.MethodDefinition => TypeNameProvider.DefinitionName(reader, reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor).GetDeclaringType()),
+            _ => string.Empty,
+        };
     }
 }
 
@@ -1264,10 +1339,26 @@ sealed record WrapperUsage(HashSet<string> TypeNames, HashSet<string> MemberKeys
     }
 }
 
-sealed record ApiDiff(List<ApiMember> Added, List<ApiMember> Removed, List<ApiMember> NewlyObsolete, List<ApiMember> AddedOnWrapperTypes, List<ApiMember> WrapperAffected)
+sealed record ApiDiff(List<ApiMember> Added, List<ApiMember> Removed, List<ApiMember> NewlyObsolete, List<ApiMember> Rebound, List<ApiMember> AddedOnWrapperTypes, List<ApiMember> WrapperAffected)
 {
     public static ApiDiff Compute(ApiSurface oldSurface, ApiSurface newSurface, WrapperUsage usage)
     {
+        // Same C# signature, different native target: RevenueCat iOS 5.102.1 added a second
+        // (bool, bool) initializer to RCDangerousSettings, and new RCDangerousSettings(bool, bool)
+        // moved onto it.
+        var rebound = new List<ApiMember>();
+        foreach (var newMember in newSurface.MembersByKey.Values)
+        {
+            var isRebound = newMember.NativeName is not null &&
+                oldSurface.MembersByKey.TryGetValue(newMember.Key, out var oldMember) &&
+                oldMember.NativeName is not null &&
+                oldMember.NativeName != newMember.NativeName;
+            if (isRebound)
+            {
+                rebound.Add(newMember with { Note = $"was `{oldSurface.MembersByKey[newMember.Key].NativeName}`, now `{newMember.NativeName}`" });
+            }
+        }
+
         var added = newSurface.MembersByKey.Values
             .Where(x => !oldSurface.MembersByKey.ContainsKey(x.Key))
             .ToList();
@@ -1291,9 +1382,10 @@ sealed record ApiDiff(List<ApiMember> Added, List<ApiMember> Removed, List<ApiMe
             .Concat(newlyObsolete
                 .Where(x => IsUsed(x, usage))
                 .Select(x => x with { Note = "now [Obsolete]" }))
+            .Concat(rebound.Where(x => IsUsed(x, usage)))
             .ToList();
 
-        return new ApiDiff(added, removed, newlyObsolete, addedOnWrapperTypes, wrapperAffected);
+        return new ApiDiff(added, removed, newlyObsolete, rebound, addedOnWrapperTypes, wrapperAffected);
     }
 
     private static bool IsUsed(ApiMember member, WrapperUsage usage)

@@ -19,8 +19,12 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 cp "$SHARPIE_RAW_DIR/ApiDefinitions.cs" "$SHARPIE_RAW_DIR/StructsAndEnums.cs" "$WORK/"
+# The bump has already overwritten the working copy, so the published binding is the
+# committed one.
+git -C "$REPO_ROOT" show HEAD:src/Maui.RevenueCat.iOS/ApiDefinitions.cs > "$WORK/published-ApiDefinitions.cs"
 (cd "$REPO_ROOT" && dotnet run .github/scripts/postprocess_ios_bindings.cs -- \
-  "$WORK/ApiDefinitions.cs" "$WORK/StructsAndEnums.cs" --report "$WORK/manual_review.md")
+  "$WORK/ApiDefinitions.cs" "$WORK/StructsAndEnums.cs" --report "$WORK/manual_review.md" \
+  --published "$WORK/published-ApiDefinitions.cs")
 
 cp "$WORK/ApiDefinitions.cs" "$REPO_ROOT/src/Maui.RevenueCat.iOS/ApiDefinitions.cs"
 cp "$WORK/StructsAndEnums.cs" "$REPO_ROOT/src/Maui.RevenueCat.iOS/StructsAndEnums.cs"

@@ -98,6 +98,30 @@ Because of a problem with bitcode I have decided to create completely new bindin
 - removed inherited `NSOperation` methods - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/1033aaca86e60519ea4b75ed3fe6d65ea3e456c4)
 - I have created aliases for methods named the same - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/866a0fbbff26b942307c77dd54bd14ac81de572b)
   - ⚠️ I dont know if this is correct or even necessary, maybe I could delete them as well
+  - The post-processor does this for methods: the second `LogIn (string, Action<…>)` becomes `LogInCompletionHandler`, named after the last part of its selector.
+  - 🛑 **Never rename a `Constructor` this way.** bgen treats only a member named `Constructor` as an initializer, so a renamed one (`ConstructorCustomEntitlementComputation`) is a plain method that sends `init…` to an object that already exists.
+    - Two initializers can share a C# signature: 5.102.1 added `initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:` next to `initWithAutoSyncPurchases:customEntitlementComputation:`, both `(bool, bool)`.
+    - Keep `Constructor` on the selector the published binding already binds, otherwise `new RCDangerousSettings(bool, bool)` still compiles for every consumer and quietly sets the other option.
+    - Bind the other one `[Internal]`, the way dotnet/macios binds `VNVector`'s `initWithR:theta:` ([VNVector.cs](https://github.com/dotnet/macios/blob/main/src/Vision/VNVector.cs)):
+      ```csharp
+      [Export ("initWithAutoSyncPurchases:forceAllowTestStoreInReleaseBuilds:")]
+      [Internal]
+      NativeHandle _InitWithAutoSyncPurchasesForceAllowTestStoreInReleaseBuilds (bool autoSyncPurchases, bool forceAllowTestStoreInReleaseBuilds);
+      ```
+    - The post-processor does all of this itself: the bump workflow passes the committed `ApiDefinitions.cs` as `--published`, and the manual-review report lists every initializer it bound `[Internal]`.
+    - To make such an initializer public, add a factory in a partial class in a regular `.cs` file of the binding project (not `ApiDefinitions.cs`):
+      ```csharp
+      public partial class RCDangerousSettings
+      {
+          public static RCDangerousSettings CreateWithForceAllowTestStoreInReleaseBuilds(bool autoSyncPurchases, bool forceAllowTestStoreInReleaseBuilds)
+          {
+              var dangerousSettings = new RCDangerousSettings(NSObjectFlag.Empty);
+              dangerousSettings.InitializeHandle(dangerousSettings._InitWithAutoSyncPurchasesForceAllowTestStoreInReleaseBuilds(autoSyncPurchases, forceAllowTestStoreInReleaseBuilds));
+              return dangerousSettings;
+          }
+      }
+      ```
+    - The bump PR's API report lists a member under 🛑 when its C# signature stayed but its selector changed, and the PR opens as an `api-rebound` draft.
 - removed attributes containing `Name` - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/4aa727562d17829c742dcd6c2f51ba3c3cb836ff)
   - this was because on my windows machine I was getting errors that platform doesnt have symbols specified for this methods containing the name
   - later I completely removed those methods because the error was still there - [commit](https://github.com/Kebechet/Maui.RevenueCat.iOS/commit/3fcceeb6ff9d8207a3545f89ddf28639cb3c0f79)
