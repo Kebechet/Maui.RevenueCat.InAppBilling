@@ -74,6 +74,26 @@ internal static class PurchasesExtensions
         return listener.Task;
     }
 
+    internal static Task<bool> ShowManageSubscriptionsAsync(this Purchases purchases, Activity activity,
+        CancellationToken cancellationToken = default)
+    {
+        var callback = new DelegatingManageSubscriptionsCallback(cancellationToken);
+        // Starts the store's screen from the activity, so it runs on the main thread like
+        // Purchase; a synchronous throw is routed into the task for the same reason.
+        activity.RunOnUiThread(() =>
+        {
+            try
+            {
+                purchases.ShowManageSubscriptions(activity, callback);
+            }
+            catch (Exception exception)
+            {
+                callback.ReportException(exception);
+            }
+        });
+        return callback.Task;
+    }
+
     internal static Task<CustomerInfo> RestorePurchasesAsync(this Purchases purchases,
         CancellationToken cancellationToken = default)
     {

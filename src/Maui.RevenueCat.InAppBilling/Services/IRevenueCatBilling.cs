@@ -78,6 +78,18 @@ public interface IRevenueCatBilling
     Task<ManagementUrlResultDto> GetManagementSubscriptionUrl(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Shows the store's own subscription management screen: the App Store's sheet inside the app
+    /// on iOS and Mac Catalyst, the subscription's page in Google Play on Android.
+    /// </summary>
+    /// <remarks>
+    /// On iOS the task completes as soon as the sheet is shown, not when the user closes it.
+    /// On Android the page comes from the subscription's management URL, so the call fails with
+    /// <see cref="PurchaseErrorStatus.UnsupportedError"/> when the user has no store-managed
+    /// subscription, which includes every RevenueCat Test Store subscription.
+    /// </remarks>
+    Task<ManageSubscriptionsResultDto> ShowManageSubscriptions(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Logs in an identified user, aliasing any anonymous ID onto it.
     /// </summary>
     Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken = default);

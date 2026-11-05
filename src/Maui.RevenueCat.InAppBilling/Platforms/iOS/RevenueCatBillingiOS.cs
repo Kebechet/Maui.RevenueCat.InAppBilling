@@ -258,6 +258,19 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
+    public async partial Task<ManageSubscriptionsResultDto> ShowManageSubscriptions(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _purchases.ShowManageSubscriptionsAsync(cancellationToken);
+
+            return new();
+        }
+        catch (Exception ex)
+        {
+            return new() { Error = LogAndMapError(ex), ErrorException = ex };
+        }
+    }
     public async partial Task<CustomerInfoResultDto> Login(string appUserId, CancellationToken cancellationToken)
     {
         try

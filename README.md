@@ -77,7 +77,7 @@ RevenueCat's [Test Store](https://www.revenuecat.com/docs/test-and-launch/sandbo
 
 This wrapper ships an iOS xcframework built **from source** with the `BYPASS_SIMULATED_STORE_RELEASE_CHECK` Swift compilation flag, so a `test_…` key works on iOS Release builds too — it does **not** force-close the app. No code changes are required on your side; just pass the `test_…` key to `Initialize(...)`.
 
-On Android no such rebuild is needed: the RevenueCat SDK ships as a normal AAR (Kotlin bytecode), so its test-key check runs against the consuming app's build at runtime rather than being compiled into the library — a prebuilt AAR doesn't carry the always-on guard the prebuilt iOS framework did. Test Store support does require RevenueCat Android SDK **9.9.0+**; this binding ships upstream SDK **10.16.1** (binding package `10.16.1`), so `test_…` keys work out of the box (see issue [#95](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/95), resolved by that SDK bump). The same "don't ship a `test_` key to production" guidance applies on both platforms.
+On Android no such rebuild is needed: the RevenueCat SDK ships as a normal AAR (Kotlin bytecode), so its test-key check runs against the consuming app's build at runtime rather than being compiled into the library — a prebuilt AAR doesn't carry the always-on guard the prebuilt iOS framework did. Test Store support does require RevenueCat Android SDK **9.9.0+**; this binding ships upstream SDK **11.1.0** (binding package `11.1.0`), so `test_…` keys work out of the box in Debug builds (see issue [#95](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/95), resolved by the 10.1.2 SDK bump). In a Release build of your app, RevenueCat refuses the key with a `ConfigurationError` ("Test Store API key used in release build"). The same "don't ship a `test_` key to production" guidance applies on both platforms.
 
 See [src/Maui.RevenueCat.iOS/README.md](src/Maui.RevenueCat.iOS/README.md#test-store-api-key-support-bypass_simulated_store_release_check) for the build-time details and issue [#116](https://github.com/Kebechet/Maui.RevenueCat.InAppBilling/issues/116) for context.
 
@@ -136,6 +136,7 @@ When offerings come back empty with a configuration error, the logs show which p
 | `Logout()` | Log out and create anonymous user. `Value` is `CustomerInfoDto` |
 | `GetCustomerInfo(CustomerInfoFetchPolicy fetchPolicy = CachedOrFetched)` | Get current customer info and entitlements. `Value` is `CustomerInfoDto`. The default may return stale cached data - see [Customer Info Caching](#customer-info-caching) |
 | `GetManagementSubscriptionUrl()` | Get URL for subscription management. `Value` is `string?`; null means no store-managed subscription |
+| `ShowManageSubscriptions()` | Show the store's own subscription management screen: the App Store's sheet on iOS and Mac Catalyst, the subscription's Google Play page on Android. The result carries no `Value`. On Android it fails with `UnsupportedError` when the user has no store-managed subscription, including every Test Store subscription |
 
 ### Customer Info Caching
 
@@ -276,6 +277,7 @@ own payload:
 | `ProductIdentifiersResultDto` | `List<string>` | `GetActiveSubscriptions()`, `GetAllPurchasedIdentifiers()` |
 | `PurchaseDateResultDto` | `DateTime?` | `GetPurchaseDateForProductIdentifier()` |
 | `ManagementUrlResultDto` | `string?` | `GetManagementSubscriptionUrl()` |
+| `ManageSubscriptionsResultDto` | none (a `Result<PurchaseErrorStatus>`) | `ShowManageSubscriptions()` |
 | `StorefrontResultDto` | `string?` | `GetStorefrontCountryCode()` - empty string when the storefront is not yet known |
 | `CustomerInfoResultDto` | `CustomerInfoDto` | `Login()`, `Logout()`, `RestoreTransactions()`, `GetCustomerInfo()` |
 | `PurchaseResultDto` | `CustomerInfoDto` | `PurchaseProduct()` - carries the same payload as `CustomerInfoResultDto` plus a `Transaction`, but is a sibling of it, not a subclass |
