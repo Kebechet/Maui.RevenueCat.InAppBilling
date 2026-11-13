@@ -24,46 +24,17 @@
 		<DebugType>embedded</DebugType>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<EmbedAllSources>true</EmbedAllSources>
-		<Version>11.1.0.0</Version>
-		<PackageReleaseNotes>11.1.0.0: RevenueCat Android SDK updated from 10.16.1 to 11.1.0. RevenueCat SDK changes per version (RevenueCatUI is not bound):
-10.16.2: fix: don't share a MessageDigest across coroutines in FontLoader and DefaultFileCache. Fix misleading ui_config warnings for projects without paywalls. fix: Declare kotlinx-coroutines-android as a dependency. fix(paywalls): prewarm the current offering's workflow assets on load.
-10.17.0: feat(ads): fire reward-verification tracking events from the poll. fix(paywalls): don't leave a hidden package selected by default.
-10.18.0: Track checkpoint hits through the analytics events pipeline. Add public Purchases.showManageSubscriptions() API. feat(ads): ad reward tracking with admob adapter.
-10.18.1: Don't jitter developer-initiated subscriber attribute posts in foreground.
-10.19.0: feat(singular): add $singularDeviceId subscriber attribute for Singular V2. Add awaitShowManageSubscriptions.
-10.19.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.20.0: Narrow consumer R8 rules. Surface attribute sync errors when fetching offerings. Fall back to "en" when a paywall screen omits default_locale. Cache web purchase redemption CustomerInfo for the initiating App User ID.
-10.21.0: fix: send X-Is-Sandbox header when using a Test Store API key. fix: floating-point rounding bug in Test Store priceString.
-10.21.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.22.0: Create the signature verifier off the configure() thread.
-10.22.1: Do not apply a previous user's CustomerInfo after an identity change.
-10.23.0: feat(admob): add next-gen SDK support. Treat a -1 HTTP status code as a connection error. fix: bypass app-installed HTTP response caches for API requests.
-10.23.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.23.2: Skip obfuscatedAccountId when the device already owns the subscription being purchased.
-10.23.3: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.23.4: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.24.0: Track rewarded ad prompt shown and accepted events.
-10.24.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.24.2: Fix backend prices losing a micro when converted to amountMicros.
-10.25.0: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.26.0: feat(paywalls): introduce video localization support for Android.
-10.27.0: feat(ads): allow manual rewarded ad earned tracking. Fix IAM retries when switching users.
-10.27.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.28.0: Add LevelPlay manual ad tracking sample.
-10.28.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-10.29.0: Skip the Blockstore alias path when the Blockstore client is unavailable.
-10.30.0: Parse paywall gating in checkpoint workflows. fix(checkpoints): track started Activities from process start. fix: keep the cached offerings response out of SharedPreferences to reduce memory usage. Fix dropped Billing callbacks after disconnection. Fix requests hanging indefinitely when the server stops responding. Fix non-subscription transactions reporting "null" display name and store transaction ID.
-10.30.1: no RevenueCat SDK changes listed (RevenueCatUI or internal changes only).
-11.0.0: WARNING: Your app, and any library module that depends on the SDK, must now compile against API 35 or later. This requirement comes from androidx.core 1.15.0, which Play Billing Library 9 depends on. minSdk and targetSdk are not affected. BREAKING: Update to Play Billing Library 9.1.0. BREAKING: Update to AGP 9 (AGP 9.2.1, Gradle 9.4.1, Kotlin 2.2.21). Fix paywall image localization parsing under kotlinx-serialization 1.7.3.
-11.0.1: Fail the pending purchase when Play completes another base plan.
-11.1.0: Expose configured ad rewards as a preview API. fix: preserve workflow context in custom paywall impressions.
+		<Version>11.2.1.0</Version>
+		<PackageReleaseNotes>11.2.1.0: RevenueCat Android SDK updated from 11.1.0 to 11.2.1. RevenueCat SDK changes per version (RevenueCatUI is not bound):
+11.2.0: Remove preview annotations from configured ad rewards.
+11.2.1: fix(ads): poll reward verification for the user captured before polling.
 Full changelog: https://github.com/RevenueCat/purchases-android/releases</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<!--The AAR is downloaded from Maven Central and its POM drives Java dependency
 		verification, so every RevenueCat bump cross-checks the PackageReference list below.-->
-		<AndroidMavenLibrary Include="com.revenuecat.purchases:purchases" Version="11.1.0" />
+		<AndroidMavenLibrary Include="com.revenuecat.purchases:purchases" Version="11.2.1" />
 		<!--RevenueCat uses Poko only as a compile-time Gradle plugin and @Poko is
 		source-retention, so the POM's runtime dependency has no bytecode footprint.
 		Referencing a binding for it caused #83 and #114.-->
