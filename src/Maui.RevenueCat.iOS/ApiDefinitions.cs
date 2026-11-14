@@ -1438,6 +1438,22 @@ interface RCPurchases
 	[Export ("showStoreMessagesForTypes:completion:")]
 	void ShowStoreMessagesForTypes (NSSet types, Action completion);
 
+	// -(void)getVirtualCurrenciesWithCompletion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
+	[Export ("getVirtualCurrenciesWithCompletion:")]
+	void GetVirtualCurrenciesWithCompletion (Action<RCVirtualCurrencies, NSError> completion);
+
+	// @property (readonly, nonatomic, strong) RCVirtualCurrencies * _Nullable cachedVirtualCurrencies;
+	[NullAllowed, Export ("cachedVirtualCurrencies", ArgumentSemantic.Strong)]
+	RCVirtualCurrencies CachedVirtualCurrencies { get; }
+
+	// -(void)invalidateVirtualCurrenciesCache;
+	[Export ("invalidateVirtualCurrenciesCache")]
+	void InvalidateVirtualCurrenciesCache ();
+
+	// -(void)spendVirtualCurrenciesWithAmounts:(NSDictionary<NSString *,NSNumber *> * _Nonnull)amounts reference:(NSString * _Nullable)reference completion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
+	[Export ("spendVirtualCurrenciesWithAmounts:reference:completion:")]
+	void SpendVirtualCurrenciesWithAmounts (NSDictionary<NSString, NSNumber> amounts, [NullAllowed] string reference, Action<RCVirtualCurrencies, NSError> completion);
+
 	// +(RCPurchases * _Nonnull)configureWithConfiguration:(RCConfiguration * _Nonnull)configuration;
 	[Static]
 	[Export ("configureWithConfiguration:")]
@@ -1462,22 +1478,6 @@ interface RCPurchases
 	[Static]
 	[Export ("configureWithAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:")]
 	RCPurchases ConfigureWithAPIKey (string apiKey, [NullAllowed] string appUserID, RCPurchasesAreCompletedBy purchasesAreCompletedBy, RCStoreKitVersion storeKitVersion);
-
-	// -(void)getVirtualCurrenciesWithCompletion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
-	[Export ("getVirtualCurrenciesWithCompletion:")]
-	void GetVirtualCurrenciesWithCompletion (Action<RCVirtualCurrencies, NSError> completion);
-
-	// @property (readonly, nonatomic, strong) RCVirtualCurrencies * _Nullable cachedVirtualCurrencies;
-	[NullAllowed, Export ("cachedVirtualCurrencies", ArgumentSemantic.Strong)]
-	RCVirtualCurrencies CachedVirtualCurrencies { get; }
-
-	// -(void)invalidateVirtualCurrenciesCache;
-	[Export ("invalidateVirtualCurrenciesCache")]
-	void InvalidateVirtualCurrenciesCache ();
-
-	// -(void)spendVirtualCurrenciesWithAmounts:(NSDictionary<NSString *,NSNumber *> * _Nonnull)amounts reference:(NSString * _Nullable)reference completion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
-	[Export ("spendVirtualCurrenciesWithAmounts:reference:completion:")]
-	void SpendVirtualCurrenciesWithAmounts (NSDictionary<NSString, NSNumber> amounts, [NullAllowed] string reference, Action<RCVirtualCurrencies, NSError> completion);
 
 	// @property (nonatomic, class) BOOL debugLogsEnabled __attribute__((deprecated("use Purchases.logLevel instead")));
 	[Static]
