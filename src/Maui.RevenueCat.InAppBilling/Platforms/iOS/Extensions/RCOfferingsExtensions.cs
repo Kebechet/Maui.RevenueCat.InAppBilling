@@ -6,7 +6,7 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
 internal static class RCOfferingsExtensions
 {
-    internal static List<OfferingDto> ToOfferingDtoList(this RCOfferings offerings)
+    internal static List<OfferingDto> ToOfferingDtoList(this RCOfferings offerings, IReadOnlySet<string> freeTrialEligibleProductIdentifiers)
     {
         var offeringDtos = new List<OfferingDto>();
 
@@ -15,7 +15,7 @@ internal static class RCOfferingsExtensions
             var offeringDto = new OfferingDto()
             {
                 Identifier = offer.Identifier,
-                AvailablePackages = offer.AvailablePackages.ToPackageDtoList(),
+                AvailablePackages = offer.AvailablePackages.ToPackageDtoList(freeTrialEligibleProductIdentifiers),
                 IsCurrent = offer.Identifier == offerings.Current?.Identifier,
                 Metadata = offer.Metadata.ToJson().ToMetadataDictionary()
             };
