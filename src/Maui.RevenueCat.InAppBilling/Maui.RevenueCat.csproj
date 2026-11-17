@@ -33,15 +33,14 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>10.2.0</Version>
+    <Version>10.2.1</Version>
     <PackageReleaseNotes>
-ADDED
-- `ProductDto.FreeTrialPeriod` is the free trial that a purchase of the product starts for the current user (`Value=2, Unit=Week` for two weeks), or `null` when the product has none or the user can no longer get it. A paywall can now promise a trial only to someone who will get it.
-  - Android: the free phase of the product's default subscription option, the one a purchase of the package uses. Google Play leaves out offers the user is not eligible for; an offer with "Developer determined" eligibility is always listed.
-  - iOS and Mac Catalyst: the introductory offer when it is a free trial, kept only when RevenueCat reports the user as `Eligible`. `GetOfferings()` checks this when it fetches the offerings; `Unknown`, `Ineligible` or a failed check give `null`.
+FIXED
+- iOS and Mac Catalyst: an `Unknown` or failed free-trial eligibility answer is no longer kept with the cached offerings. 10.2.0 kept it until `GetOfferings(forceRefresh: true)`, so after a StoreKit hiccup an eligible user saw no `ProductDto.FreeTrialPeriod` for the rest of the session. Now every later `GetOfferings()` asks again until the answer is definite.
+- iOS and Mac Catalyst: a `GetOfferings()` call that arrived while another one was still checking eligibility read the new offerings with the old answer (none on the first load), so an eligible user got no trial. Offerings and eligibility are now cached together.
 
 NOTE
-- Nothing else in `IRevenueCatBilling` or its DTOs changed, and the bindings are the same as in 10.1.0.
+- No API change, and the bindings are the same as in 10.1.0.
 </PackageReleaseNotes>
   </PropertyGroup>
 
