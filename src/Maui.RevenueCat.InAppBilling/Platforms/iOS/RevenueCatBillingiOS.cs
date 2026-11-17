@@ -18,7 +18,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 {
     private Purchases _purchases = default!;
     private RCOfferings? _cachedOfferingPackages = null;
-    private IReadOnlySet<string> _freeTrialEligibleProductIdentifiers = new HashSet<string>();
+    private FreeTrialEligibility _freeTrialEligibility = FreeTrialEligibility.NotChecked;
 
     public partial bool IsAnonymous() => Purchases.SharedPurchases.IsAnonymous;
     public partial string GetAppUserId() => Purchases.SharedPurchases.AppUserID;
@@ -89,21 +89,32 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 
     public async partial Task<OfferingsResultDto> GetOfferings(bool forceRefresh, CancellationToken cancellationToken)
     {
-        if (!forceRefresh && _cachedOfferingPackages != null)
-        {
-            return new() { Value = _cachedOfferingPackages.ToOfferingDtoList(_freeTrialEligibleProductIdentifiers) };
-        }
-
         try
         {
-            _cachedOfferingPackages = await _purchases.GetOfferingsAsync(cancellationToken);
-            if (_cachedOfferingPackages is null)
+            if (!forceRefresh && _cachedOfferingPackages != null)
             {
+                if (!_freeTrialEligibility.IsDefinite)
+                {
+                    _freeTrialEligibility = await GetFreeTrialEligibility(_cachedOfferingPackages, cancellationToken);
+                }
+
+                return new() { Value = _cachedOfferingPackages.ToOfferingDtoList(_freeTrialEligibility.EligibleProductIdentifiers) };
+            }
+
+            var offerings = await _purchases.GetOfferingsAsync(cancellationToken);
+            if (offerings is null)
+            {
+                _cachedOfferingPackages = null;
                 return new() { Value = [] };
             }
 
-            _freeTrialEligibleProductIdentifiers = await GetFreeTrialEligibleProductIdentifiers(_cachedOfferingPackages, cancellationToken);
-            return new() { Value = _cachedOfferingPackages.ToOfferingDtoList(_freeTrialEligibleProductIdentifiers) };
+            // Both are cached together, once both are known: a call that arrives between the two awaits would
+            // otherwise read the new offerings with the old eligibility and show no trial to an eligible user.
+            var freeTrialEligibility = await GetFreeTrialEligibility(offerings, cancellationToken);
+            _cachedOfferingPackages = offerings;
+            _freeTrialEligibility = freeTrialEligibility;
+
+            return new() { Value = offerings.ToOfferingDtoList(freeTrialEligibility.EligibleProductIdentifiers) };
         }
         catch (Exception ex)
         {
@@ -328,11 +339,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     }
 
     /// <summary>
-    /// The products whose free trial the user can still start. Only an eligible answer keeps the trial, as in
+    /// Whether the user can still start each product's free trial. Only an eligible answer keeps the trial, as in
     /// RevenueCat's own example: an unknown one, or a failed check, would let a paywall promise a trial that StoreKit
     /// then does not give.
     /// </summary>
-    private async Task<IReadOnlySet<string>> GetFreeTrialEligibleProductIdentifiers(RCOfferings offerings, CancellationToken cancellationToken)
+    private async Task<FreeTrialEligibility> GetFreeTrialEligibility(RCOfferings offerings, CancellationToken cancellationToken)
     {
         var freeTrialProductIdentifiers = offerings.All.Values
             .SelectMany(x => x.AvailablePackages)
@@ -343,19 +354,11 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             .ToList();
         if (!freeTrialProductIdentifiers.Any())
         {
-            return new HashSet<string>();
+            return FreeTrialEligibility.From(freeTrialProductIdentifiers, new Dictionary<string, IntroElegibilityStatus>());
         }
 
         var eligibilityResult = await CheckTrialOrIntroDiscountEligibility(freeTrialProductIdentifiers, cancellationToken);
-        if (eligibilityResult.Value is null)
-        {
-            return new HashSet<string>();
-        }
-
-        return eligibilityResult.Value
-            .Where(x => x.Value == IntroElegibilityStatus.Eligible)
-            .Select(x => x.Key)
-            .ToHashSet();
+        return FreeTrialEligibility.From(freeTrialProductIdentifiers, eligibilityResult.Value);
     }
 
     private PurchaseErrorStatus LogAndMapError(Exception exception, [CallerMemberName] string operationName = "")
