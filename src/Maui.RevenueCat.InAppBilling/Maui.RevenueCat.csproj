@@ -33,18 +33,15 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>10.1.0</Version>
+    <Version>10.2.0</Version>
     <PackageReleaseNotes>
 ADDED
-- `ShowManageSubscriptions()` shows the store's own subscription management screen: the App Store's sheet inside the app on iOS and Mac Catalyst, the subscription's Google Play page on Android. RevenueCat Android only gained it in 10.18.0, so the wrapper could not offer it on both platforms before. On Android it needs a store-managed subscription and fails with `UnsupportedError` otherwise, which includes every Test Store subscription.
-- `OwnershipType.Assigned` for a purchase the user has through an organization (StoreKit's `assigned` ownership). It was reported as `OwnershipType.Unknown` before.
-
-CHANGED
-- Android uses RevenueCat Android SDK 11.1.0 (binding `Kebechet.Maui.RevenueCat.Android` 11.1.0, was 10.16.1), built on Google Play Billing Library 9.1. Apps now resolve at least `Xamarin.Android.Google.BillingClient` 9.1.0, `Xamarin.AndroidX.Core` 1.19.0, `Xamarin.AndroidX.Activity` 1.13.0, `Xamarin.Kotlin.StdLib` 2.4.0 and `Xamarin.KotlinX.Coroutines.Core` 1.11.0; an app that pins one of them lower has to raise it (NU1605).
-- iOS and Mac Catalyst use RevenueCat iOS SDK 5.102.1 (binding `Kebechet.Maui.RevenueCat.iOS` 5.102.1, was 5.83.1).
+- `ProductDto.FreeTrialPeriod` is the free trial that a purchase of the product starts for the current user (`Value=2, Unit=Week` for two weeks), or `null` when the product has none or the user can no longer get it. A paywall can now promise a trial only to someone who will get it.
+  - Android: the free phase of the product's default subscription option, the one a purchase of the package uses. Google Play leaves out offers the user is not eligible for; an offer with "Developer determined" eligibility is always listed.
+  - iOS and Mac Catalyst: the introductory offer when it is a free trial, kept only when RevenueCat reports the user as `Eligible`. `GetOfferings()` checks this when it fetches the offerings; `Unknown`, `Ineligible` or a failed check give `null`.
 
 NOTE
-- Apart from the additions above, `IRevenueCatBilling` and its DTOs are unchanged. The RevenueCat changes in each range are in the binding release notes: https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.Android/11.1.0 and https://www.nuget.org/packages/Kebechet.Maui.RevenueCat.iOS/5.102.1
+- Nothing else in `IRevenueCatBilling` or its DTOs changed, and the bindings are the same as in 10.1.0.
 </PackageReleaseNotes>
   </PropertyGroup>
 

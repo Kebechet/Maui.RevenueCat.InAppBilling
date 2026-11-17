@@ -13,7 +13,11 @@ public class PackageToButtonTextConverter : IValueConverter
         {
             return string.Empty;
         }
-        return $"Buy {packageDto.Identifier} for {packageDto.Product.Pricing.PriceLocalized}";
+        var freeTrialPeriod = packageDto.Product.FreeTrialPeriod;
+        var freeTrialText = freeTrialPeriod is null
+            ? string.Empty
+            : $" after {freeTrialPeriod.Value} {freeTrialPeriod.Unit} free";
+        return $"Buy {packageDto.Identifier} for {packageDto.Product.Pricing.PriceLocalized}{freeTrialText}";
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

@@ -6,7 +6,10 @@ namespace Maui.RevenueCat.InAppBilling.Platforms.iOS.Extensions;
 
 internal static class PackageArrayExtensions
 {
-    internal static List<PackageDto> ToPackageDtoList(this RCPackage[] packages)
+    /// <param name="freeTrialEligibleProductIdentifiers">
+    /// Products whose free trial the user can still start; every other product is mapped without one.
+    /// </param>
+    internal static List<PackageDto> ToPackageDtoList(this RCPackage[] packages, IReadOnlySet<string> freeTrialEligibleProductIdentifiers)
     {
         var packageDtos = new List<PackageDto>();
 
@@ -30,6 +33,9 @@ internal static class PackageArrayExtensions
                     },
                     Sku = package.StoreProduct.ProductIdentifier,
                     SubscriptionPeriod = package.StoreProduct.SubscriptionPeriod.ToSubscriptionPeriodDto(),
+                    FreeTrialPeriod = freeTrialEligibleProductIdentifiers.Contains(package.StoreProduct.ProductIdentifier)
+                        ? package.StoreProduct.IntroductoryDiscount.ToFreeTrialPeriodDto()
+                        : null,
                 }
             };
 

@@ -30,6 +30,8 @@ internal static class PackageListExtensions
                     },
                     Sku = package.Product.Sku,
                     SubscriptionPeriod = package.Product.Period.ToSubscriptionPeriodDto(),
+                    // The default option, because it is the one a purchase of the package starts.
+                    FreeTrialPeriod = package.Product.DefaultOption?.FreePhase?.BillingPeriod.ToSubscriptionPeriodDto(),
                 }
             };
 

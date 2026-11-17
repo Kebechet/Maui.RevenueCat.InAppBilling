@@ -115,8 +115,16 @@ When offerings come back empty with a configuration error, the logs show which p
 
 | Method | Description |
 |--------|-------------|
-| `GetOfferings(bool forceRefresh = false)` | Fetch available offerings and packages. `Value` is `List<OfferingDto>` |
+| `GetOfferings(bool forceRefresh = false)` | Fetch available offerings and packages. `Value` is `List<OfferingDto>`. Each package's `Product.FreeTrialPeriod` is the free trial a purchase starts for the current user, or `null` when there is none or the user can no longer get it (see [Free trials](#free-trials)) |
 | `CheckTrialOrIntroDiscountEligibility(List<string> identifiers)` | Check eligibility for trials/intro pricing. `Value` is `Dictionary<string, IntroElegibilityStatus>`. Apple platforms only (iOS and Mac Catalyst); throws `NotImplementedException` on Android |
+
+### Free trials
+
+`ProductDto.FreeTrialPeriod` says how long the free trial is that a purchase of the product starts for the current user (`Value=2, Unit=Week` for two weeks). Show a trial on a paywall only when it is set: a user who already had the trial no longer gets it, and the store charges them at once.
+
+- **Android**: the trial of the product's default subscription option, the one a purchase of the package uses. Google Play leaves out the offers a user is not eligible for, so a user who already used a "New customer acquisition" trial gets `null`. An offer with "Developer determined" eligibility is always listed, so the wrapper cannot tell for those ([RevenueCat: Google Play offers](https://www.revenuecat.com/docs/subscription-guidance/subscription-offers/google-play-offers)).
+- **iOS and Mac Catalyst**: the product's introductory offer when it is a free trial, kept only when RevenueCat reports the user as `Eligible`. `Unknown`, `Ineligible` or a failed check gives `null`, as in [RevenueCat's own example](https://www.revenuecat.com/docs/subscription-guidance/subscription-offers). `GetOfferings()` checks eligibility when it fetches the offerings, so a cached result keeps the answer until `GetOfferings(forceRefresh: true)`.
+- **Windows and other platforms**: always `null`.
 
 ### Purchases
 

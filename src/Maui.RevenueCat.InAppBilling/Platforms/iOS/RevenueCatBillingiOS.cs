@@ -18,6 +18,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
 {
     private Purchases _purchases = default!;
     private RCOfferings? _cachedOfferingPackages = null;
+    private IReadOnlySet<string> _freeTrialEligibleProductIdentifiers = new HashSet<string>();
 
     public partial bool IsAnonymous() => Purchases.SharedPurchases.IsAnonymous;
     public partial string GetAppUserId() => Purchases.SharedPurchases.AppUserID;
@@ -90,7 +91,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         if (!forceRefresh && _cachedOfferingPackages != null)
         {
-            return new() { Value = _cachedOfferingPackages.ToOfferingDtoList() };
+            return new() { Value = _cachedOfferingPackages.ToOfferingDtoList(_freeTrialEligibleProductIdentifiers) };
         }
 
         try
@@ -101,7 +102,8 @@ public partial class RevenueCatBilling : IRevenueCatBilling
                 return new() { Value = [] };
             }
 
-            return new() { Value = _cachedOfferingPackages.ToOfferingDtoList() };
+            _freeTrialEligibleProductIdentifiers = await GetFreeTrialEligibleProductIdentifiers(_cachedOfferingPackages, cancellationToken);
+            return new() { Value = _cachedOfferingPackages.ToOfferingDtoList(_freeTrialEligibleProductIdentifiers) };
         }
         catch (Exception ex)
         {
@@ -324,6 +326,38 @@ public partial class RevenueCatBilling : IRevenueCatBilling
             return new() { Error = LogAndMapError(ex), ErrorException = ex };
         }
     }
+
+    /// <summary>
+    /// The products whose free trial the user can still start. Only an eligible answer keeps the trial, as in
+    /// RevenueCat's own example: an unknown one, or a failed check, would let a paywall promise a trial that StoreKit
+    /// then does not give.
+    /// </summary>
+    private async Task<IReadOnlySet<string>> GetFreeTrialEligibleProductIdentifiers(RCOfferings offerings, CancellationToken cancellationToken)
+    {
+        var freeTrialProductIdentifiers = offerings.All.Values
+            .SelectMany(x => x.AvailablePackages)
+            .Select(x => x.StoreProduct)
+            .Where(x => x.IntroductoryDiscount.ToFreeTrialPeriodDto() is not null)
+            .Select(x => x.ProductIdentifier)
+            .Distinct()
+            .ToList();
+        if (!freeTrialProductIdentifiers.Any())
+        {
+            return new HashSet<string>();
+        }
+
+        var eligibilityResult = await CheckTrialOrIntroDiscountEligibility(freeTrialProductIdentifiers, cancellationToken);
+        if (eligibilityResult.Value is null)
+        {
+            return new HashSet<string>();
+        }
+
+        return eligibilityResult.Value
+            .Where(x => x.Value == IntroElegibilityStatus.Eligible)
+            .Select(x => x.Key)
+            .ToHashSet();
+    }
+
     private PurchaseErrorStatus LogAndMapError(Exception exception, [CallerMemberName] string operationName = "")
     {
         var errorStatus = exception switch
