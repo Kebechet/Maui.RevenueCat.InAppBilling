@@ -161,7 +161,7 @@ jobs:
             ${{ env.DOTNET_BUILD_SDK }}
             10.0.x
 
-      # The repository root keeps no global.json, so the file-based scripts run on .NET 10.
+      # The repository root's global.json keeps the file-based scripts on .NET 10.
       # Every iOS build runs from this directory instead, whose global.json picks 9.0.101.
       - name: Pin .NET ${{ env.DOTNET_BUILD_SDK }} for the iOS builds
         run: |
