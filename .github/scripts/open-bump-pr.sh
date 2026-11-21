@@ -338,39 +338,36 @@ fi
 # previous bump PR is still open. Both are opened against the pin on the base branch, so
 # they coexist and the older one is dead weight.
 #
-# Two deliberate limits:
-#   - only when THIS PR is green: a draft (broken build, breaking release) must not close an
-#     older bump that is actually mergeable.
-#   - only strictly older versions, so an explicitly dispatched older bump never closes a
-#     newer one.
+# The newer bump closes the older one whatever either status is: only the newest release is
+# ever worth merging, and a broken newer bump is fixed on its own branch, not by merging an
+# older one. The one limit: only strictly older versions, so an explicitly dispatched older
+# bump never closes a newer one.
 # The branch is deleted only when the superseded PR is an untouched single bot commit;
 # anything else may carry a fix worth cherry-picking, and closing already makes it inert.
-if [[ "$STATUS" == "green" ]]; then
-  gh pr list --state open --base "$BASE_BRANCH" --json number,headRefName,isDraft \
-      --jq ".[] | select(.headRefName | startswith(\"bump/${PLATFORM}-\")) | select(.number != ${NUM}) | \"\(.number) \(.headRefName) \(.isDraft)\"" \
-    | while read -r old_num old_branch old_draft; do
-        # Every command in this loop reads from /dev/null: the loop's stdin is the PR list,
-        # and a command that reads stdin would swallow the PRs after the current one.
-        old_version="${old_branch##*-}"
-        if [[ "$(dotnet run .github/scripts/bump.cs -- compare-versions "$old_version" "$TARGET" < /dev/null)" != "-1" ]]; then
-          echo "==> leaving PR #${old_num} (${old_version}) open: not older than ${TARGET}"
-          continue
-        fi
+gh pr list --state open --base "$BASE_BRANCH" --json number,headRefName \
+    --jq ".[] | select(.headRefName | startswith(\"bump/${PLATFORM}-\")) | select(.number != ${NUM}) | \"\(.number) \(.headRefName)\"" \
+  | while read -r old_num old_branch; do
+      # Every command in this loop reads from /dev/null: the loop's stdin is the PR list,
+      # and a command that reads stdin would swallow the PRs after the current one.
+      old_version="${old_branch##*-}"
+      if [[ "$(dotnet run .github/scripts/bump.cs -- compare-versions "$old_version" "$TARGET" < /dev/null)" != "-1" ]]; then
+        echo "==> leaving PR #${old_num} (${old_version}) open: not older than ${TARGET}"
+        continue
+      fi
 
-        commits=$(gh pr view "$old_num" --json commits --jq '.commits | length' < /dev/null)
-        if [[ "$old_draft" == "false" && "$commits" == "1" ]]; then
-          delete_note="Its branch \`${old_branch}\` has been deleted."
-          delete_flag=(--delete-branch)
-        else
-          delete_note="Its branch \`${old_branch}\` is kept, because it carries work beyond the original bump commit."
-          delete_flag=()
-        fi
+      commits=$(gh pr view "$old_num" --json commits --jq '.commits | length' < /dev/null)
+      if [[ "$commits" == "1" ]]; then
+        delete_note="Its branch \`${old_branch}\` has been deleted."
+        delete_flag=(--delete-branch)
+      else
+        delete_note="Its branch \`${old_branch}\` is kept, because it carries work beyond the original bump commit."
+        delete_flag=()
+      fi
 
-        echo "==> superseding PR #${old_num} (${old_version} -> ${TARGET})"
-        gh pr close "$old_num" --comment "Superseded by ${URL} - RevenueCat ${PLATFORM_NAME} \`${TARGET}\` is now the newest release upstream, so this bump to \`${old_version}\` will not be merged. ${delete_note}" \
-          ${delete_flag[@]+"${delete_flag[@]}"} < /dev/null || echo "WARN: could not close PR #${old_num}" >&2
-      done
-fi
+      echo "==> superseding PR #${old_num} (${old_version} -> ${TARGET})"
+      gh pr close "$old_num" --comment "Superseded by ${URL} - RevenueCat ${PLATFORM_NAME} \`${TARGET}\` is now the newest release upstream, so this bump to \`${old_version}\` will not be merged. ${delete_note}" \
+        ${delete_flag[@]+"${delete_flag[@]}"} < /dev/null || echo "WARN: could not close PR #${old_num}" >&2
+    done
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
