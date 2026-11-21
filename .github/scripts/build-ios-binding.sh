@@ -14,8 +14,8 @@
 #
 # Environment:
 #   SDK9_DIR   directory whose global.json pins the .NET SDK the iOS packages are built
-#              with (publish-ios.yml's 9.0.101). The repository root has no global.json,
-#              so .NET 10 still runs the file-based scripts; see the iOS toolchain pin in
+#              with (publish-ios.yml's 9.0.101). The repository root's global.json pins
+#              .NET 10, which still runs the file-based scripts; see the iOS toolchain pin in
 #              CLAUDE.md for why the build cannot simply use .NET 10.
 
 set -euo pipefail
