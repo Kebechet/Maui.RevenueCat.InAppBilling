@@ -51,6 +51,7 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial void SetDisplayName(string name);
     public partial void SetPhoneNumber(string phone);
     public partial void SetAttributes(IDictionary<string, string> attributes);
+    public partial void CollectDeviceIdentifiers();
 
     internal static partial void EnableDebugLogs(bool enable);
 }

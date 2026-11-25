@@ -96,6 +96,9 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     public partial void SetAttributes(IDictionary<string, string> attributes)
     {
     }
+    public partial void CollectDeviceIdentifiers()
+    {
+    }
 
     public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken)
     {

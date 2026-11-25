@@ -174,6 +174,22 @@ var customerInfoResult = await _revenueCat.GetCustomerInfo(CustomerInfoFetchPoli
 | `SetDisplayName(string name)` | Set user's display name |
 | `SetPhoneNumber(string phone)` | Set user's phone number |
 | `SetAttributes(IDictionary<string, string> attributes)` | Set custom attributes |
+| `CollectDeviceIdentifiers()` | Set the device's identifiers as attributes, see [Device Identifiers](#device-identifiers) |
+
+### Device Identifiers
+
+Attribution integrations such as [RevenueCat's Meta Ads integration](https://www.revenuecat.com/docs/integrations/attribution/meta-ads) use device identifiers to match a user. `CollectDeviceIdentifiers()` sets them on the current user:
+
+| Platform | Attributes |
+|----------|------------|
+| iOS, Mac Catalyst | `$idfa`, `$idfv`, `$ip`, `$deviceVersion` |
+| Android | `$gpsAdId`, `$ip`, `$deviceVersion` |
+| Windows and others | none, the call does nothing |
+
+Call it after `Initialize`. **Getting the user's consent before calling it is your responsibility.** RevenueCat's Android SDK warns against calling it in apps that target children.
+
+- iOS: `$idfa` needs your app to link the `AdSupport` framework, which the RevenueCat SDK does not link itself. From iOS 14.5 its value is usable only after the user authorizes App Tracking Transparency. The method does not show that prompt, so call it again once the user grants it.
+- Android: `$gpsAdId` is left out when there is no advertising ID to read: the user deleted it or opted out, Google Play services cannot provide it, or your app targets Android 13 or later without the `com.google.android.gms.permission.AD_ID` permission. A dependency of the Android binding declares that permission, so it is merged into your app unless you remove it. The Android ID is not collected.
 
 ## Example: Complete Purchase Flow
 

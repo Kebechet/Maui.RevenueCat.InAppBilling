@@ -131,4 +131,34 @@ public interface IRevenueCatBilling
     void SetDisplayName(string name);
     void SetPhoneNumber(string phone);
     void SetAttributes(IDictionary<string, string> attributes);
+
+    /// <summary>
+    /// Sets the device's identifiers as subscriber attributes of the current user, which
+    /// attribution integrations such as RevenueCat's Meta Ads integration use for matching.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// iOS and Mac Catalyst set <c>$idfa</c>, <c>$idfv</c>, <c>$ip</c> and <c>$deviceVersion</c>.
+    /// <c>$idfa</c> needs the app to link the AdSupport framework, which the RevenueCat SDK does
+    /// not link itself. From iOS 14.5 its value is usable only after the user authorizes App Tracking
+    /// Transparency. This method does not show that prompt, so call it again once the user grants it.
+    /// </para>
+    /// <para>
+    /// Android sets <c>$gpsAdId</c>, <c>$ip</c> and <c>$deviceVersion</c>. <c>$gpsAdId</c> is left out
+    /// when there is no advertising ID to read: the user deleted it or opted out, Google Play services
+    /// cannot provide it, or the app targets Android 13 or later without the
+    /// <c>com.google.android.gms.permission.AD_ID</c> permission. A dependency of the Android binding
+    /// declares that permission, so it is merged into the app unless the app removes it.
+    /// The Android ID is not collected.
+    /// </para>
+    /// <para>
+    /// Windows and other platforms do nothing.
+    /// </para>
+    /// <para>
+    /// Call it after <see cref="Initialize(string)"/>. Getting the user's consent before calling it is
+    /// the caller's responsibility. RevenueCat's Android SDK warns against calling it in apps that
+    /// target children.
+    /// </para>
+    /// </remarks>
+    void CollectDeviceIdentifiers();
 }

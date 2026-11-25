@@ -390,6 +390,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
     {
         Purchases.SharedInstance.SetAttributes(attributes);
     }
+    public partial void CollectDeviceIdentifiers()
+    {
+        Purchases.SharedInstance.CollectDeviceIdentifiers();
+    }
 
     public async partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken)
     {

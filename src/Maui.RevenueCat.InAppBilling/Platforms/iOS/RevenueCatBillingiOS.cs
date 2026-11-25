@@ -406,6 +406,10 @@ public partial class RevenueCatBilling : IRevenueCatBilling
         var nsAttributes = attributes.ToNSDictionary();
         Purchases.SharedPurchases.Attribution.SetAttributes(nsAttributes);
     }
+    public partial void CollectDeviceIdentifiers()
+    {
+        Purchases.SharedPurchases.Attribution.CollectDeviceIdentifiers();
+    }
 
     public partial Task<StorefrontResultDto> GetStorefrontCountryCode(CancellationToken cancellationToken)
     {
