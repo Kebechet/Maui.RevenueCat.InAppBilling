@@ -33,14 +33,16 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>embedded</DebugType>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>10.2.1</Version>
+    <Version>10.3.0</Version>
     <PackageReleaseNotes>
-FIXED
-- iOS and Mac Catalyst: an `Unknown` or failed free-trial eligibility answer is no longer kept with the cached offerings. 10.2.0 kept it until `GetOfferings(forceRefresh: true)`, so after a StoreKit hiccup an eligible user saw no `ProductDto.FreeTrialPeriod` for the rest of the session. Now every later `GetOfferings()` asks again until the answer is definite.
-- iOS and Mac Catalyst: a `GetOfferings()` call that arrived while another one was still checking eligibility read the new offerings with the old answer (none on the first load), so an eligible user got no trial. Offerings and eligibility are now cached together.
+ADDED
+- `CollectDeviceIdentifiers()` sets the device's identifiers as subscriber attributes of the current user, which attribution integrations such as RevenueCat's Meta Ads integration use for matching. Call it after `Initialize`; getting the user's consent before calling it is your responsibility.
+  - iOS and Mac Catalyst: `$idfa`, `$idfv`, `$ip` and `$deviceVersion`. `$idfa` needs your app to link the AdSupport framework, and from iOS 14.5 the user's App Tracking Transparency authorization.
+  - Android: `$gpsAdId`, `$ip` and `$deviceVersion`.
+  - Windows and other platforms: the call does nothing.
 
 NOTE
-- No API change, and the bindings are the same as in 10.1.0.
+- Your own implementation of `IRevenueCatBilling`, if you have one, needs the new member. Nothing else in `IRevenueCatBilling` or its DTOs changed, and the bindings are the same as in 10.1.0.
 </PackageReleaseNotes>
   </PropertyGroup>
 
