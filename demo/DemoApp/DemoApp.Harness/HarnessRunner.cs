@@ -212,6 +212,12 @@ public sealed class HarnessRunner
                 return Task.FromResult("sent, verify in RevenueCat dashboard");
             }
             );
+            yield return (nameof(IRevenueCatBilling.CollectDeviceIdentifiers), _ =>
+            {
+                _revenueCatBilling.CollectDeviceIdentifiers();
+                return Task.FromResult("sent, verify in RevenueCat dashboard");
+            }
+            );
         }
     }
 }

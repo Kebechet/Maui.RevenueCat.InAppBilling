@@ -94,6 +94,18 @@ public class HarnessRunnerTests
     }
 
     [Fact]
+    public async Task RunAllChecks_CollectDeviceIdentifiers_RunsOnce()
+    {
+        var revenueCatBilling = CreateHappyBilling();
+        var harnessRunner = new HarnessRunner(revenueCatBilling, new HarnessLog());
+
+        var harnessCheckResults = await harnessRunner.RunAllChecksAsync();
+
+        revenueCatBilling.Received(1).CollectDeviceIdentifiers();
+        Assert.Contains(harnessCheckResults, x => x.Name == nameof(IRevenueCatBilling.CollectDeviceIdentifiers));
+    }
+
+    [Fact]
     public async Task RunAllChecks_GetOfferingsThrows_ReportsFailedAndContinues()
     {
         var revenueCatBilling = CreateHappyBilling();
