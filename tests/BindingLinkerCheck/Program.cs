@@ -49,6 +49,7 @@ public static class Program
         _ = typeof(RCCustomerAttribute);
         _ = typeof(RCCustomerInfo);
         _ = typeof(RCDangerousSettings);
+        _ = typeof(RCDeviceIdentifierCollectionMode);
         _ = typeof(RCEntitlementInfo);
         _ = typeof(RCEntitlementInfos);
         _ = typeof(RCIdentity);

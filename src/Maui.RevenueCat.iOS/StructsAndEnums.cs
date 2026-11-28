@@ -168,7 +168,9 @@ public enum RCStore : long
 	External = 8,
 	Paddle = 9,
 	TestStore = 10,
-	Galaxy = 11
+	Galaxy = 11,
+	Roku = 12,
+	PayPal = 13
 }
 
 [Native]
