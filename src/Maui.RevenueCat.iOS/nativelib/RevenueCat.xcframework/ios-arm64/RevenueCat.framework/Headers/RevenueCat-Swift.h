@@ -467,6 +467,7 @@ SWIFT_AVAILABILITY(watchos,unavailable) SWIFT_AVAILABILITY(tvos,unavailable) SWI
 ///     <code>$ip</code>
 ///   </li>
 /// </ul>
+/// This collects them regardless of the configured <code>DeviceIdentifierCollectionMode</code>.
 - (void)collectDeviceIdentifiers;
 /// Subscriber attributes are useful for storing additional, structured information on a user.
 /// Since attributes are writable using a public key they should not be used for
@@ -947,6 +948,7 @@ enum RCStoreKitVersion : NSInteger;
 @class RCDangerousSettings;
 @class RCPlatformInfo;
 enum RCEntitlementVerificationMode : NSInteger;
+@class RCDeviceIdentifierCollectionMode;
 @class RCConfiguration;
 /// The Builder for <code>Configuration</code>.
 SWIFT_CLASS_NAMED("Builder")
@@ -1050,17 +1052,12 @@ SWIFT_CLASS_NAMED("Builder")
 ///   </li>
 /// </ul>
 - (RCConfigurationBuilder * _Nonnull)withStoreKitVersion:(enum RCStoreKitVersion)version SWIFT_WARN_UNUSED_RESULT;
+/// Set how the SDK collects device identifiers. <code>DeviceIdentifierCollectionMode/automatic</code> by default.
+- (RCConfigurationBuilder * _Nonnull)withDeviceIdentifierCollectionMode:(RCDeviceIdentifierCollectionMode * _Nonnull)deviceIdentifierCollectionMode SWIFT_WARN_UNUSED_RESULT;
 /// Set <code>automaticDeviceIdentifierCollectionEnabled</code>. This is enabled by default.
-/// Enable this setting to allow the collection of identifiers when setting the identifier for an
-/// attribution network. For example, when calling<code>Purchases/setAdjustID(_:)</code>
-/// or <code>Purchases/setAppsflyerID(_:)</code>, the SDK would collect the device identifiers like
-/// IDFA, IDFV or IP, if available, and send them to RevenueCat.
-/// This is required by some attribution networks to attribute installs and re-installs.
-/// Enabling this setting does NOT mean we will always collect the identifiers. We will only do so when
-/// setting an attribution network ID and the user has not limited tracking on their device.
-/// With this option disabled you can still collect device identifiers
-/// by calling <code>Purchases/collectDeviceIdentifiers()</code>
-- (RCConfigurationBuilder * _Nonnull)withAutomaticDeviceIdentifierCollectionEnabled:(BOOL)automaticDeviceIdentifierCollectionEnabled SWIFT_WARN_UNUSED_RESULT;
+/// <code>true</code> is equivalent to <code>DeviceIdentifierCollectionMode/automatic</code> and <code>false</code> to
+/// <code>DeviceIdentifierCollectionMode/functional</code>.
+- (RCConfigurationBuilder * _Nonnull)withAutomaticDeviceIdentifierCollectionEnabled:(BOOL)automaticDeviceIdentifierCollectionEnabled SWIFT_WARN_UNUSED_RESULT SWIFT_DEPRECATED_MSG("Use with(deviceIdentifierCollectionMode:): .automatic for true, .functional for false");
 /// Set <code>iamEnabled</code>. This is <em>disabled</em> by default.
 /// Enabling tells the SDK to prefer using token-based user sessions for communicating with the server.
 /// seealso:
@@ -1430,6 +1427,43 @@ SWIFT_CLASS_NAMED("DangerousSettings")
 - (nonnull instancetype)initWithAutoSyncPurchases:(BOOL)autoSyncPurchases customEntitlementComputation:(BOOL)customEntitlementComputation;
 - (BOOL)isEqual:(id _Nullable)object SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic, readonly) NSUInteger hash;
+@end
+
+/// Defines which device identifiers the SDK sends to RevenueCat without an explicit call.
+/// <code>Purchases/collectDeviceIdentifiers()</code> collects them in every mode.
+/// <h3>Related Symbols</h3>
+/// <ul>
+///   <li>
+///     <code>Configuration/Builder/with(deviceIdentifierCollectionMode:)</code>
+///   </li>
+/// </ul>
+SWIFT_CLASS_NAMED("DeviceIdentifierCollectionMode")
+@interface RCDeviceIdentifierCollectionMode : NSObject
+/// The SDK sends the device’s <code>identifierForVendor</code> in the <code>X-Apple-Device-Identifier</code> header of
+/// its requests, and collects device identifiers like IDFA, IDFV or IP, if available, when setting
+/// the identifier for an attribution network. For example, when calling
+/// <code>Purchases/setAdjustID(_:)</code> or <code>Purchases/setAppsflyerID(_:)</code>.
+/// This is required by some attribution networks to attribute installs and re-installs.
+/// The IDFA is all zeros unless the user has authorized tracking. The IDFV and IP are collected
+/// regardless.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) RCDeviceIdentifierCollectionMode * _Nonnull automatic;)
++ (RCDeviceIdentifierCollectionMode * _Nonnull)automatic SWIFT_WARN_UNUSED_RESULT;
+/// The SDK only sends the device’s <code>identifierForVendor</code> in the <code>X-Apple-Device-Identifier</code> header
+/// of its requests. RevenueCat needs it to validate StoreKit 1 receipts created with a StoreKit
+/// Configuration file in Xcode. In macOS and Mac Catalyst sandbox builds, the header carries an
+/// identifier derived from the device’s MAC address instead.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) RCDeviceIdentifierCollectionMode * _Nonnull functional;)
++ (RCDeviceIdentifierCollectionMode * _Nonnull)functional SWIFT_WARN_UNUSED_RESULT;
+/// The SDK does not send the <code>X-Apple-Device-Identifier</code> header and only collects device
+/// identifiers when <code>Purchases/collectDeviceIdentifiers()</code> is called.
+/// warning:
+/// RevenueCat needs the <code>X-Apple-Device-Identifier</code> header to validate StoreKit 1
+/// receipts created with a StoreKit Configuration file in Xcode. In this mode, those test
+/// purchases fail.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) RCDeviceIdentifierCollectionMode * _Nonnull manualOnly;)
++ (RCDeviceIdentifierCollectionMode * _Nonnull)manualOnly SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 SWIFT_CLASS("_TtC10RevenueCat24DiagnosticsPostOperation")
@@ -2456,8 +2490,7 @@ SWIFT_PROTOCOL_NAMED("PurchasesType")
 ///   </li>
 /// </ul>
 @property (nonatomic, readonly, copy) NSString * _Nullable storeFrontCountryCode;
-/// The <code>appUserID</code> used by <code>Purchases</code>.
-/// If not passed on initialization this will be generated and cached by <code>Purchases</code>.
+/// Returns <code>true</code> if the current RevenueCat user is anonymous, <code>false</code> otherwise.
 @property (nonatomic, readonly) BOOL isAnonymous;
 /// Controls if purchases should be made and transactions finished automatically by RevenueCat.
 /// * <code>PurchasesAreCompletedBy/revenueCat</code> by default.
@@ -3555,6 +3588,41 @@ SWIFT_AVAILABILITY(visionos,introduced=2.0) SWIFT_AVAILABILITY(watchos,introduce
 @end
 
 @interface RCPurchases (SWIFT_EXTENSION(RevenueCat))
+/// Enable debug logging. Useful for debugging issues with the lovely team @RevenueCat.
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL debugLogsEnabled SWIFT_DEPRECATED_MSG("use Purchases.logLevel instead");)
++ (BOOL)debugLogsEnabled SWIFT_WARN_UNUSED_RESULT;
++ (void)setDebugLogsEnabled:(BOOL)newValue;
+/// Deprecated
+@property (nonatomic) BOOL allowSharingAppStoreAccount SWIFT_DEPRECATED_MSG("\n    Configure behavior through the RevenueCat dashboard instead. If you have configured the \"Legacy\" restore\n    behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep\n    this setting active.\n    ");
+/// Deprecated. Where responsibility for completing purchase transactions lies.
+@property (nonatomic) BOOL finishTransactions SWIFT_DEPRECATED_MSG("Use ``purchasesAreCompletedBy`` instead.");
+/// Deprecated
++ (void)addAttributionData:(NSDictionary<NSString *, id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network SWIFT_DEPRECATED_MSG("Use the set<NetworkId> functions instead");
+/// Send your attribution data to RevenueCat so you can track the revenue generated by your different campaigns.
+/// <h4>Related articles</h4>
+/// <ul>
+///   <li>
+///     <a href="https://docs.revenuecat.com/docs/attribution">Attribution</a>
+///   </li>
+/// </ul>
+/// \param data Dictionary provided by the network.
+///
+/// \param network Enum for the network the data is coming from, see <code>AttributionNetwork</code> for supported
+/// networks.
+///
+/// \param networkUserId User Id that should be sent to the network. Default is the current App User Id.
+///
++ (void)addAttributionData:(NSDictionary<NSString *, id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network forNetworkUserId:(NSString * _Nullable)networkUserId SWIFT_DEPRECATED_MSG("Use the set<NetworkId> functions instead");
+@end
+
+@interface RCPurchases (SWIFT_EXTENSION(RevenueCat))
+- (void)getVirtualCurrenciesWithCompletion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
+@property (nonatomic, readonly, strong) RCVirtualCurrencies * _Nullable cachedVirtualCurrencies;
+- (void)invalidateVirtualCurrenciesCache;
+- (void)spendVirtualCurrenciesWithAmounts:(NSDictionary<NSString *, NSNumber *> * _Nonnull)amounts reference:(NSString * _Nullable)reference completion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
+@end
+
+@interface RCPurchases (SWIFT_EXTENSION(RevenueCat))
 /// Configures an instance of the Purchases SDK with a specified <code>Configuration</code>.
 /// The instance will be set as a singleton.
 /// You should access the singleton instance using <code>Purchases/shared</code>
@@ -3648,41 +3716,6 @@ SWIFT_AVAILABILITY(visionos,introduced=2.0) SWIFT_AVAILABILITY(watchos,introduce
 /// returns:
 /// An instantiated <code>Purchases</code> object that has been set as a singleton.
 + (RCPurchases * _Nonnull)configureWithAPIKey:(NSString * _Nonnull)apiKey appUserID:(NSString * _Nullable)appUserID purchasesAreCompletedBy:(enum RCPurchasesAreCompletedBy)purchasesAreCompletedBy storeKitVersion:(enum RCStoreKitVersion)storeKitVersion;
-@end
-
-@interface RCPurchases (SWIFT_EXTENSION(RevenueCat))
-- (void)getVirtualCurrenciesWithCompletion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
-@property (nonatomic, readonly, strong) RCVirtualCurrencies * _Nullable cachedVirtualCurrencies;
-- (void)invalidateVirtualCurrenciesCache;
-- (void)spendVirtualCurrenciesWithAmounts:(NSDictionary<NSString *, NSNumber *> * _Nonnull)amounts reference:(NSString * _Nullable)reference completion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
-@end
-
-@interface RCPurchases (SWIFT_EXTENSION(RevenueCat))
-/// Enable debug logging. Useful for debugging issues with the lovely team @RevenueCat.
-SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL debugLogsEnabled SWIFT_DEPRECATED_MSG("use Purchases.logLevel instead");)
-+ (BOOL)debugLogsEnabled SWIFT_WARN_UNUSED_RESULT;
-+ (void)setDebugLogsEnabled:(BOOL)newValue;
-/// Deprecated
-@property (nonatomic) BOOL allowSharingAppStoreAccount SWIFT_DEPRECATED_MSG("\n    Configure behavior through the RevenueCat dashboard instead. If you have configured the \"Legacy\" restore\n    behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep\n    this setting active.\n    ");
-/// Deprecated. Where responsibility for completing purchase transactions lies.
-@property (nonatomic) BOOL finishTransactions SWIFT_DEPRECATED_MSG("Use ``purchasesAreCompletedBy`` instead.");
-/// Deprecated
-+ (void)addAttributionData:(NSDictionary<NSString *, id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network SWIFT_DEPRECATED_MSG("Use the set<NetworkId> functions instead");
-/// Send your attribution data to RevenueCat so you can track the revenue generated by your different campaigns.
-/// <h4>Related articles</h4>
-/// <ul>
-///   <li>
-///     <a href="https://docs.revenuecat.com/docs/attribution">Attribution</a>
-///   </li>
-/// </ul>
-/// \param data Dictionary provided by the network.
-///
-/// \param network Enum for the network the data is coming from, see <code>AttributionNetwork</code> for supported
-/// networks.
-///
-/// \param networkUserId User Id that should be sent to the network. Default is the current App User Id.
-///
-+ (void)addAttributionData:(NSDictionary<NSString *, id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network forNetworkUserId:(NSString * _Nullable)networkUserId SWIFT_DEPRECATED_MSG("Use the set<NetworkId> functions instead");
 @end
 
 @interface RCPurchases (SWIFT_EXTENSION(RevenueCat))
@@ -3990,7 +4023,9 @@ SWIFT_PROTOCOL_NAMED("PurchasesDelegate")
 /// objc: purchases:receivedUpdatedCustomerInfo:
 - (void)purchases:(RCPurchases * _Nonnull)purchases didReceiveUpdatedPurchaserInfo:(RCCustomerInfo * _Nonnull)purchaserInfo SWIFT_AVAILABILITY(watchos,obsoleted=1) SWIFT_AVAILABILITY(tvos,obsoleted=1) SWIFT_AVAILABILITY(macos,obsoleted=1) SWIFT_AVAILABILITY(ios,obsoleted=1);
 /// Called whenever <code>Purchases</code> receives updated customer info. This may happen periodically
-/// throughout the life of the app if new information becomes available (e.g. UIApplicationDidBecomeActive).*
+/// throughout the life of the app if new information becomes available (e.g. UIApplicationDidBecomeActive).
+/// It is also called when a promotional entitlement expires according to the device clock, with the
+/// cached <code>CustomerInfo</code> re-evaluated so that the entitlement is no longer active.
 /// \param purchases Related <code>Purchases</code> object
 ///
 /// \param customerInfo Updated <code>CustomerInfo</code>
@@ -4182,6 +4217,10 @@ typedef SWIFT_ENUM_NAMED(NSInteger, RCStore, "Store", open) {
   RCTestStore SWIFT_COMPILE_NAME("testStore") = 10,
 /// For entitlements granted via the Galaxy Store.
   RCGalaxy SWIFT_COMPILE_NAME("galaxy") = 11,
+/// For entitlements granted via Roku.
+  RCRoku SWIFT_COMPILE_NAME("roku") = 12,
+/// For entitlements granted via PayPal.
+  RCPayPal SWIFT_COMPILE_NAME("payPal") = 13,
 };
 
 SWIFT_CLASS("_TtC10RevenueCat16StoreKit1Wrapper")
@@ -4693,12 +4732,12 @@ typedef SWIFT_ENUM_NAMED(NSInteger, RCSubscriptionPeriodUnit, "Unit", open) {
 };
 
 @interface RCSubscriptionPeriod (SWIFT_EXTENSION(RevenueCat))
-/// The number of units per subscription period
-@property (nonatomic, readonly) NSInteger numberOfUnits SWIFT_AVAILABILITY(macos,unavailable,message="'numberOfUnits' has been renamed to 'value'") SWIFT_AVAILABILITY(watchos,unavailable,message="'numberOfUnits' has been renamed to 'value'") SWIFT_AVAILABILITY(tvos,unavailable,message="'numberOfUnits' has been renamed to 'value'") SWIFT_AVAILABILITY(ios,unavailable,message="'numberOfUnits' has been renamed to 'value'");
+@property (nonatomic, readonly, copy) NSString * _Nonnull debugDescription;
 @end
 
 @interface RCSubscriptionPeriod (SWIFT_EXTENSION(RevenueCat))
-@property (nonatomic, readonly, copy) NSString * _Nonnull debugDescription;
+/// The number of units per subscription period
+@property (nonatomic, readonly) NSInteger numberOfUnits SWIFT_AVAILABILITY(macos,unavailable,message="'numberOfUnits' has been renamed to 'value'") SWIFT_AVAILABILITY(watchos,unavailable,message="'numberOfUnits' has been renamed to 'value'") SWIFT_AVAILABILITY(tvos,unavailable,message="'numberOfUnits' has been renamed to 'value'") SWIFT_AVAILABILITY(ios,unavailable,message="'numberOfUnits' has been renamed to 'value'");
 @end
 
 SWIFT_CLASS("_TtC10RevenueCat19TokenLogInOperation")

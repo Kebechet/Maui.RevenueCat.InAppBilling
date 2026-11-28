@@ -396,7 +396,11 @@ interface RCConfigurationBuilder
 	[Export ("withStoreKitVersion:")]
 	RCConfigurationBuilder WithStoreKitVersion (RCStoreKitVersion version);
 
-	// -(RCConfigurationBuilder * _Nonnull)withAutomaticDeviceIdentifierCollectionEnabled:(BOOL)automaticDeviceIdentifierCollectionEnabled __attribute__((warn_unused_result("")));
+	// -(RCConfigurationBuilder * _Nonnull)withDeviceIdentifierCollectionMode:(RCDeviceIdentifierCollectionMode * _Nonnull)deviceIdentifierCollectionMode __attribute__((warn_unused_result("")));
+	[Export ("withDeviceIdentifierCollectionMode:")]
+	RCConfigurationBuilder WithDeviceIdentifierCollectionMode (RCDeviceIdentifierCollectionMode deviceIdentifierCollectionMode);
+
+	// -(RCConfigurationBuilder * _Nonnull)withAutomaticDeviceIdentifierCollectionEnabled:(BOOL)automaticDeviceIdentifierCollectionEnabled __attribute__((warn_unused_result(""))) __attribute__((deprecated("Use with(deviceIdentifierCollectionMode:): .automatic for true, .functional for false")));
 	[Export ("withAutomaticDeviceIdentifierCollectionEnabled:")]
 	RCConfigurationBuilder WithAutomaticDeviceIdentifierCollectionEnabled (bool automaticDeviceIdentifierCollectionEnabled);
 
@@ -617,6 +621,27 @@ interface RCDangerousSettings
 	// @property (readonly, nonatomic) NSUInteger hash;
 	[Export ("hash")]
 	nuint Hash { get; }
+}
+
+// @interface RCDeviceIdentifierCollectionMode : NSObject
+[BaseType (typeof(NSObject))]
+[DisableDefaultCtor]
+interface RCDeviceIdentifierCollectionMode
+{
+	// @property (readonly, nonatomic, strong, class) RCDeviceIdentifierCollectionMode * _Nonnull automatic;
+	[Static]
+	[Export ("automatic", ArgumentSemantic.Strong)]
+	RCDeviceIdentifierCollectionMode Automatic { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCDeviceIdentifierCollectionMode * _Nonnull functional;
+	[Static]
+	[Export ("functional", ArgumentSemantic.Strong)]
+	RCDeviceIdentifierCollectionMode Functional { get; }
+
+	// @property (readonly, nonatomic, strong, class) RCDeviceIdentifierCollectionMode * _Nonnull manualOnly;
+	[Static]
+	[Export ("manualOnly", ArgumentSemantic.Strong)]
+	RCDeviceIdentifierCollectionMode ManualOnly { get; }
 }
 
 
@@ -1438,6 +1463,45 @@ interface RCPurchases
 	[Export ("showStoreMessagesForTypes:completion:")]
 	void ShowStoreMessagesForTypes (NSSet types, Action completion);
 
+	// @property (nonatomic, class) BOOL debugLogsEnabled __attribute__((deprecated("use Purchases.logLevel instead")));
+	[Static]
+	[Export ("debugLogsEnabled")]
+	bool DebugLogsEnabled { get; set; }
+
+	// @property (nonatomic) BOOL allowSharingAppStoreAccount __attribute__((deprecated(" Configure behavior through the RevenueCat dashboard instead. If you have configured the "Legacy" restore behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep this setting active. ")));
+	[Export ("allowSharingAppStoreAccount")]
+	bool AllowSharingAppStoreAccount { get; set; }
+
+	// @property (nonatomic) BOOL finishTransactions __attribute__((deprecated("Use ``purchasesAreCompletedBy`` instead.")));
+	[Export ("finishTransactions")]
+	bool FinishTransactions { get; set; }
+
+	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network __attribute__((deprecated("Use the set<NetworkId> functions instead")));
+	[Static]
+	[Export ("addAttributionData:fromNetwork:")]
+	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network);
+
+	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network forNetworkUserId:(NSString * _Nullable)networkUserId __attribute__((deprecated("Use the set<NetworkId> functions instead")));
+	[Static]
+	[Export ("addAttributionData:fromNetwork:forNetworkUserId:")]
+	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network, [NullAllowed] string networkUserId);
+
+	// -(void)getVirtualCurrenciesWithCompletion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
+	[Export ("getVirtualCurrenciesWithCompletion:")]
+	void GetVirtualCurrenciesWithCompletion (Action<RCVirtualCurrencies, NSError> completion);
+
+	// @property (readonly, nonatomic, strong) RCVirtualCurrencies * _Nullable cachedVirtualCurrencies;
+	[NullAllowed, Export ("cachedVirtualCurrencies", ArgumentSemantic.Strong)]
+	RCVirtualCurrencies CachedVirtualCurrencies { get; }
+
+	// -(void)invalidateVirtualCurrenciesCache;
+	[Export ("invalidateVirtualCurrenciesCache")]
+	void InvalidateVirtualCurrenciesCache ();
+
+	// -(void)spendVirtualCurrenciesWithAmounts:(NSDictionary<NSString *,NSNumber *> * _Nonnull)amounts reference:(NSString * _Nullable)reference completion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
+	[Export ("spendVirtualCurrenciesWithAmounts:reference:completion:")]
+	void SpendVirtualCurrenciesWithAmounts (NSDictionary<NSString, NSNumber> amounts, [NullAllowed] string reference, Action<RCVirtualCurrencies, NSError> completion);
+
 	// +(RCPurchases * _Nonnull)configureWithConfiguration:(RCConfiguration * _Nonnull)configuration;
 	[Static]
 	[Export ("configureWithConfiguration:")]
@@ -1462,45 +1526,6 @@ interface RCPurchases
 	[Static]
 	[Export ("configureWithAPIKey:appUserID:purchasesAreCompletedBy:storeKitVersion:")]
 	RCPurchases ConfigureWithAPIKey (string apiKey, [NullAllowed] string appUserID, RCPurchasesAreCompletedBy purchasesAreCompletedBy, RCStoreKitVersion storeKitVersion);
-
-	// -(void)getVirtualCurrenciesWithCompletion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
-	[Export ("getVirtualCurrenciesWithCompletion:")]
-	void GetVirtualCurrenciesWithCompletion (Action<RCVirtualCurrencies, NSError> completion);
-
-	// @property (readonly, nonatomic, strong) RCVirtualCurrencies * _Nullable cachedVirtualCurrencies;
-	[NullAllowed, Export ("cachedVirtualCurrencies", ArgumentSemantic.Strong)]
-	RCVirtualCurrencies CachedVirtualCurrencies { get; }
-
-	// -(void)invalidateVirtualCurrenciesCache;
-	[Export ("invalidateVirtualCurrenciesCache")]
-	void InvalidateVirtualCurrenciesCache ();
-
-	// -(void)spendVirtualCurrenciesWithAmounts:(NSDictionary<NSString *,NSNumber *> * _Nonnull)amounts reference:(NSString * _Nullable)reference completion:(void (^ _Nonnull)(RCVirtualCurrencies * _Nullable, NSError * _Nullable))completion;
-	[Export ("spendVirtualCurrenciesWithAmounts:reference:completion:")]
-	void SpendVirtualCurrenciesWithAmounts (NSDictionary<NSString, NSNumber> amounts, [NullAllowed] string reference, Action<RCVirtualCurrencies, NSError> completion);
-
-	// @property (nonatomic, class) BOOL debugLogsEnabled __attribute__((deprecated("use Purchases.logLevel instead")));
-	[Static]
-	[Export ("debugLogsEnabled")]
-	bool DebugLogsEnabled { get; set; }
-
-	// @property (nonatomic) BOOL allowSharingAppStoreAccount __attribute__((deprecated(" Configure behavior through the RevenueCat dashboard instead. If you have configured the "Legacy" restore behavior in the [RevenueCat Dashboard](app.revenuecat.com) and are currently setting this to `true`, keep this setting active. ")));
-	[Export ("allowSharingAppStoreAccount")]
-	bool AllowSharingAppStoreAccount { get; set; }
-
-	// @property (nonatomic) BOOL finishTransactions __attribute__((deprecated("Use ``purchasesAreCompletedBy`` instead.")));
-	[Export ("finishTransactions")]
-	bool FinishTransactions { get; set; }
-
-	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network __attribute__((deprecated("Use the set<NetworkId> functions instead")));
-	[Static]
-	[Export ("addAttributionData:fromNetwork:")]
-	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network);
-
-	// +(void)addAttributionData:(NSDictionary<NSString *,id> * _Nonnull)data fromNetwork:(enum RCAttributionNetwork)network forNetworkUserId:(NSString * _Nullable)networkUserId __attribute__((deprecated("Use the set<NetworkId> functions instead")));
-	[Static]
-	[Export ("addAttributionData:fromNetwork:forNetworkUserId:")]
-	void AddAttributionData (NSDictionary<NSString, NSObject> data, RCAttributionNetwork network, [NullAllowed] string networkUserId);
 
 	// @property (readonly, nonatomic, strong) RCPurchasesAuthentication * _Nonnull authentication;
 	[Export ("authentication", ArgumentSemantic.Strong)]
@@ -2301,11 +2326,11 @@ interface RCSubscriptionPeriod
 	[Export ("hash")]
 	nuint Hash { get; }
 
+	// @property (readonly, copy, nonatomic) NSString * _Nonnull debugDescription;
+
 	// @property (readonly, nonatomic) NSInteger numberOfUnits __attribute__((availability(macos, unavailable))) __attribute__((availability(watchos, unavailable))) __attribute__((availability(tvos, unavailable))) __attribute__((availability(ios, unavailable)));
 	[Export ("numberOfUnits")]
 	nint NumberOfUnits { get; }
-
-	// @property (readonly, copy, nonatomic) NSString * _Nonnull debugDescription;
 }
 
 
